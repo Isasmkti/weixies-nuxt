@@ -138,9 +138,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useProductsStore } from '../../stores/productsStore'
-import { useCategoriesStore } from '../../stores/categoriesStore'
-import { sGetById } from '../../services/productsService'
+import { useProductsStore } from '../../../stores/productsStore'
+import { useCategoriesStore } from '../../../stores/categoriesStore'
+import { sGetById } from '../../../services/productsService'
 
 const route = useRoute()
 const router = useRouter()
