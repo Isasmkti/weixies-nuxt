@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE & Edge lama */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+
+h1{
+    font-family: 'Poppins', sans-serif;
+}
+
+h2,p{
+    font-family: 'Montserrat', sans-serif;
+}
+
+:root {
+    /* Primary (Elegant Blue) */
+    --color-primary: 79 70 229;        /* indigo-600 */
+    --color-primary-dark: 67 56 202;   /* indigo-700 */
+  
+
+    /* Light Mode */
+    --color-bg: 250 250 250;           /* near-white */
+    --color-bg-alt: 243 244 246;       /* gray-100 */
+    --color-surface: 255 255 255;      /* white */
+
+    --color-text: 24 24 27;            /* zinc-900 */
+    --color-text-muted: 113 113 122;   /* zinc-500 */
+}
+
+/* Dark Mode (Elegant Slate) */
+html.dark {
+    --color-primary: 129 140 248;      /* indigo-400 */
+    --color-primary-dark: 99 102 241;  /* indigo-500 */
+  
+
+    --color-bg: 9 9 11;                /* zinc-950 */
+    --color-bg-alt: 24 24 27;          /* zinc-900 */
+    --color-surface: 39 39 42;         /* zinc-800 */
+
+    --color-text: 244 244 245;         /* zinc-100 */
+    --color-text-muted: 161 161 170;   /* zinc-400 */
+}
+
+/* Global Transition & Base Styles */
+html, body {
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+    @apply bg-bg
+           text-text-main
+           transition-colors duration-300 ease-in-out;
+}
