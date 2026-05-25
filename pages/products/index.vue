@@ -50,7 +50,7 @@
               <button @click.prevent="clearAllSearches" class="text-xs text-primary font-semibold hover:text-primary-dark">Clear All</button>
             </div>
             <div class="max-h-48 overflow-y-auto">
-              <button
+              <div
                 v-for="term in recentSearches" :key="term"
                 @mousedown.prevent="applyRecentSearch(term)"
                 class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt/50 transition-colors text-left group"
@@ -64,7 +64,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ import defaultProduct from "../components/defaultProduct.vue";
 
 // import router from "../router/index";
 // import { useWishlistStore } from "../stores/wishlistStore";
-// import { getUser } from "../services/authService";
+import { getUser } from "../../services/authService";
 // import { useRecentSearches } from "../composables/useRecentSearches";
 
 const router = useRouter();

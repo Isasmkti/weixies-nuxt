@@ -120,8 +120,8 @@
 <script setup>
 import { onMounted, computed } from 'vue'
 
-import { useProductsStore } from '../../stores/productsStore'
-import { formatIDR } from '../../utils/currency'
+import { useProductsStore } from '../../../stores/productsStore'
+import { formatIDR } from '../../../utils/currency'
 
 const productsStore = useProductsStore()
 
