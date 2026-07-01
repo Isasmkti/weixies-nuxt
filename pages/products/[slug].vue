@@ -1,13 +1,13 @@
 <template>
     
-        <div class="max-w-6xl mx-auto font-poppins">
-            <div v-if="loading" class="bg-surface rounded-3xl border border-bg-alt/60 p-12 text-center shadow-lg">
+        <div class="max-w-6xl mx-auto font-poppins px-4 sm:px-6 lg:px-0">
+            <div v-if="loading" class="bg-surface rounded-3xl border border-bg-alt/60 p-6 sm:p-12 text-center shadow-lg">
                 <div class="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary">
                 </div>
                 <p class="mt-4 text-text-muted font-semibold">Loading product details...</p>
             </div>
 
-            <div v-else-if="error" class="bg-surface rounded-3xl border border-bg-alt/60 p-12 text-center shadow-lg">
+            <div v-else-if="error" class="bg-surface rounded-3xl border border-bg-alt/60 p-6 sm:p-12 text-center shadow-lg">
                 <h2 class="text-2xl font-bold text-text-main mb-2">Product not available</h2>
                 <p class="text-text-muted mb-6">{{ error }}</p>
                 <NuxtLink to="/products"
@@ -16,7 +16,7 @@
                 </NuxtLink>
             </div>
 
-            <div v-else-if="product" class="space-y-6">
+            <div v-else-if="product" class="space-y-4 md:space-y-6">
                 <div class="flex items-center justify-between gap-4">
                     <NuxtLink to="/products"
                         class="inline-flex items-center gap-2 text-text-muted hover:text-primary font-semibold transition-colors">
@@ -33,7 +33,7 @@
                 </div>
 
                 <section
-                    class="relative overflow-hidden rounded-[2rem] border border-bg-alt/60 bg-surface p-6 md:p-10 shadow-2xl shadow-black/[0.03]">
+                    class="relative overflow-hidden rounded-2xl sm:rounded-[2rem] border border-bg-alt/60 bg-surface p-4 sm:p-6 md:p-10 shadow-2xl shadow-black/[0.03]">
                     <div class="pointer-events-none absolute inset-0 pattern-grid opacity-30"></div>
                     <div
                         class="pointer-events-none absolute -top-24 -left-20 h-64 w-64 rounded-full bg-primary/10 blur-[90px]">
@@ -42,7 +42,7 @@
                         class="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-[100px]">
                     </div>
 
-                    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
                         <div class="space-y-4">
                             <!-- Main Large Image -->
                             <div class="rounded-3xl border border-bg-alt bg-bg-alt/50 p-4">
@@ -87,7 +87,7 @@
                                     Product Detail
                                 </span>
                                 <h1
-                                    class="text-3xl md:text-4xl font-extrabold text-text-main tracking-tight leading-tight">
+                                    class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text-main tracking-tight leading-tight">
                                     {{ product.name }}
                                 </h1>
                                 <div class="flex flex-wrap gap-2 pt-1">
@@ -119,7 +119,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="rounded-2xl border border-bg-alt bg-bg/70 p-4">
                                     <p class="text-xs uppercase tracking-widest text-text-muted font-semibold">Price</p>
-                                    <p class="text-3xl font-black text-text-main mt-2">{{ formattedPrice }}</p>
+                                    <p class="text-2xl md:text-3xl font-black text-text-main mt-2">{{ formattedPrice }}</p>
                                 </div>
                                 <div class="rounded-2xl border border-bg-alt bg-bg/70 p-4">
                                     <p class="text-xs uppercase tracking-widest text-text-muted font-semibold">Status
@@ -128,10 +128,10 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-wrap gap-3 pt-2">
+                            <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
                                 <button @click="isInCart(product.id) ? router.push('/cart') : addToCart()"
                                     :disabled="addingToCart === product.id || (addingToCart && !product.id)" :class="[
-                                        'inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70',
+                                        'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 w-full sm:w-auto',
                                         isInCart(product.id)
                                             ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'
                                             : 'bg-primary hover:bg-primary-dark shadow-primary/30 hover:shadow-primary/40'
@@ -155,8 +155,18 @@
                                         isInCart(product.id) ? 'Go to Cart' : 'Add to Cart' }}
                                 </button>
 
+                                <!-- <NuxtLink :to="`/reviews/${product.slug}`"
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl border border-bg-alt bg-bg px-6 py-3 font-semibold text-text-main hover:border-primary/30 hover:text-primary transition-colors w-full sm:w-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Write a Review
+                                </NuxtLink> -->
+
                                 <NuxtLink to="/products"
-                                    class="inline-flex items-center gap-2 rounded-xl border border-bg-alt bg-bg px-6 py-3 font-semibold text-text-main hover:border-primary/30 hover:text-primary transition-colors">
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl border border-bg-alt bg-bg px-6 py-3 font-semibold text-text-main hover:border-primary/30 hover:text-primary transition-colors w-full sm:w-auto">
                                     Continue Shopping
                                 </NuxtLink>
                             </div>
@@ -166,9 +176,9 @@
 
 
 
-                <section class="rounded-[2rem] border border-bg-alt/60 bg-surface p-6 md:p-10 shadow-lg">
+                <section class="rounded-2xl sm:rounded-[2rem] border border-bg-alt/60 bg-surface p-4 sm:p-6 md:p-10 shadow-lg">
                     <div class="max-w-3xl">
-                        <h2 class="text-2xl md:text-3xl font-bold text-text-main mb-4">
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-text-main mb-4">
                             Product Description
                         </h2>
 
@@ -183,10 +193,70 @@
                     </div>
                 </section>
 
+                <section
+                    class="rounded-2xl sm:rounded-[2rem] border border-bg-alt/60 bg-surface p-4 sm:p-6 md:p-10 shadow-lg">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-text-main">
+                            Customer Reviews
+                        </h2>
+                        <!-- <NuxtLink :to="`/reviews/${product.slug}`"
+                            class="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                            Write a Review
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </NuxtLink> -->
+                    </div>
 
-                <section v-if="randomProducts && randomProducts.length > 0" class="space-y-8 pt-8">
+                    <div v-if="reviewsStore.loading && reviewsStore.reviews.length === 0"
+                        class="flex justify-center py-8">
+                        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary">
+                        </div>
+                    </div>
+                    <div v-else-if="reviewsStore.reviews.length === 0" class="text-center py-8 text-text-muted">
+                        <p>No reviews yet. Be the first to review this product!</p>
+                    </div>
+                    <div v-else class="space-y-6">
+                        <div v-for="review in reviewsStore.reviews" :key="review.id"
+                            class="p-5 rounded-2xl bg-bg border border-bg-alt/50">
+                            <div class="flex items-center gap-4 mb-3">
+                                <img v-if="review.profiles?.profile_img" :src="review.profiles.profile_img"
+                                    alt="Reviewer" class="w-10 h-10 rounded-full object-cover">
+                                <div v-else
+                                    class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                    {{ review.profiles?.full_name?.charAt(0) || 'U' }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-text-main">
+                                        {{ review.profiles?.full_name || 'Anonymous User' }}
+                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex text-yellow-500">
+                                            <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg"
+                                                class="h-3 w-3"
+                                                :class="i <= review.rating ? 'fill-current' : 'text-gray-300 dark:text-gray-600'"
+                                                viewBox="0 0 20 20" fill="currentColor">
+                                                <path
+                                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                        </div>
+                                        <span class="text-xs text-text-muted">
+                                            {{ new Date(review.created_at).toLocaleDateString() }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-text-muted">{{ review.comment }}</p>
+                        </div>
+                    </div>
+                </section>
+
+
+                <section v-if="randomProducts && randomProducts.length > 0" class="space-y-4 sm:space-y-8 pt-4 sm:pt-8">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-2xl md:text-3xl font-bold text-text-main">
+                        <h2 class="text-lg sm:text-2xl md:text-3xl font-bold text-text-main">
                             You Might Also Like
                         </h2>
                         <NuxtLink to="/products" class="text-primary font-semibold hover:underline">
@@ -194,7 +264,7 @@
                         </NuxtLink>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                         <div v-for="rp in randomProducts" :key="rp.id" @click="router.push(`/products/${rp.slug}`)"
                             class="group bg-surface rounded-2xl shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border border-bg-alt overflow-hidden flex flex-col cursor-pointer">
                             <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt">
@@ -246,7 +316,7 @@
                                     {{ rp.description }}
                                 </p>
                                 <div class="flex justify-between items-center mt-auto pt-4 border-t border-bg-alt">
-                                    <span class="text-xl font-extrabold text-text-main">
+                                    <span class="text-base sm:text-xl font-extrabold text-text-main">
                                         {{ formatIDR(rp.price) }}
                                     </span>
                                     <button @click.stop="isInCart(rp.id) ? router.push('/cart') : addToCart(rp.id)"
@@ -280,13 +350,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import defaultProduct from '../components/defaultProduct.vue'
-// import { useProductDetailUI } from '../composables/useProductDetailUI'
-// import DashboardLayout from '../components/layouts/DashboardLayout.vue'
-// import router from '../router/index';
-// import { useWishlistStore } from "../stores/wishlistStore";
-// import { getUser } from "../services/authService";
+import { onMounted, ref, watch } from 'vue'
+import defaultProduct from '../../components/defaultProduct.vue'
+import { getUser } from '../../services/authService'
+import { useReviewsStore } from '../../stores/reviewsStore'
 
 const props = defineProps({
     slug: {
@@ -297,6 +364,7 @@ const props = defineProps({
 
 const router = useRouter();
 const wishlistStore = useWishlistStore();
+const reviewsStore = useReviewsStore();
 const profileId = ref(null);
 
 onMounted(async () => {
@@ -309,8 +377,12 @@ onMounted(async () => {
 
 const toggleWishlist = async (productId) => {
     if (!profileId.value) {
-        router.push('/login');
-        return;
+        const user = await getUser();
+        if (!user) {
+            router.push('/login');
+            return;
+        }
+        profileId.value = user.id;
     }
     await wishlistStore.stToggleWishlist(profileId.value, productId);
 };
@@ -328,6 +400,12 @@ const {
     cartStore,
     formatIDR
 } = useProductDetailUI(props.slug)
+
+watch(product, (newProduct) => {
+    if (newProduct?.id) {
+        reviewsStore.fetchReviews(newProduct.id)
+    }
+}, { immediate: true })
 
 // reactive check
 const isInCart = (productId) => {
