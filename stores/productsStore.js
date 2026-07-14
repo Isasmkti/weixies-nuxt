@@ -86,8 +86,36 @@ export const useProductsStore = defineStore('products', {
             };
         },
 
-        async stAll(page) {
+        async stAll(page, options = {}) {
             const targetPage = Number.isFinite(page) && page > 0 ? page : this.page
+            const {
+                limit = this.limit,
+                sortBy = this.sortBy,
+                sortOrder = this.sortOrder,
+                search = this.search,
+                categorySlug = this.categorySlug,
+                force = false
+            } = options
+
+            const normalizedCategorySlug = Array.isArray(categorySlug)
+                ? categorySlug
+                : (categorySlug ? [categorySlug] : [])
+
+            const filtersChanged = (
+                targetPage !== this.page ||
+                Number(limit) !== Number(this.limit) ||
+                sortBy !== this.sortBy ||
+                sortOrder !== this.sortOrder ||
+                search !== this.search ||
+                JSON.stringify(normalizedCategorySlug) !== JSON.stringify(this.categorySlug)
+            )
+
+            const shouldSkip = !force && !this.loading && this.products.length > 0 && this.total > 0 && !filtersChanged
+
+            if (shouldSkip) {
+                return { data: this.products, total: this.total, page: this.page }
+            }
+
             const current = ++this.requestId
             this.loading = true
             this.error = null
@@ -96,11 +124,11 @@ export const useProductsStore = defineStore('products', {
                 const res = await withTimeout(
                     productsService.sAll(
                         targetPage,
-                        this.limit,
-                        this.sortBy,
-                        this.sortOrder,
-                        this.search,
-                        this.categorySlug
+                        limit,
+                        sortBy,
+                        sortOrder,
+                        search,
+                        normalizedCategorySlug
                     )
                 )
 
@@ -108,18 +136,29 @@ export const useProductsStore = defineStore('products', {
 
                 const rawData = Array.isArray(res?.data) ? res.data : []
                 this.products = rawData.map(p => this._mapProduct(p))
-                
                 this.total = Number(res?.total) || 0
                 this.page = targetPage
+                this.limit = Number(limit) || this.limit
+                this.sortBy = sortBy
+                this.sortOrder = sortOrder
+                this.search = search
+                this.categorySlug = normalizedCategorySlug
+
+                return { data: this.products, total: this.total, page: this.page }
             } catch (err) {
                 if (current === this.requestId) {
                     this.error = err.message || 'Failed to load products'
                 }
+                throw err
             } finally {
                 if (current === this.requestId) {
                     this.loading = false
                 }
             }
+        },
+
+        async ensureProductsLoaded(options = {}) {
+            return this.stAll(options.page, options)
         },
 
         setSearch(val) {

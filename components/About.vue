@@ -1,15 +1,15 @@
 <template>
-    <div class="py-20 md:py-32 lg:py-48 bg-bg-alt overflow-hidden" v-if="store.about">
-        <div class="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+    <div class="overflow-hidden bg-bg-alt py-20 md:py-28 lg:py-36" v-if="store.about">
+        <div class="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
             <div class="flex flex-col items-center text-center">
-                <h2 class="text-sm md:text-base font-bold text-primary tracking-[0.2em] uppercase mb-4">{{ store.about.title }}</h2>
-                <h3 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-text-main tracking-tight leading-tight max-w-4xl">
+                <h2 class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-primary md:text-base">{{ store.about.title }}</h2>
+                <h3 class="max-w-4xl text-3xl font-black leading-tight tracking-tight text-text-main sm:text-4xl md:text-5xl lg:text-6xl">
                     {{ store.about.subtitle }}
                 </h3>
-                <p class="max-w-2xl mt-8 text-lg sm:text-xl lg:text-2xl text-text-muted leading-relaxed font-medium">
+                <p class="mt-8 max-w-2xl text-base font-medium leading-relaxed text-text-muted sm:text-lg lg:text-xl">
                     {{ store.about.description }}
                 </p>
-                <div class="mt-12 h-1 w-24 bg-primary rounded-full"></div>
+                <div class="mt-10 h-1 w-24 rounded-full bg-primary"></div>
             </div>
         </div>
     </div>

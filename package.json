@@ -16,6 +16,7 @@
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.13.0",
     "autoprefixer": "^10.5.0",
+    "midtrans-client": "^1.4.3",
     "nuxt": "^4.4.6",
     "pinia": "^3.0.4",
     "postcss": "^8.5.15",

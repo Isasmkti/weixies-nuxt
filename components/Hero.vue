@@ -1,7 +1,6 @@
 <template>
   <div class="relative min-h-[100vh] flex items-center justify-center overflow-hidden bg-bg-alt">
 
-    <!-- Loading -->
     <div
       v-if="store.loading"
       class="absolute inset-0 z-50 flex items-center justify-center bg-bg-alt/70 backdrop-blur-md"
@@ -9,65 +8,55 @@
       <div class="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
     </div>
 
-    <!-- Error -->
     <div
       v-else-if="store.error"
       class="absolute inset-0 z-50 flex items-center justify-center"
     >
-      <p class="bg-surface text-text px-6 py-4 rounded-xl shadow-lg font-medium">
+      <p class="rounded-xl bg-surface px-6 py-4 font-medium text-text shadow-lg">
         Error: {{ store.error }}
       </p>
     </div>
 
-    <!-- Hero -->
     <template v-else-if="currentItem">
       <MotionGroup preset="fade" :duration="1000" :delay="500">
-        <!-- Background -->
         <div class="absolute inset-0">
           <img
             :src="currentItem.image"
             alt="Hero Background"
-            class="h-full w-full object-cover scale-110 animate-subtle-zoom"
+            class="h-full w-full scale-110 object-cover animate-subtle-zoom"
           />
-          
-          <!-- Soft radial gradient -->
+
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2),rgba(0,0,0,0.75))]"></div>
-
-          <!-- Subtle primary tint -->
           <div class="absolute inset-0 bg-primary/10"></div>
-
-          <!-- Bottom fade -->
-          <div class="absolute bottom-0 inset-x-0 h-96 bg-gradient-to-t from-bg-alt via-bg-alt/80 to-transparent"></div>
+          <div class="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-bg-alt via-bg-alt/80 to-transparent"></div>
         </div>
       </MotionGroup>
 
-      <!-- Content -->
       <MotionGroup preset="fade" :duration="1000" :delay="1000">
-        <main class="relative z-10 max-w-6xl mx-auto px-6 text-center pt-32 pb-20 md:pt-48 md:pb-36 lg:pt-56 lg:pb-44">
+        <main class="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-6 pb-20 pt-28 text-center sm:px-8 md:pb-28 md:pt-40 lg:px-12 lg:pb-36 lg:pt-48">
           <h1
-            class="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.1] drop-shadow-2xl"
+            class="max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.02em] text-white drop-shadow-2xl sm:text-5xl md:text-6xl lg:text-7xl"
           >
             {{ currentItem.title }}
           </h1>
 
           <p
-            class="mt-8 max-w-2xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed font-medium drop-shadow-lg"
+            class="mx-auto mt-6 max-w-2xl text-base font-medium leading-relaxed text-white/90 drop-shadow-lg sm:text-lg md:text-xl"
           >
             {{ currentItem.description }}
           </p>
 
-          <!-- CTA -->
-          <div class="mt-12 flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-6">
+          <div class="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:w-auto sm:flex-row md:gap-6">
             <a
               href="#"
-              class="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-primary px-8 md:px-10 py-4 text-base md:text-lg font-bold text-white shadow-2xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300"
+              class="inline-flex w-full items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/40 sm:w-auto sm:text-base"
             >
               Get Started
             </a>
 
             <a
               href="#"
-              class="w-full sm:w-auto inline-flex items-center justify-center rounded-full border-2 border-white/50 backdrop-blur-sm px-8 md:px-10 py-4 text-base md:text-lg font-bold text-white hover:bg-white hover:text-black transition-all duration-300"
+              class="inline-flex w-full items-center justify-center rounded-full border-2 border-white/50 bg-transparent px-8 py-4 text-sm font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-black sm:w-auto sm:text-base"
             >
               Live Demo
             </a>
@@ -75,7 +64,6 @@
         </main>
       </MotionGroup>
     </template>
-   
   </div>
 </template>
 

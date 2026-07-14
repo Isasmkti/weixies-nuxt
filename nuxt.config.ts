@@ -1,3 +1,5 @@
+import { resolveMidtransIsProduction } from './utils/midtrans';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -17,7 +19,7 @@ export default defineNuxtConfig({
     head: {
       title: 'Weixies Webshop',
       meta: [
-        { name: 'description', content: 'A simple ecommerce' }
+        { name: 'description', content: 'A simple ecommerce' },
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/weixies-logo.svg' },
@@ -54,6 +56,16 @@ export default defineNuxtConfig({
     configPath: '~/tailwind.config.js',
   },
 
+  nitro: {
+    routeRules: {
+      '/**': {
+        headers: {
+          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://app.midtrans.com https://snap-assets.sandbox.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://pay.google.com https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https://*.midtrans.com https://*.googleusercontent.com https://*.supabase.co; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://api.sandbox.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://app.midtrans.com https://*.midtrans.com https://*.supabase.co; frame-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com https://pay.google.com https://gwk.gopayapi.com; object-src 'self'"
+        }
+      }
+    }
+  },
+
   vite: {
     optimizeDeps: {
       include: [
@@ -66,9 +78,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
     public: {
+      midtransIsProduction: resolveMidtransIsProduction(process.env.MIDTRANS_IS_PRODUCTION),
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',
       supabaseAnonKey: 'sb_publishable_WCN1OssVUJja7c159tuslQ_ouBV5LGC',
+      midtransClientKey: process.env.MIDTRANS_CLIENT_KEY,
     },
   },
 })

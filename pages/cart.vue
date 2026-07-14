@@ -113,8 +113,11 @@
                         </div>
 
                         <button
-                            class="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-4 rounded-xl hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 font-bold text-lg flex items-center justify-center gap-2 group">
-                            <span>Checkout</span>
+                            @click="handleCheckout"
+                            :disabled="isCheckingOut"
+                            class="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-4 rounded-xl hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 font-bold text-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span v-if="isCheckingOut">Memproses...</span>
+                            <span v-else>Bayar!</span>
                             <svg xmlns="http://www.w3.org/2000/svg"
                                 class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
@@ -156,6 +159,8 @@ const loading = computed(() => cartStore.loading)
 const error = computed(() => cartStore.error)
 
 const selectedItems = ref([])
+const currentUser = ref(null)
+const isCheckingOut = ref(false)
 
 const total = computed(() => {
     return items.value.reduce((sum, item) => {
@@ -172,6 +177,7 @@ onMounted(async () => {
         router.push('/login')
         return
     }
+    currentUser.value = user
     await cartStore.stGetCart(user.id)
 })
 
@@ -192,6 +198,127 @@ const removeFromCart = async (itemId) => {
     })
     if (result.isConfirmed) {
         await cartStore.stRemoveFromCart(itemId)
+    }
+}
+
+const waitForMidtransSnap = async (timeoutMs = 10000) => {
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < timeoutMs) {
+        if (typeof window !== 'undefined' && window.snap?.pay) {
+            return true
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 250))
+    }
+
+    return false
+}
+
+const handleCheckout = async () => {
+    const checkoutItems = items.value.filter(item => selectedItems.value.includes(item.id))
+    
+    if (checkoutItems.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No items selected',
+            text: 'Please select at least one item to checkout.',
+            background: 'rgb(var(--color-surface))',
+            color: 'rgb(var(--color-text))',
+            confirmButtonColor: 'rgb(var(--color-primary))'
+        })
+        return
+    }
+
+    // For digital products: process each item as a separate order
+    if (checkoutItems.length > 1) {
+        Swal.fire({
+            icon: 'info',
+            title: 'One product at a time',
+            text: 'Please select one product to checkout at a time for digital purchases.',
+            background: 'rgb(var(--color-surface))',
+            color: 'rgb(var(--color-text))',
+            confirmButtonColor: 'rgb(var(--color-primary))'
+        })
+        return
+    }
+
+    const item = checkoutItems[0]
+
+    try {
+        isCheckingOut.value = true
+
+        const isSnapReady = await waitForMidtransSnap()
+        if (!isSnapReady) {
+            throw new Error('Midtrans Snap is not ready. Please refresh the page and try again.')
+        }
+
+        const payload = {
+            product_id: item.product.id,
+            profile_id: currentUser.value?.id,
+            customerName: currentUser.value?.user_metadata?.full_name || currentUser.value?.email?.split('@')[0] || 'Customer',
+            customerEmail: currentUser.value?.email || 'customer@example.com',
+        }
+
+        const response = await $fetch('/api/payment', {
+            method: 'POST',
+            body: payload
+        })
+
+        if (response && response.token) {
+            window.snap.pay(response.token, {
+                onSuccess: function(result) {
+                    console.log('Payment success', result);
+                    // Remove purchased item from cart
+                    cartStore.stRemoveFromCart(item.id)
+                    Swal.fire({
+                        title: 'Payment Successful!', 
+                        text: 'Your product is ready to download in My Orders.',
+                        icon: 'success',
+                        background: 'rgb(var(--color-surface))',
+                        color: 'rgb(var(--color-text))',
+                        confirmButtonColor: 'rgb(var(--color-primary))'
+                    }).then(() => router.push('/orders'));
+                },
+                onPending: function(result) {
+                    console.log('Payment pending', result);
+                    Swal.fire({
+                        title: 'Payment Pending', 
+                        text: 'Your payment is being processed. Check My Orders for updates.',
+                        icon: 'info',
+                        background: 'rgb(var(--color-surface))',
+                        color: 'rgb(var(--color-text))',
+                        confirmButtonColor: 'rgb(var(--color-primary))'
+                    }).then(() => router.push('/orders'));
+                },
+                onError: function(result) {
+                    console.log('Payment error', result);
+                    Swal.fire({
+                        title: 'Payment Failed', 
+                        text: 'Payment could not be completed. Please try again.',
+                        icon: 'error',
+                        background: 'rgb(var(--color-surface))',
+                        color: 'rgb(var(--color-text))',
+                        confirmButtonColor: 'rgb(var(--color-primary))'
+                    });
+                },
+                onClose: function() {
+                    console.log('Snap popup closed.');
+                }
+            })
+        }
+    } catch (err) {
+        console.error('Checkout error:', err)
+        Swal.fire({
+            title: 'Error', 
+            text: err?.message || 'Failed to initialize checkout.',
+            icon: 'error',
+            background: 'rgb(var(--color-surface))',
+            color: 'rgb(var(--color-text))',
+            confirmButtonColor: 'rgb(var(--color-primary))'
+        })
+    } finally {
+        isCheckingOut.value = false
     }
 }
 </script>

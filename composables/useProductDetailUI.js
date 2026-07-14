@@ -47,7 +47,7 @@ export function useProductDetailUI(initialSlug) {
   const fetchRandomProducts = async () => {
     try {
       if (productsStore.products.length === 0) {
-        await productsStore.stAll()
+        await productsStore.ensureProductsLoaded({ force: false })
       }
 
       const allProducts = productsStore.products

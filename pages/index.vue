@@ -263,7 +263,7 @@ onMounted(async () => {
 
   // Only fetch products if not already loaded
   if (!productsStore.products.length) {
-    promises.push(productsStore.stAll())
+    promises.push(productsStore.ensureProductsLoaded({ force: false }))
   }
 
   const user = await getUser()

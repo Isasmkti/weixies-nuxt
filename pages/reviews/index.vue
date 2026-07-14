@@ -75,7 +75,7 @@ const productsStore = useProductsStore()
 
 onMounted(async () => {
     if (productsStore.products.length === 0) {
-        await productsStore.stAll(1)
+        await productsStore.ensureProductsLoaded({ page: 1, force: false })
     }
 })
 </script>

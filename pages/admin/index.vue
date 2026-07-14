@@ -54,7 +54,7 @@ const productsStore = useProductsStore()
 // ])
 
 onMounted(async () => {
-    await productsStore.stAll(1)
+    await productsStore.ensureProductsLoaded({ page: 1, force: true })
 })
 
 // const deleteProduct = async (id) => {

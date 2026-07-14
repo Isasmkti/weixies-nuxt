@@ -32,7 +32,7 @@ export function useCatalogUI() {
   onMounted(async () => {
     const user = await getUser()
     const promises = [
-      productsStore.stAll(),
+      productsStore.ensureProductsLoaded({ force: false }),
       categoriesStore.fetchCategories()
     ]
 
