@@ -144,9 +144,9 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue'
-
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
+import { supabase } from '../utils/supabase'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
 import Swal from 'sweetalert2'
@@ -253,6 +253,9 @@ const handleCheckout = async () => {
             throw new Error('Midtrans Snap is not ready. Please refresh the page and try again.')
         }
 
+        const { data: sessionData } = await supabase.auth.getSession()
+        const token = sessionData?.session?.access_token
+
         const payload = {
             product_id: item.product.id,
             profile_id: currentUser.value?.id,
@@ -262,6 +265,9 @@ const handleCheckout = async () => {
 
         const response = await $fetch('/api/payment', {
             method: 'POST',
+            headers: {
+                Authorization: token ? `Bearer ${token}` : ''
+            },
             body: payload
         })
 

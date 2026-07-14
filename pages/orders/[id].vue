@@ -171,6 +171,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
+import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
 
 const props = defineProps({
@@ -227,8 +228,12 @@ onMounted(async () => {
   loading.value = true
   error.value = null
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+
     const data = await $fetch(`/api/orders/${props.id}`, {
-      query: { profile_id: user.id }
+      query: { profile_id: user.id },
+      headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     order.value = data.order
   } catch (err) {

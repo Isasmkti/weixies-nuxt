@@ -144,6 +144,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
+import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
 
 const router = useRouter()
@@ -199,7 +200,13 @@ const fetchOrders = async (profileId) => {
   loading.value = true
   error.value = null
   try {
-    const data = await $fetch('/api/orders', { query: { profile_id: profileId } })
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+
+    const data = await $fetch('/api/orders', { 
+      query: { profile_id: profileId },
+      headers: { Authorization: token ? `Bearer ${token}` : '' }
+    })
     orders.value = data.orders || []
   } catch (err) {
     console.error('Error fetching orders:', err)

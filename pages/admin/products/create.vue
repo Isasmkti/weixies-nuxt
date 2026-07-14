@@ -79,6 +79,14 @@
                                 Add Image
                             </button>
                         </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main mb-2">Product ZIP File</label>
+                            <input type="file" accept=".zip" @change="handleZipChange"
+                                class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 focus:ring-2 focus:ring-primary/30 outline-none transition-all text-sm" />
+                            <p class="text-xs text-text-muted mt-1">Upload a ZIP file for downloadable product content. Leave blank to keep existing file.</p>
+                            <p v-if="zipFile" class="text-sm font-medium text-text-main mt-2">Selected file: {{ zipFile.name }}</p>
+                            <p v-else-if="existingZipFile" class="text-sm text-text-muted mt-2">Current ZIP: {{ existingZipFile.file_name }}</p>
+                        </div>
                         
                         <div class="space-y-4">
                             <div v-for="(image, index) in form.images" :key="index" class="bg-bg-alt/30 p-4 rounded-xl border border-bg-alt flex flex-col gap-3">
@@ -161,9 +169,22 @@ const form = ref({
     images: [], // Array of { image_url: string, is_primary: boolean }
     categoryIds: [] // Array of category UUIDs
 })
+const zipFile = ref(null)
+const existingZipFile = ref(null)
 
 const addImageUrl = () => {
     form.value.images.push({ image_url: '', is_primary: form.value.images.length === 0 })
+}
+
+const handleZipChange = (event) => {
+    const file = event.target.files?.[0] ?? null
+    if (file && !file.name.toLowerCase().endsWith('.zip')) {
+        error.value = 'Please choose a .zip file.'
+        zipFile.value = null
+        return
+    }
+    error.value = null
+    zipFile.value = file
 }
 
 const removeImage = (index) => {
@@ -197,6 +218,9 @@ onMounted(async () => {
                     images: product.product_images ? [...product.product_images].sort((a,b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)) : [],
                     categoryIds: product.product_categories ? product.product_categories.map(pc => pc.category_id) : []
                 }
+                if (product.product_files && product.product_files.length > 0) {
+                    existingZipFile.value = [...product.product_files].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+                }
             }
         } catch (err) {
             error.value = 'Failed to load product details'
@@ -212,10 +236,15 @@ const handleSubmit = async () => {
     error.value = null
 
     try {
+        const payload = {
+            ...form.value,
+            zipFile: zipFile.value
+        }
+
         if (isEditMode.value) {
-            await productsStore.updateProduct(route.params.id, form.value)
+            await productsStore.updateProduct(route.params.id, payload)
         } else {
-            await productsStore.createProduct(form.value)
+            await productsStore.createProduct(payload)
         }
         router.push('/admin')
     } catch (err) {

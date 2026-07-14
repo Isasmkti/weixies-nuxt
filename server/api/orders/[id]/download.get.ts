@@ -1,10 +1,22 @@
-import { supabase } from '~/utils/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 const SIGNED_URL_EXPIRES_IN = 300; // 5 minutes
 
 export default defineEventHandler(async (event) => {
   const orderId = getRouterParam(event, 'id');
   const query = getQuery(event);
+  const config = useRuntimeConfig();
+
+  const authHeader = getRequestHeader(event, 'authorization');
+  const reqSupabase = createClient(
+    config.public.supabaseUrl,
+    config.public.supabaseAnonKey,
+    {
+      global: {
+        headers: { Authorization: authHeader || '' }
+      }
+    }
+  );
   const profileId = query.profile_id as string;
   const productId = query.product_id as string;
 
@@ -21,7 +33,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 1. Verify order belongs to user and is paid
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await reqSupabase
     .from('orders')
     .select('id, status')
     .eq('id', orderId)
@@ -37,7 +49,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 2. Verify user actually owns this product via user_products
-  const { data: ownership, error: ownershipError } = await supabase
+  const { data: ownership, error: ownershipError } = await reqSupabase
     .from('user_products')
     .select('id')
     .eq('profile_id', profileId)
@@ -49,7 +61,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 3. Fetch the product file from product_files table
-  const { data: productFile, error: fileError } = await supabase
+  const { data: productFile, error: fileError } = await reqSupabase
     .from('product_files')
     .select('file_url, file_name')
     .eq('product_id', productId)
@@ -65,7 +77,7 @@ export default defineEventHandler(async (event) => {
   const storagePath = productFile.file_url;
 
   // 4. Generate a signed URL (private bucket)
-  const { data: signedData, error: signedError } = await supabase.storage
+  const { data: signedData, error: signedError } = await reqSupabase.storage
     .from('products')
     .createSignedUrl(storagePath, SIGNED_URL_EXPIRES_IN);
 
@@ -75,7 +87,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 5. Log the download
-  await supabase.from('download_logs').insert({
+  await reqSupabase.from('download_logs').insert({
     profile_id: profileId,
     product_id: productId,
     downloaded_at: new Date().toISOString(),

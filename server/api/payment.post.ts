@@ -1,5 +1,5 @@
 import { getMidtransAuthorizationHeader, getMidtransSnapApiUrl, resolveMidtransIsProduction } from '~/utils/midtrans';
-import { supabase } from '~/utils/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 function generateOrderNumber(): string {
   const now = new Date();
@@ -11,6 +11,19 @@ function generateOrderNumber(): string {
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const config = useRuntimeConfig();
+
+  const authHeader = getRequestHeader(event, 'authorization');
+  const reqSupabase = createClient(
+    config.public.supabaseUrl,
+    config.public.supabaseAnonKey,
+    {
+      global: {
+        headers: {
+          Authorization: authHeader || ''
+        }
+      }
+    }
+  );
 
   const serverKey = String(config.midtransServerKey || process.env.MIDTRANS_SERVER_KEY || '').trim();
   const isProduction = resolveMidtransIsProduction(config.public.midtransIsProduction);
@@ -29,18 +42,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch product from DB — never trust price from frontend
-  const { data: product, error: productError } = await supabase
+  const { data: product, error: productError } = await reqSupabase
     .from('products')
-    .select('id, name, price, is_active')
+    .select('id, name, price')
     .eq('id', productId)
     .single();
 
   if (productError || !product) {
     throw createError({ statusCode: 404, statusMessage: 'Product not found.' });
-  }
-
-  if (!product.is_active) {
-    throw createError({ statusCode: 400, statusMessage: 'Product is not available.' });
   }
 
   const totalAmount = Number(product.price);
@@ -57,7 +66,7 @@ export default defineEventHandler(async (event) => {
   const orderNumber = generateOrderNumber();
 
   // Insert order with status pending
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await reqSupabase
     .from('orders')
     .insert({
       profile_id: profileId,
@@ -78,7 +87,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Insert order_items
-  await supabase.from('order_items').insert({
+  await reqSupabase.from('order_items').insert({
     order_id: order.id,
     product_id: productId,
     price: totalAmount,
@@ -132,7 +141,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update order with snap_token
-    await supabase
+    await reqSupabase
       .from('orders')
       .update({
         midtrans_order_id: orderNumber,
@@ -148,7 +157,7 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: any) {
     // Mark order as failed if Midtrans call fails
-    await supabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
+    await reqSupabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
     throw createError({
       statusCode: 500,
       statusMessage: error.statusMessage || error.message || 'Midtrans error'

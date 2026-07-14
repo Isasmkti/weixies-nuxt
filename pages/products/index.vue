@@ -342,6 +342,7 @@ import { getUser } from "../../services/authService";
 // import { useRecentSearches } from "../composables/useRecentSearches";
 
 const router = useRouter();
+const route = useRoute();
 const wishlistStore = useWishlistStore();
 const profileId = ref(null);
 const searchInputEl = ref(null);

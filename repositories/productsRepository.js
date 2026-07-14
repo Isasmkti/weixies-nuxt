@@ -6,7 +6,8 @@ const PRODUCT_SELECT = `
   product_categories(
     categories(*)
   ),
-  reviews(*)
+  reviews(*),
+  product_files(*)
 `
 
 export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = []) {
@@ -100,9 +101,23 @@ export async function rUpsertImages(productId, images) {
         image_url: typeof img === 'string' ? img : img.image_url,
         is_primary: img.is_primary ?? (i === 0)
     }))
+
+    const uniqueRecords = Array.from(
+        new Map(records.map(item => [`${item.product_id}-${item.image_url}`, item]))
+            .values()
+    )
+
+    await supabase
+        .from('product_images')
+        .delete()
+        .eq('product_id', productId)
+
+    if (uniqueRecords.length === 0) return
+
     const { error } = await supabase
         .from('product_images')
-        .upsert(records, { onConflict: 'product_id,image_url' })
+        .insert(uniqueRecords)
+
     if (error) throw error
 }
 
@@ -119,4 +134,31 @@ export async function rUpsertProductCategories(productId, categoryIds) {
         .from('product_categories')
         .insert(records)
     if (error) throw error
+}
+
+export async function rCreateProductFile(productId, file) {
+    if (!file) return null
+
+    const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
+    const filePath = `${productId}/${Date.now()}-${safeName}`
+
+    const { error: uploadError } = await supabase
+        .storage
+        .from('products')
+        .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    const { data, error } = await supabase
+        .from('product_files')
+        .insert({
+            product_id: productId,
+            file_url: filePath,
+            file_name: file.name
+        })
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
 }

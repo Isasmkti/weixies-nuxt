@@ -1,14 +1,26 @@
-import { supabase } from '~/utils/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+  const config = useRuntimeConfig();
+  
+  const authHeader = getRequestHeader(event, 'authorization');
+  const reqSupabase = createClient(
+    config.public.supabaseUrl,
+    config.public.supabaseAnonKey,
+    {
+      global: {
+        headers: { Authorization: authHeader || '' }
+      }
+    }
+  );
   const profileId = query.profile_id as string;
 
   if (!profileId) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized: profile_id required.' });
   }
 
-  const { data: orders, error } = await supabase
+  const { data: orders, error } = await reqSupabase
     .from('orders')
     .select(`
       id,

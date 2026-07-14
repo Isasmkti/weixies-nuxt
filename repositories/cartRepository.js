@@ -52,7 +52,7 @@ export async function rAddToCart(cartId, productId) {
     } else {
         const { error } = await supabase
             .from('cart_items')
-            .insert({ cart_id: cartId, product_id: productId, quantity: 1 })
+            .insert({ cart_id: cartId, product_id: productId })
         if (error) throw error
     }
 }
