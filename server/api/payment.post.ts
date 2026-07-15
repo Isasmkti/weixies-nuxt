@@ -65,6 +65,49 @@ export default defineEventHandler(async (event) => {
   // Derive order ownership from the verified access token.
   const profileId = user.id;
 
+  // Resume only a pending order for this exact product. A user may have several
+  // pending orders, so profile_id + status alone is not specific enough.
+  const { data: pendingOrder, error: pendingOrderError } = await reqSupabase
+    .from('orders')
+    .select(`
+      id,
+      order_number,
+      snap_token,
+      snap_redirect_url,
+      order_items!inner ( product_id )
+    `)
+    .eq('profile_id', profileId)
+    .eq('status', 'pending')
+    .eq('order_items.product_id', productId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingOrderError) {
+    console.error('[Payment] Failed to look up pending order:', pendingOrderError);
+    throw createError({ statusCode: 500, statusMessage: 'Failed to look up pending order.' });
+  }
+
+  if (pendingOrder) {
+    if (!pendingOrder.snap_token) {
+      // A Snap token cannot be recovered from Midtrans after it was created.
+      // Do not create a duplicate order for this product automatically.
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'A pending payment exists but has no Snap token. Cancel or expire that order before retrying.'
+      });
+    }
+
+    return {
+      resumed: true,
+      token: pendingOrder.snap_token,
+      redirect_url: pendingOrder.snap_redirect_url,
+      order_id: pendingOrder.id,
+      order_number: pendingOrder.order_number,
+      status: 'pending'
+    };
+  }
+
   const orderNumber = generateOrderNumber();
 
   // Insert order with status pending
@@ -89,11 +132,17 @@ export default defineEventHandler(async (event) => {
   }
 
   // Insert order_items
-  await reqSupabase.from('order_items').insert({
+  const { error: orderItemError } = await reqSupabase.from('order_items').insert({
     order_id: order.id,
     product_id: productId,
     price: totalAmount,
   });
+
+  if (orderItemError) {
+    console.error('[Payment] Failed to create order item:', orderItemError);
+    await reqSupabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
+    throw createError({ statusCode: 500, statusMessage: 'Failed to create order item.' });
+  }
 
   const parameter = {
     transaction_details: {
@@ -142,15 +191,22 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Update order with snap_token
-    await reqSupabase
+    // Store the token before sending it to the client so this payment can be resumed.
+    const { error: snapUpdateError } = await reqSupabase
       .from('orders')
       .update({
-        midtrans_order_id: orderNumber,
+        snap_token: data.token,
+        snap_redirect_url: data.redirect_url || null,
       })
       .eq('id', order.id);
 
+    if (snapUpdateError) {
+      console.error('[Payment] Failed to save Snap session:', snapUpdateError);
+      throw createError({ statusCode: 500, statusMessage: 'Failed to save payment session.' });
+    }
+
     return {
+      resumed: false,
       token: data.token,
       redirect_url: data.redirect_url,
       order_number: orderNumber,

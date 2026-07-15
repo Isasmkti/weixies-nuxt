@@ -144,6 +144,21 @@ Callback hanya untuk UI.
 
 Status pembayaran tetap berasal dari webhook.
 
+## Resume Pending Payment
+
+Sebelum membuat transaksi baru, cari order `pending` milik user terautentikasi
+yang memiliki `order_items.product_id` sama dengan produk yang sedang di-checkout.
+
+- Jika ada, kembalikan `snap_token`, `snap_redirect_url`, `order_id`, dan
+  `order_number` dengan `resumed: true`; jangan membuat order atau transaksi
+  Midtrans baru.
+- Jika tidak ada, buat order, simpan `order_items`, buat transaksi Snap, lalu
+  simpan `snap_token` dan `snap_redirect_url` sebelum mengembalikannya dengan
+  `resumed: false`.
+
+Jangan mencari order pending hanya berdasarkan `profile_id`, karena seorang user
+dapat memiliki beberapa order pending untuk produk yang berbeda.
+
 ---
 
 ## 4. Webhook

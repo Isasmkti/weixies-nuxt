@@ -116,9 +116,23 @@
                 {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : 'Download' }}
               </button>
 
+              <!-- Resume Button (only while the Midtrans payment is pending) -->
+              <button
+                v-else-if="order.status === 'pending'"
+                @click="continuePayment(order, item)"
+                :disabled="resumingOrder === order.id"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-dark px-4 py-2 text-sm font-semibold text-white transition-all duration-300 shadow-md shadow-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span v-if="resumingOrder === order.id" class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ resumingOrder === order.id ? 'Opening...' : 'Continue Payment' }}
+              </button>
+
               <!-- Status-based pill -->
               <span v-else class="text-xs text-text-muted font-semibold italic">
-                {{ order.status === 'pending' ? 'Awaiting payment' : order.status }}
+                {{ order.status }}
               </span>
             </div>
           </div>
@@ -154,6 +168,7 @@ const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
+const resumingOrder = ref(null)
 let refreshTimer = null
 
 const formatDate = (dateStr) => {
@@ -250,6 +265,53 @@ const handleDownload = async (order, item) => {
     alert(err?.data?.message || err?.message || 'Download failed.')
   } finally {
     downloadingItem.value = null
+  }
+}
+
+const waitForMidtransSnap = async (timeoutMs = 10000) => {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    if (window.snap?.pay) return true
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  return false
+}
+
+const continuePayment = async (order, item) => {
+  const productId = item.product?.id
+  if (!productId || !currentUser.value) return
+
+  try {
+    resumingOrder.value = order.id
+
+    if (!await waitForMidtransSnap()) {
+      throw new Error('Midtrans Snap is not ready. Please refresh the page and try again.')
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    const response = await $fetch('/api/payment', {
+      method: 'POST',
+      headers: { Authorization: token ? `Bearer ${token}` : '' },
+      body: {
+        product_id: productId,
+        customerName: currentUser.value.user_metadata?.full_name || currentUser.value.email?.split('@')[0] || 'Customer',
+        customerEmail: currentUser.value.email || 'customer@example.com',
+      }
+    })
+
+    if (!response?.token) throw new Error('Payment session is unavailable.')
+
+    window.snap.pay(response.token, {
+      onSuccess: () => fetchOrders(currentUser.value.id, true),
+      onPending: () => fetchOrders(currentUser.value.id, true),
+      onError: () => fetchOrders(currentUser.value.id, true),
+    })
+  } catch (err) {
+    console.error('Continue payment error:', err)
+    alert(err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')
+  } finally {
+    resumingOrder.value = null
   }
 }
 </script>

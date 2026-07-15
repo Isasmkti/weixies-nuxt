@@ -61,6 +61,8 @@ Additional columns:
 - payment_method (text)
 - midtrans_order_id (text, unique)
 - midtrans_transaction_id (text, unique)
+- snap_token (text)
+- snap_redirect_url (text)
 - created_at (timestamptz)
 - paid_at (timestamptz)
 - expired_at (timestamptz)
