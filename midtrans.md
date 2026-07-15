@@ -29,6 +29,7 @@ Tambahkan environment berikut.
 MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxx
 MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxx
 MIDTRANS_IS_PRODUCTION=false
+SUPABASE_SERVICE_ROLE_KEY=eyJ... # Server-only; required for webhook writes that bypass RLS.
 ```
 
 Expose hanya Client Key ke frontend.

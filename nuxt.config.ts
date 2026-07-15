@@ -79,6 +79,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
+    // Server-only: used for trusted database writes from Midtrans webhooks.
+    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     public: {
       midtransIsProduction: resolveMidtransIsProduction(process.env.MIDTRANS_IS_PRODUCTION),
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',

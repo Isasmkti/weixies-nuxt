@@ -275,8 +275,6 @@ const handleCheckout = async () => {
             window.snap.pay(response.token, {
                 onSuccess: function(result) {
                     console.log('Payment success', result);
-                    // Remove purchased item from cart
-                    cartStore.stRemoveFromCart(item.id)
                     Swal.fire({
                         title: 'Payment Successful!', 
                         text: 'Your product is ready to download in My Orders.',

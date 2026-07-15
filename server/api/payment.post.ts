@@ -35,6 +35,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const { data: { user }, error: userError } = await reqSupabase.auth.getUser();
+  if (userError || !user) {
+    throw createError({ statusCode: 401, statusMessage: 'User not authenticated.' });
+  }
+
   // product_id is required for digital product purchase
   const productId = body?.product_id;
   if (!productId) {
@@ -57,11 +62,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid product price.' });
   }
 
-  // Require authenticated user — profile_id from body (set by frontend after auth)
-  const profileId = body?.profile_id || body?.userId || null;
-  if (!profileId) {
-    throw createError({ statusCode: 401, statusMessage: 'User not authenticated.' });
-  }
+  // Derive order ownership from the verified access token.
+  const profileId = user.id;
 
   const orderNumber = generateOrderNumber();
 

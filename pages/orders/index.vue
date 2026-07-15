@@ -142,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onBeforeUnmount, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
@@ -154,6 +154,7 @@ const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
+let refreshTimer = null
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -170,6 +171,8 @@ const statusClass = (status) => {
     expired: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     cancelled: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    partially_refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    chargeback: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 ring-1 ring-red-500/30',
   }
   return map[status] || 'bg-gray-100 text-gray-500'
 }
@@ -182,6 +185,8 @@ const statusDotClass = (status) => {
     expired: 'bg-gray-400',
     cancelled: 'bg-gray-400',
     refunded: 'bg-blue-500',
+    partially_refunded: 'bg-blue-500',
+    chargeback: 'bg-red-500',
   }
   return map[status] || 'bg-gray-400'
 }
@@ -194,10 +199,16 @@ onMounted(async () => {
   }
   currentUser.value = user
   await fetchOrders(user.id)
+  // Midtrans updates payments asynchronously, including pending -> expired.
+  refreshTimer = window.setInterval(() => fetchOrders(user.id, true), 10000)
 })
 
-const fetchOrders = async (profileId) => {
-  loading.value = true
+onBeforeUnmount(() => {
+  if (refreshTimer) window.clearInterval(refreshTimer)
+})
+
+const fetchOrders = async (profileId, silent = false) => {
+  if (!silent) loading.value = true
   error.value = null
   try {
     const { data: sessionData } = await supabase.auth.getSession()
@@ -212,7 +223,7 @@ const fetchOrders = async (profileId) => {
     console.error('Error fetching orders:', err)
     error.value = err?.message || 'Failed to load orders.'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 

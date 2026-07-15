@@ -53,6 +53,8 @@ Allowed values:
 - expired
 - cancelled
 - refunded
+- partially_refunded
+- chargeback
 
 Additional columns:
 
