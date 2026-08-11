@@ -116,10 +116,10 @@
                 {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : 'Download' }}
               </button>
 
-              <!-- Resume Button (only while the Midtrans payment is pending) -->
+              <!-- Resume Button (only while the payment is pending) -->
               <button
                 v-else-if="order.status === 'pending'"
-                @click="continuePayment(order, item)"
+                @click="continuePayment(order)"
                 :disabled="resumingOrder === order.id"
                 class="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-dark px-4 py-2 text-sm font-semibold text-white transition-all duration-300 shadow-md shadow-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -214,7 +214,7 @@ onMounted(async () => {
   }
   currentUser.value = user
   await fetchOrders(user.id)
-  // Midtrans updates payments asynchronously, including pending -> expired.
+  // Payment webhooks update statuses asynchronously, including pending -> expired.
   refreshTimer = window.setInterval(() => fetchOrders(user.id, true), 10000)
 })
 
@@ -268,45 +268,17 @@ const handleDownload = async (order, item) => {
   }
 }
 
-const waitForMidtransSnap = async (timeoutMs = 10000) => {
-  const startedAt = Date.now()
-  while (Date.now() - startedAt < timeoutMs) {
-    if (window.snap?.pay) return true
-    await new Promise((resolve) => setTimeout(resolve, 250))
-  }
-  return false
-}
-
-const continuePayment = async (order, item) => {
-  const productId = item.product?.id
-  if (!productId || !currentUser.value) return
+const continuePayment = async (order) => {
+  if (!currentUser.value) return
 
   try {
     resumingOrder.value = order.id
 
-    if (!await waitForMidtransSnap()) {
-      throw new Error('Midtrans Snap is not ready. Please refresh the page and try again.')
+    if (!order.payment_url) {
+      throw new Error('Payment URL is unavailable.')
     }
 
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData?.session?.access_token
-    const response = await $fetch('/api/payment', {
-      method: 'POST',
-      headers: { Authorization: token ? `Bearer ${token}` : '' },
-      body: {
-        product_id: productId,
-        customerName: currentUser.value.user_metadata?.full_name || currentUser.value.email?.split('@')[0] || 'Customer',
-        customerEmail: currentUser.value.email || 'customer@example.com',
-      }
-    })
-
-    if (!response?.token) throw new Error('Payment session is unavailable.')
-
-    window.snap.pay(response.token, {
-      onSuccess: () => fetchOrders(currentUser.value.id, true),
-      onPending: () => fetchOrders(currentUser.value.id, true),
-      onError: () => fetchOrders(currentUser.value.id, true),
-    })
+    window.location.href = order.payment_url
   } catch (err) {
     console.error('Continue payment error:', err)
     alert(err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')

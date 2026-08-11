@@ -1,5 +1,3 @@
-import { resolveMidtransIsProduction } from './utils/midtrans';
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -60,8 +58,14 @@ export default defineNuxtConfig({
     routeRules: {
       '/**': {
         headers: {
-          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.sandbox.midtrans.com https://app.midtrans.com https://snap-assets.sandbox.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://pay.google.com https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https://*.midtrans.com https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://api.sandbox.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://app.midtrans.com https://*.midtrans.com https://*.supabase.co; frame-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com https://pay.google.com https://gwk.gopayapi.com; object-src 'self'"
+          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pay.google.com https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'self' https://pay.google.com https://gwk.gopayapi.com; object-src 'self'"
         }
+      }
+    },
+    tasks: {
+      'payment-status-check': {
+        handler: '~/server/tasks/payment-status-check',
+        description: 'Check payment status for pending orders'
       }
     }
   },
@@ -78,14 +82,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
-    // Server-only: used for trusted database writes from Midtrans webhooks.
+    xenditSecretKey: process.env.XENDIT_SECRET_KEY,
+    xenditWebhookToken: process.env.XENDIT_WEBHOOK_TOKEN,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     public: {
-      midtransIsProduction: resolveMidtransIsProduction(process.env.MIDTRANS_IS_PRODUCTION),
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',
       supabaseAnonKey: 'sb_publishable_WCN1OssVUJja7c159tuslQ_ouBV5LGC',
-      midtransClientKey: process.env.MIDTRANS_CLIENT_KEY,
     },
   },
 })

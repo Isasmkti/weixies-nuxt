@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
       total_amount,
       status,
       payment_method,
+      payment_url,
       created_at,
       paid_at,
       order_items (

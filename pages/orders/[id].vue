@@ -56,9 +56,11 @@
             <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Paid At</p>
             <p class="font-semibold text-emerald-500 text-sm">{{ formatDate(order.paid_at) }}</p>
           </div>
-          <div v-if="order.midtrans_transaction_id">
-            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Transaction ID</p>
-            <p class="font-semibold text-text-muted text-xs font-mono break-all">{{ order.midtrans_transaction_id }}</p>
+          <div v-if="order.payment_url">
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment URL</p>
+            <a :href="order.payment_url" target="_blank" rel="noreferrer" class="font-semibold text-primary text-xs break-all underline">
+              Open payment page
+            </a>
           </div>
           <div v-if="order.payment_method">
             <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment Method</p>
@@ -122,6 +124,13 @@
                   <span class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
                   Waiting for payment
                 </span>
+                <button
+                  v-if="order.payment_url"
+                  @click="continuePayment"
+                  class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-semibold text-white transition-colors hover:bg-primary-dark"
+                >
+                  Continue Payment
+                </button>
               </div>
 
               <!-- Other states -->
@@ -152,13 +161,16 @@
             class="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
           >
             <div>
-              <p class="font-semibold text-text-main capitalize">{{ payment.payment_type || 'Payment' }}</p>
+              <p class="font-semibold text-text-main capitalize">{{ payment.payment_method || payment.provider || 'Payment' }}</p>
               <p class="text-xs text-text-muted font-montserrat">{{ formatDate(payment.created_at) }}</p>
+              <p v-if="payment.provider_invoice_id" class="text-[11px] text-text-muted font-mono break-all mt-1">
+                {{ payment.provider_invoice_id }}
+              </p>
             </div>
             <div class="flex items-center gap-4">
-              <p class="font-bold text-text-main">{{ formatIDR(payment.gross_amount) }}</p>
-              <span :class="['px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide', statusClass(payment.transaction_status === 'settlement' || payment.transaction_status === 'capture' ? 'paid' : payment.transaction_status)]">
-                {{ payment.transaction_status }}
+              <p class="font-bold text-text-main">{{ payment.paid_at ? formatDate(payment.paid_at) : formatDate(payment.created_at) }}</p>
+              <span :class="['px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide', statusClass(payment.status)]">
+                {{ payment.status }}
               </span>
             </div>
           </div>
@@ -273,5 +285,10 @@ const handleDownload = async (item) => {
   } finally {
     downloadingItem.value = null
   }
+}
+
+const continuePayment = () => {
+  if (!order.value?.payment_url) return
+  window.location.href = order.value.payment_url
 }
 </script>

@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
       total_amount,
       status,
       payment_method,
-      midtrans_transaction_id,
+      payment_url,
       created_at,
       paid_at,
       expired_at,
@@ -50,9 +50,12 @@ export default defineEventHandler(async (event) => {
       ),
       payments (
         id,
-        payment_type,
-        gross_amount,
-        transaction_status,
+        provider,
+        provider_invoice_id,
+        payment_method,
+        status,
+        paid_at,
+        raw_response,
         created_at
       )
     `)
