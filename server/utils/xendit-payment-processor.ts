@@ -15,7 +15,7 @@ export async function processPendingOrder(
   try {
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, provider_invoice_id, status, total_amount, profile_id, order_number')
+      .select('id, status, total_amount, profile_id, order_number')
       .eq('id', orderId)
       .single();
 
@@ -30,7 +30,22 @@ export async function processPendingOrder(
       return { success: false, error: 'Order not found' };
     }
 
-    if (!order.provider_invoice_id) {
+    const { data: paymentRows, error: paymentError } = await supabase
+      .from('payments')
+      .select('provider_invoice_id, status, raw_response, payment_method, provider')
+      .eq('order_id', orderId)
+      .eq('provider', 'xendit')
+      .order('created_at', { ascending: false });
+
+    if (paymentError) {
+      console.error(`[Xendit Status Processor] Failed to load Xendit payment row for order ${orderId}:`, paymentError);
+      return { success: false, error: paymentError.message };
+    }
+
+    const xenditPayment = (paymentRows || []).find((row: any) => String(row.provider || '').toLowerCase() === 'xendit' && row.provider_invoice_id);
+    const invoiceId = xenditPayment?.provider_invoice_id;
+
+    if (!invoiceId) {
       await logPaymentEvent({
         order_id: orderId,
         order_number: order.order_number,
@@ -51,7 +66,7 @@ export async function processPendingOrder(
       created_at: new Date().toISOString(),
     });
 
-    const invoice = await getXenditInvoice(order.provider_invoice_id, secretKey);
+    const invoice = await getXenditInvoice(invoiceId, secretKey);
 
     if (String(invoice.external_id || '').trim() !== `ORDER-${order.id}`) {
       await logPaymentEvent({
@@ -104,7 +119,7 @@ export async function processPendingOrder(
       ? (invoice.paid_at || new Date().toISOString())
       : null;
 
-    const { error: paymentError } = await supabase.from('payments').upsert({
+    const { error: paymentUpdateError } = await supabase.from('payments').upsert({
       order_id: order.id,
       provider: 'xendit',
       provider_invoice_id: invoice.id,
@@ -115,14 +130,12 @@ export async function processPendingOrder(
       created_at: invoice.created || new Date().toISOString(),
     }, { onConflict: 'provider_invoice_id' });
 
-    if (paymentError) {
-      throw paymentError;
+    if (paymentUpdateError) {
+      throw paymentUpdateError;
     }
 
     const orderUpdate: Record<string, string | null> = {
       status: normalizedStatus,
-      payment_method: paymentMethod,
-      payment_url: invoice.invoice_url || null,
     };
 
     if (normalizedStatus === 'paid') {

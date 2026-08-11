@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select('id, profile_id, status, total_amount, order_number, payment_url')
+    .select('id, profile_id, status, total_amount, order_number')
     .eq('id', orderId)
     .single();
 
@@ -150,8 +150,6 @@ export default defineEventHandler(async (event) => {
 
   const orderUpdate: Record<string, string | null> = {
     status: normalizedStatus,
-    payment_method: paymentMethod,
-    payment_url: invoice.invoice_url || order.payment_url || null,
   };
 
   if (normalizedStatus === 'paid') {

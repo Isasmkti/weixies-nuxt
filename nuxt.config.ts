@@ -82,9 +82,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    xenditSecretKey: process.env.XENDIT_SECRET_KEY,
-    xenditWebhookToken: process.env.XENDIT_WEBHOOK_TOKEN,
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    // `NUXT_*` variables are resolved by Nitro at runtime in production. The
+    // unprefixed fallbacks keep the existing local `.env` convention working.
+    xenditSecretKey: process.env.NUXT_XENDIT_SECRET_KEY || process.env.XENDIT_SECRET_KEY || '',
+    xenditWebhookToken: process.env.NUXT_XENDIT_WEBHOOK_TOKEN || process.env.XENDIT_WEBHOOK_TOKEN || '',
+    supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     public: {
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',
       supabaseAnonKey: 'sb_publishable_WCN1OssVUJja7c159tuslQ_ouBV5LGC',

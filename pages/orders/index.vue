@@ -268,17 +268,32 @@ const handleDownload = async (order, item) => {
   }
 }
 
+const getPaymentUrl = (incomingOrder) => {
+  const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
+  const xenditPayment = payments.find((payment) => {
+    const provider = String(payment?.provider || '').toLowerCase()
+    return provider === 'xendit' && payment?.raw_response?.invoice_url
+  })
+
+  if (xenditPayment?.raw_response?.invoice_url) {
+    return xenditPayment.raw_response.invoice_url
+  }
+
+  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+}
+
 const continuePayment = async (order) => {
   if (!currentUser.value) return
 
   try {
     resumingOrder.value = order.id
 
-    if (!order.payment_url) {
+    const paymentUrl = getPaymentUrl(order)
+    if (!paymentUrl) {
       throw new Error('Payment URL is unavailable.')
     }
 
-    window.location.href = order.payment_url
+    window.location.href = paymentUrl
   } catch (err) {
     console.error('Continue payment error:', err)
     alert(err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')

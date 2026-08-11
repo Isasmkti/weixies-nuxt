@@ -56,15 +56,11 @@
             <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Paid At</p>
             <p class="font-semibold text-emerald-500 text-sm">{{ formatDate(order.paid_at) }}</p>
           </div>
-          <div v-if="order.payment_url">
+          <div v-if="getPaymentUrl(order)">
             <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment URL</p>
-            <a :href="order.payment_url" target="_blank" rel="noreferrer" class="font-semibold text-primary text-xs break-all underline">
+            <a :href="getPaymentUrl(order)" target="_blank" rel="noreferrer" class="font-semibold text-primary text-xs break-all underline">
               Open payment page
             </a>
-          </div>
-          <div v-if="order.payment_method">
-            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment Method</p>
-            <p class="font-semibold text-text-main capitalize">{{ order.payment_method }}</p>
           </div>
         </div>
       </section>
@@ -125,7 +121,7 @@
                   Waiting for payment
                 </span>
                 <button
-                  v-if="order.payment_url"
+                  v-if="getPaymentUrl(order)"
                   @click="continuePayment"
                   class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-semibold text-white transition-colors hover:bg-primary-dark"
                 >
@@ -197,6 +193,20 @@ const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
+
+const getPaymentUrl = (incomingOrder) => {
+  const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
+  const xenditPayment = payments.find((payment) => {
+    const provider = String(payment?.provider || '').toLowerCase()
+    return provider === 'xendit' && payment?.raw_response?.invoice_url
+  })
+
+  if (xenditPayment?.raw_response?.invoice_url) {
+    return xenditPayment.raw_response.invoice_url
+  }
+
+  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -288,7 +298,8 @@ const handleDownload = async (item) => {
 }
 
 const continuePayment = () => {
-  if (!order.value?.payment_url) return
-  window.location.href = order.value.payment_url
+  const paymentUrl = getPaymentUrl(order.value)
+  if (!paymentUrl) return
+  window.location.href = paymentUrl
 }
 </script>
