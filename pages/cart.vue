@@ -201,20 +201,6 @@ const removeFromCart = async (itemId) => {
     }
 }
 
-const waitForMidtransSnap = async (timeoutMs = 10000) => {
-    const startedAt = Date.now()
-
-    while (Date.now() - startedAt < timeoutMs) {
-        if (typeof window !== 'undefined' && window.snap?.pay) {
-            return true
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 250))
-    }
-
-    return false
-}
-
 const handleCheckout = async () => {
     const checkoutItems = items.value.filter(item => selectedItems.value.includes(item.id))
     
@@ -248,11 +234,6 @@ const handleCheckout = async () => {
     try {
         isCheckingOut.value = true
 
-        const isSnapReady = await waitForMidtransSnap()
-        if (!isSnapReady) {
-            throw new Error('Midtrans Snap is not ready. Please refresh the page and try again.')
-        }
-
         const { data: sessionData } = await supabase.auth.getSession()
         const token = sessionData?.session?.access_token
 
@@ -263,7 +244,7 @@ const handleCheckout = async () => {
             customerEmail: currentUser.value?.email || 'customer@example.com',
         }
 
-        const response = await $fetch('/api/payment', {
+        const response = await $fetch('/api/checkout', {
             method: 'POST',
             headers: {
                 Authorization: token ? `Bearer ${token}` : ''
@@ -271,48 +252,12 @@ const handleCheckout = async () => {
             body: payload
         })
 
-        if (response && response.token) {
-            window.snap.pay(response.token, {
-                onSuccess: function(result) {
-                    console.log('Payment success', result);
-                    // Remove purchased item from cart
-                    cartStore.stRemoveFromCart(item.id)
-                    Swal.fire({
-                        title: 'Payment Successful!', 
-                        text: 'Your product is ready to download in My Orders.',
-                        icon: 'success',
-                        background: 'rgb(var(--color-surface))',
-                        color: 'rgb(var(--color-text))',
-                        confirmButtonColor: 'rgb(var(--color-primary))'
-                    }).then(() => router.push('/orders'));
-                },
-                onPending: function(result) {
-                    console.log('Payment pending', result);
-                    Swal.fire({
-                        title: 'Payment Pending', 
-                        text: 'Your payment is being processed. Check My Orders for updates.',
-                        icon: 'info',
-                        background: 'rgb(var(--color-surface))',
-                        color: 'rgb(var(--color-text))',
-                        confirmButtonColor: 'rgb(var(--color-primary))'
-                    }).then(() => router.push('/orders'));
-                },
-                onError: function(result) {
-                    console.log('Payment error', result);
-                    Swal.fire({
-                        title: 'Payment Failed', 
-                        text: 'Payment could not be completed. Please try again.',
-                        icon: 'error',
-                        background: 'rgb(var(--color-surface))',
-                        color: 'rgb(var(--color-text))',
-                        confirmButtonColor: 'rgb(var(--color-primary))'
-                    });
-                },
-                onClose: function() {
-                    console.log('Snap popup closed.');
-                }
-            })
+        if (response?.payment_url) {
+            window.location.href = response.payment_url
+            return
         }
+
+        throw new Error('Payment URL is unavailable.')
     } catch (err) {
         console.error('Checkout error:', err)
         Swal.fire({

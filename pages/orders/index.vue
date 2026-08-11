@@ -116,9 +116,23 @@
                 {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : 'Download' }}
               </button>
 
+              <!-- Resume Button (only while the payment is pending) -->
+              <button
+                v-else-if="order.status === 'pending'"
+                @click="continuePayment(order)"
+                :disabled="resumingOrder === order.id"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-dark px-4 py-2 text-sm font-semibold text-white transition-all duration-300 shadow-md shadow-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span v-if="resumingOrder === order.id" class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ resumingOrder === order.id ? 'Opening...' : 'Continue Payment' }}
+              </button>
+
               <!-- Status-based pill -->
               <span v-else class="text-xs text-text-muted font-semibold italic">
-                {{ order.status === 'pending' ? 'Awaiting payment' : order.status }}
+                {{ order.status }}
               </span>
             </div>
           </div>
@@ -142,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onBeforeUnmount, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
@@ -154,6 +168,8 @@ const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
+const resumingOrder = ref(null)
+let refreshTimer = null
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -170,6 +186,8 @@ const statusClass = (status) => {
     expired: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     cancelled: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    partially_refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    chargeback: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 ring-1 ring-red-500/30',
   }
   return map[status] || 'bg-gray-100 text-gray-500'
 }
@@ -182,6 +200,8 @@ const statusDotClass = (status) => {
     expired: 'bg-gray-400',
     cancelled: 'bg-gray-400',
     refunded: 'bg-blue-500',
+    partially_refunded: 'bg-blue-500',
+    chargeback: 'bg-red-500',
   }
   return map[status] || 'bg-gray-400'
 }
@@ -194,10 +214,16 @@ onMounted(async () => {
   }
   currentUser.value = user
   await fetchOrders(user.id)
+  // Payment webhooks update statuses asynchronously, including pending -> expired.
+  refreshTimer = window.setInterval(() => fetchOrders(user.id, true), 10000)
 })
 
-const fetchOrders = async (profileId) => {
-  loading.value = true
+onBeforeUnmount(() => {
+  if (refreshTimer) window.clearInterval(refreshTimer)
+})
+
+const fetchOrders = async (profileId, silent = false) => {
+  if (!silent) loading.value = true
   error.value = null
   try {
     const { data: sessionData } = await supabase.auth.getSession()
@@ -212,7 +238,7 @@ const fetchOrders = async (profileId) => {
     console.error('Error fetching orders:', err)
     error.value = err?.message || 'Failed to load orders.'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -239,6 +265,40 @@ const handleDownload = async (order, item) => {
     alert(err?.data?.message || err?.message || 'Download failed.')
   } finally {
     downloadingItem.value = null
+  }
+}
+
+const getPaymentUrl = (incomingOrder) => {
+  const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
+  const xenditPayment = payments.find((payment) => {
+    const provider = String(payment?.provider || '').toLowerCase()
+    return provider === 'xendit' && payment?.raw_response?.invoice_url
+  })
+
+  if (xenditPayment?.raw_response?.invoice_url) {
+    return xenditPayment.raw_response.invoice_url
+  }
+
+  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+}
+
+const continuePayment = async (order) => {
+  if (!currentUser.value) return
+
+  try {
+    resumingOrder.value = order.id
+
+    const paymentUrl = getPaymentUrl(order)
+    if (!paymentUrl) {
+      throw new Error('Payment URL is unavailable.')
+    }
+
+    window.location.href = paymentUrl
+  } catch (err) {
+    console.error('Continue payment error:', err)
+    alert(err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')
+  } finally {
+    resumingOrder.value = null
   }
 }
 </script>

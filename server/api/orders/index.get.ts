@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
       order_number,
       total_amount,
       status,
-      payment_method,
       created_at,
       paid_at,
       order_items (
@@ -40,6 +39,16 @@ export default defineEventHandler(async (event) => {
           description,
           product_images ( image_url )
         )
+      ),
+      payments (
+        id,
+        provider,
+        provider_invoice_id,
+        payment_method,
+        status,
+        paid_at,
+        raw_response,
+        created_at
       )
     `)
     .eq('profile_id', profileId)

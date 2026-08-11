@@ -56,13 +56,11 @@
             <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Paid At</p>
             <p class="font-semibold text-emerald-500 text-sm">{{ formatDate(order.paid_at) }}</p>
           </div>
-          <div v-if="order.midtrans_transaction_id">
-            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Transaction ID</p>
-            <p class="font-semibold text-text-muted text-xs font-mono break-all">{{ order.midtrans_transaction_id }}</p>
-          </div>
-          <div v-if="order.payment_method">
-            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment Method</p>
-            <p class="font-semibold text-text-main capitalize">{{ order.payment_method }}</p>
+          <div v-if="getPaymentUrl(order)">
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-widest mb-1">Payment URL</p>
+            <a :href="getPaymentUrl(order)" target="_blank" rel="noreferrer" class="font-semibold text-primary text-xs break-all underline">
+              Open payment page
+            </a>
           </div>
         </div>
       </section>
@@ -122,6 +120,13 @@
                   <span class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
                   Waiting for payment
                 </span>
+                <button
+                  v-if="getPaymentUrl(order)"
+                  @click="continuePayment"
+                  class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-semibold text-white transition-colors hover:bg-primary-dark"
+                >
+                  Continue Payment
+                </button>
               </div>
 
               <!-- Other states -->
@@ -152,13 +157,16 @@
             class="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
           >
             <div>
-              <p class="font-semibold text-text-main capitalize">{{ payment.payment_type || 'Payment' }}</p>
+              <p class="font-semibold text-text-main capitalize">{{ payment.payment_method || payment.provider || 'Payment' }}</p>
               <p class="text-xs text-text-muted font-montserrat">{{ formatDate(payment.created_at) }}</p>
+              <p v-if="payment.provider_invoice_id" class="text-[11px] text-text-muted font-mono break-all mt-1">
+                {{ payment.provider_invoice_id }}
+              </p>
             </div>
             <div class="flex items-center gap-4">
-              <p class="font-bold text-text-main">{{ formatIDR(payment.gross_amount) }}</p>
-              <span :class="['px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide', statusClass(payment.transaction_status === 'settlement' || payment.transaction_status === 'capture' ? 'paid' : payment.transaction_status)]">
-                {{ payment.transaction_status }}
+              <p class="font-bold text-text-main">{{ payment.paid_at ? formatDate(payment.paid_at) : formatDate(payment.created_at) }}</p>
+              <span :class="['px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide', statusClass(payment.status)]">
+                {{ payment.status }}
               </span>
             </div>
           </div>
@@ -186,6 +194,20 @@ const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
 
+const getPaymentUrl = (incomingOrder) => {
+  const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
+  const xenditPayment = payments.find((payment) => {
+    const provider = String(payment?.provider || '').toLowerCase()
+    return provider === 'xendit' && payment?.raw_response?.invoice_url
+  })
+
+  if (xenditPayment?.raw_response?.invoice_url) {
+    return xenditPayment.raw_response.invoice_url
+  }
+
+  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+}
+
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString('id-ID', {
@@ -201,6 +223,8 @@ const statusClass = (status) => {
     expired: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     cancelled: 'bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 ring-1 ring-gray-400/30',
     refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    partially_refunded: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30',
+    chargeback: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 ring-1 ring-red-500/30',
   }
   return map[status] || 'bg-gray-100 text-gray-500'
 }
@@ -213,6 +237,8 @@ const statusDotClass = (status) => {
     expired: 'bg-gray-400',
     cancelled: 'bg-gray-400',
     refunded: 'bg-blue-500',
+    partially_refunded: 'bg-blue-500',
+    chargeback: 'bg-red-500',
   }
   return map[status] || 'bg-gray-400'
 }
@@ -269,5 +295,11 @@ const handleDownload = async (item) => {
   } finally {
     downloadingItem.value = null
   }
+}
+
+const continuePayment = () => {
+  const paymentUrl = getPaymentUrl(order.value)
+  if (!paymentUrl) return
+  window.location.href = paymentUrl
 }
 </script>
