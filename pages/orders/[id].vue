@@ -177,16 +177,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
 
-const props = defineProps({
-  id: { type: String, required: true }
-})
-
 const router = useRouter()
+const route = useRoute()
+const orderId = computed(() => {
+  const id = route.params.id
+  return Array.isArray(id) ? id[0] : id
+})
 
 const order = ref(null)
 const loading = ref(true)
@@ -244,6 +245,13 @@ const statusDotClass = (status) => {
 }
 
 onMounted(async () => {
+  if (!orderId.value) {
+    // Guard against a transient undefined id during route/component transitions
+    error.value = 'Order not found.'
+    loading.value = false
+    return
+  }
+
   const user = await getUser()
   if (!user) {
     router.push('/login')
@@ -257,7 +265,7 @@ onMounted(async () => {
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token
 
-    const data = await $fetch(`/api/orders/${props.id}`, {
+    const data = await $fetch(`/api/orders/${orderId.value}`, {
       query: { profile_id: user.id },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
@@ -275,11 +283,15 @@ const handleDownload = async (item) => {
 
   downloadingItem.value = productId
   try {
-    const data = await $fetch(`/api/orders/${props.id}/download`, {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+
+    const data = await $fetch(`/api/orders/${orderId.value}/download`, {
       query: {
         profile_id: currentUser.value?.id,
         product_id: productId
-      }
+      },
+      headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     // Trigger browser download via signed URL
     const link = document.createElement('a')

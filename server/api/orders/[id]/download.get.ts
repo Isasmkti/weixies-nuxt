@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 
 const SIGNED_URL_EXPIRES_IN = 300; // 5 minutes
 
@@ -61,7 +62,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // 3. Fetch the product file from product_files table
-  const { data: productFile, error: fileError } = await reqSupabase
+  //    Uses the admin client: ownership/payment already verified above,
+  //    and the "products" storage bucket's SELECT policy is admin-only,
+  //    so a buyer's own JWT can never read this table/bucket via RLS.
+  const supabaseAdmin = useSupabaseAdmin();
+
+  const { data: productFile, error: fileError } = await supabaseAdmin
     .from('product_files')
     .select('file_url, file_name')
     .eq('product_id', productId)
@@ -76,8 +82,8 @@ export default defineEventHandler(async (event) => {
   // file_url stores the storage path, e.g. "products/template-admin.zip"
   const storagePath = productFile.file_url;
 
-  // 4. Generate a signed URL (private bucket)
-  const { data: signedData, error: signedError } = await reqSupabase.storage
+  // 4. Generate a signed URL (private bucket, admin-only SELECT policy)
+  const { data: signedData, error: signedError } = await supabaseAdmin.storage
     .from('products')
     .createSignedUrl(storagePath, SIGNED_URL_EXPIRES_IN);
 
@@ -87,7 +93,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 5. Log the download
-  await reqSupabase.from('download_logs').insert({
+  await supabaseAdmin.from('download_logs').insert({
     profile_id: profileId,
     product_id: productId,
     downloaded_at: new Date().toISOString(),

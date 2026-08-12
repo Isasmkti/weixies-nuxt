@@ -48,8 +48,10 @@ export function useAuth() {
   }
 
   const fetchProfile = async () => {
-    // Get current user to access metadata
-     const { data: { user: currentUser } } = await supabase.auth.getUser()
+    // Get current user without a network round-trip (see authService.getUser
+    // for the rationale on getSession() vs getUser()).
+     const { data: { session } } = await supabase.auth.getSession()
+     const currentUser = session?.user
   if (!currentUser) return
 
   user.value = currentUser

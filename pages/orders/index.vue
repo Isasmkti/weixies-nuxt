@@ -246,11 +246,15 @@ const handleDownload = async (order, item) => {
   const key = `${order.id}-${item.product?.id}`
   downloadingItem.value = key
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+
     const data = await $fetch(`/api/orders/${order.id}/download`, {
       query: {
         profile_id: currentUser.value?.id,
         product_id: item.product?.id
-      }
+      },
+      headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     // Trigger browser download
     const link = document.createElement('a')
