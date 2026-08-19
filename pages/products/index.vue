@@ -1,432 +1,104 @@
 <template>
-  
-    <div class="max-w-[1600px] mx-auto font-poppins">
+  <div class="mx-auto max-w-[1500px] font-poppins">
+    <header class="mb-7">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Marketplace</p>
+      <h1 class="mt-1 text-3xl font-black tracking-tight text-text-main">Product catalog</h1>
+      <p class="mt-2 text-sm text-text-muted">Discover digital assets made for your next project.</p>
+    </header>
 
-   <!-- HEADER -->
-      <div class="flex flex-col gap-4 mb-8">
-        <!-- Top row: back button + title -->
-        <div class="flex items-center gap-3">
-          <button @click="router.push('/')" class="shrink-0 p-2 -ml-2 rounded-xl hover:bg-bg-alt text-text-muted hover:text-primary transition-colors md:hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div class="flex-1">
-            <h1 class="text-xl md:text-3xl font-extrabold text-text-main">
-              Product Catalog
-            </h1>
-          </div>
-        </div>
-
-        <!-- SEARCH -->
-        <div class="relative w-full">
-          <input
-            ref="searchInputEl"
-            v-model="searchInput"
-            type="text"
-            placeholder="Search products..."
-            @keydown.enter="onSearchSubmit"
-            @focus="showRecentSearches = true"
-            @blur="hideRecentDelayed"
-            class="w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 pl-11 pr-10 text-text-main focus:ring-2 focus:ring-primary/30 focus:border-primary/30 transition-all"
-          />
-          <svg xmlns="http://www.w3.org/2000/svg"
-            class="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M21 21l-4.35-4.35M16.65 11A5.65 5.65 0 1111 5.35a5.65 5.65 0 015.65 5.65z" />
-          </svg>
-          <button v-if="searchInput" @click="searchInput = ''" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-bg-alt text-text-muted hover:text-text-main transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <!-- Recent Searches Dropdown -->
-          <div v-if="showRecentSearches && !searchInput && recentSearches.length > 0"
-            class="absolute top-full left-0 right-0 mt-2 bg-surface border border-bg-alt rounded-xl shadow-xl shadow-black/5 z-50 overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-2.5 border-b border-bg-alt/50">
-              <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Recent Searches</span>
-              <button @click.prevent="clearAllSearches" class="text-xs text-primary font-semibold hover:text-primary-dark">Clear All</button>
-            </div>
-            <div class="max-h-48 overflow-y-auto">
-              <div
-                v-for="term in recentSearches" :key="term"
-                @mousedown.prevent="applyRecentSearch(term)"
-                class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt/50 transition-colors text-left group"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="text-sm text-text-main flex-1 truncate">{{ term }}</span>
-                <button @mousedown.prevent.stop="removeSearch(term)" class="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-bg-alt text-text-muted hover:text-red-500 transition-all">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CATEGORY CHECKBOXES -->
-      <div v-if="categories.length" class="mb-8 md:mb-10 w-full">
-        <h2 class="text-sm md:text-base font-bold text-text-main mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          Filter Category
-        </h2>
-        
-        <div class="flex overflow-x-auto gap-4 md:gap-6 pb-3 snap-x items-center w-full [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-surface [&::-webkit-scrollbar-thumb]:bg-bg-alt hover:[&::-webkit-scrollbar-thumb]:bg-text-muted [&::-webkit-scrollbar-thumb]:rounded-full transition-colors">
-          
-          <!-- All Items Checkbox -->
-        <label class="snap-start flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 group">
-          <input type="checkbox" :checked="selectedCategory.length === 0" @change="productsStore.clearCategories()" class="hidden" />
-          <div :class="[
-            'w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-colors',
-            selectedCategory.length === 0 ? 'bg-primary border-primary' : 'bg-surface border-bg-alt group-hover:border-primary'
-          ]">
-             <svg v-if="selectedCategory.length === 0" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-             </svg>
-          </div>
-          <span :class="['text-sm font-semibold transition-colors', selectedCategory.length === 0 ? 'text-primary' : 'text-text-muted group-hover:text-primary']">All Items</span>
-        </label>
-
-        <!-- Category Checkboxes -->
-        <label v-for="cat in categories" :key="cat.id" class="snap-start flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 group">
-          <input type="checkbox" :checked="selectedCategory.includes(cat.slug)" @change="setCategory(cat.slug)" class="hidden" />
-          <div :class="[
-            'w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-colors',
-            selectedCategory.includes(cat.slug) ? 'bg-primary border-primary' : 'bg-surface border-bg-alt group-hover:border-primary'
-          ]">
-             <svg v-if="selectedCategory.includes(cat.slug)" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-             </svg>
-          </div>
-          <span :class="['text-sm font-semibold transition-colors', selectedCategory.includes(cat.slug) ? 'text-text-main' : 'text-text-muted group-hover:text-primary']">{{ cat.name }}</span>
-        </label>
-        </div>
-      </div>
-
-      <!-- sort by -->
-      <div class="flex flex-wrap items-center gap-3 mb-8 md:mb-10">
-        <span class="text-sm text-text-muted font-semibold">Sort by:</span>
-
-        <select @change="onSortChange"
-          class="bg-surface border border-bg-alt rounded-xl px-3 md:px-4 py-2 text-sm md:text-base text-text-main font-semibold focus:ring-2 focus:ring-primary/30">
-          <option value="created_at-desc">Newest</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="name-asc">Name: A–Z</option>
-        </select>
-      </div>
-
-      <div v-if="loading" class="flex flex-col items-center justify-center py-24">
-        <div
-          class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary shadow-lg shadow-primary/30">
-        </div>
-        <p class="mt-4 text-text-muted font-medium animate-pulse">Loading products...</p>
-      </div>
-
-      <div v-else-if="error"
-        class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-6 py-4 rounded-2xl flex items-center gap-3"
-        role="alert">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <strong class="font-bold block">Error loading products</strong>
-          <span class="block text-sm">{{ error }}</span>
-        </div>
-      </div>
-
-      <div v-else-if="!products.length" class="flex flex-col items-center justify-center py-24 text-center">
-        <div class="bg-surface rounded-full p-6 mb-6 shadow-xl shadow-black/5 ring-1 ring-bg-alt">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-text-muted/50" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-text-main mb-2">No products found</h3>
-        <p class="text-text-muted max-w-sm font-montserrat">
-          We couldn't find any products matching your current search or filters. Try using
-          different keywords.
-        </p>
-        <button v-if="searchInput" @click="searchInput = ''" class="mt-8 text-primary font-semibold hover:underline">
-          Clear search query
-        </button>
-      </div>
-
-      <div v-else class="grid items-center grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-10">
-        <div v-for="product in products" :key="product.id" @click="router.push(`/products/${product.slug}`)"
-          class="group bg-surface rounded-xl md:rounded-2xl shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border border-bg-alt overflow-hidden flex flex-col h-full">
-          <!-- Image Container -->
-          <!-- Aspect ratio 16:9 for more width -->
-          <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt">
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            <defaultProduct v-else
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-
-            <!-- Overlay gradient -->
-            <div
-              class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            </div>
-
-            <div v-if="isNewProduct(product.created_at || product.createdAt)"
-              class="absolute top-2 left-2 md:top-4 md:left-4 bg-surface/90 backdrop-blur-sm rounded-full px-1.5 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold text-text-main shadow-sm">
-              New
-            </div>
-
-            <!-- Wishlist Button -->
-            <button @click.stop="toggleWishlist(product.id)" :class="[
-               'absolute top-2 right-2 md:top-4 md:right-4 h-7 w-7 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm z-10 hover:scale-110',
-              wishlistStore.isWishlisted(product.id)
-                ? 'bg-red-500 text-white shadow-red-500/30'
-                : 'bg-surface/90 backdrop-blur-sm text-text-muted hover:text-red-500 hover:bg-surface'
-            ]">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                :fill="wishlistStore.isWishlisted(product.id) ? 'currentColor' : 'none'" viewBox="0 0 24 24"
-                 stroke="currentColor" class="h-3.5 w-3.5 md:h-5 md:w-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
+    <div class="grid gap-7 lg:grid-cols-[250px_minmax(0,1fr)]">
+      <aside class="h-fit lg:sticky lg:top-6">
+        <div class="rounded-2xl border border-bg-alt bg-surface p-5 shadow-sm">
+          <div class="flex items-center justify-between border-b border-bg-alt pb-4">
+            <h2 class="text-lg font-black text-text-main">Filter</h2>
+            <button class="text-xs font-bold text-primary hover:underline" @click="resetFilters">Reset</button>
           </div>
 
-          <!-- Content -->
-          <div class="p-2 md:p-6 flex flex-col flex-grow">
-            <h3
-              class="text-xs md:text-lg font-bold text-text-main mb-0.5 md:mb-1 line-clamp-1 group-hover:text-primary transition-colors font-poppins">
-              {{ product.name }}
-            </h3>
-            <div class="hidden md:flex flex-wrap gap-1 mb-2">
-              <span v-for="cat in product.categories" :key="cat.id"
-                class="text-[10px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                {{ cat.name }}
-              </span>
-              <span v-if="!product.categories?.length" class="text-[10px] text-text-muted italic">
-                Uncategorized
-              </span>
-            </div>
-
-            <!-- Review Stars -->
-            <div class="hidden md:flex items-center gap-1 mb-3" v-if="product.reviewCount > 0">
-              <div class="flex text-yellow-500">
-                <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                  :class="i <= Math.round(product.averageRating) ? 'fill-current' : 'text-gray-300 dark:text-gray-600'"
-                  viewBox="0 0 20 20" fill="currentColor">
-                  <path
-                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </div>
-              <span class="text-xs text-text-muted font-semibold ml-1">{{ product.averageRating.toFixed(1) }} ({{
-                product.reviewCount }})</span>
-            </div>
-            <div class="hidden md:flex items-center gap-1 mb-3 text-text-muted text-xs font-semibold" v-else>
-              <div class="flex text-gray-300 dark:text-gray-600">
-                <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
-                  fill="currentColor">
-                  <path
-                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </div>
-              <span class="ml-1">No reviews</span>
-            </div>
-            <p class="hidden md:block text-text-muted text-sm mb-4 line-clamp-2 flex-grow font-montserrat">
-              {{ product.description }}
-            </p>
-
-            <div class="flex flex-col md:flex-row md:flex-nowrap justify-between items-start md:items-center mt-auto pt-2 md:pt-4 border-t border-bg-alt gap-2.5 md:gap-2">
-              <div class="flex flex-col min-w-0 w-full md:w-auto">
-                <span class="hidden md:block text-[10px] md:text-xs text-text-muted uppercase tracking-wider font-semibold truncate">Price</span>
-                <span class="text-xs md:text-base xl:text-lg font-extrabold text-text-main font-poppins truncate" :title="formatIDR(product.price)">{{ formatIDR(product.price) }}</span>
-              </div>
-
-              <button @click.stop="
-                isInCart(product.id)
-                  ? router.push('/cart')
-                  : addToCart(product.id)
-                " :disabled="addingToCart === product.id" :class="[
-                  'relative overflow-hidden px-2 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl transition-all duration-300 shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed w-full md:w-auto shrink-0',
-                  isInCart(product.id)
-                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30'
-                    : 'bg-primary hover:bg-primary-dark text-white shadow-primary/25 hover:shadow-primary/40'
-                ]">
-                <span class="flex items-center justify-center gap-1 md:gap-1.5 text-[10px] md:text-sm font-medium">
-
-                  <!-- Loading -->
-                  <span v-if="addingToCart === product.id"
-                    class="animate-spin h-3.5 w-3.5 md:h-4 md:w-4 border-2 border-white/30 border-t-white rounded-full"></span>
-
-                  <!-- Dynamic Icon -->
-                  <svg v-else-if="!isInCart(product.id)" xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-
-                  <!-- Check Icon -->
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-
-                  {{
-                    addingToCart === product.id
-                      ? "Adding..."
-                      : isInCart(product.id)
-                        ? "Cart"
-                        : "Add"
-                  }}
-                </span>
-              </button>
-
+          <div class="border-b border-bg-alt py-5">
+            <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-text-muted">Categories</h3>
+            <div class="space-y-2.5">
+              <label class="group flex cursor-pointer items-center gap-2.5 text-sm"><input type="checkbox" :checked="selectedCategory.length === 0" class="h-4 w-4 rounded border-bg-alt text-primary focus:ring-primary/30" @change="productsStore.clearCategories()"><span class="font-medium text-text-main group-hover:text-primary">All products</span></label>
+              <label v-for="category in categories" :key="category.id" class="group flex cursor-pointer items-center gap-2.5 text-sm"><input type="checkbox" :checked="selectedCategory.includes(category.slug)" class="h-4 w-4 rounded border-bg-alt text-primary focus:ring-primary/30" @change="setCategory(category.slug)"><span class="min-w-0 flex-1 truncate font-medium text-text-main group-hover:text-primary">{{ category.name }}</span></label>
+              <p v-if="!categories.length && !loading" class="text-sm text-text-muted">No categories available.</p>
             </div>
           </div>
+
+          <form class="py-5" @submit.prevent="applyPriceFilter">
+            <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-text-muted">Price range</h3>
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><input v-model="minPrice" min="0" type="number" placeholder="Min" class="min-w-0 rounded-lg border border-bg-alt bg-bg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"><span class="text-text-muted">-</span><input v-model="maxPrice" min="0" type="number" placeholder="Max" class="min-w-0 rounded-lg border border-bg-alt bg-bg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"></div>
+            <p v-if="priceError" class="mt-2 text-xs font-medium text-red-600">{{ priceError }}</p>
+            <button class="mt-3 w-full rounded-lg border border-bg-alt px-3 py-2 text-sm font-bold text-text-main transition hover:border-primary/30 hover:bg-primary/5">Apply price</button>
+          </form>
         </div>
-      </div>
+      </aside>
 
-      <!-- Pagination -->
-      <div v-if="products.length > 0"
-      class="flex flex-wrap justify-center items-center gap-4 md:gap-6 mt-12 md:mt-16 font-poppins">
-      <!-- Prev -->
-      <button :disabled="productsStore.page === 1" @click="productsStore.stAll(productsStore.page - 1)"
-        class="flex items-center gap-1.5 md:gap-2 px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base rounded-xl font-semibold bg-surface border border-bg-alt text-text-main hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-text-main">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span class="hidden sm:inline">Prev</span>
-      </button>
+      <section class="min-w-0">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative w-full max-w-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M16.65 11A5.65 5.65 0 1 1 5.35 11a5.65 5.65 0 0 1 11.3 0Z" /></svg>
+            <input ref="searchInputEl" v-model="searchInput" type="search" placeholder="Search templates, UI kits, or assets..." @keydown.enter="onSearchSubmit" @focus="showRecentSearches = true" @blur="hideRecentDelayed" class="w-full rounded-xl border border-bg-alt bg-surface py-3 pl-12 pr-10 text-sm text-text-main shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20">
+            <button v-if="searchInput" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted hover:bg-bg-alt hover:text-text-main" @click="searchInput = ''">&times;</button>
+            <div v-if="showRecentSearches && !searchInput && recentSearches.length" class="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-bg-alt bg-surface shadow-xl"><div class="flex items-center justify-between border-b border-bg-alt px-4 py-2.5"><span class="text-xs font-bold uppercase tracking-wider text-text-muted">Recent searches</span><button class="text-xs font-bold text-primary" @mousedown.prevent="clearAllSearches">Clear</button></div><button v-for="term in recentSearches" :key="term" class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-text-main hover:bg-bg-alt/50" @mousedown.prevent="applyRecentSearch(term)">{{ term }}</button></div>
+          </div>
+          <div class="flex shrink-0 items-center gap-2"><label for="catalog-sort" class="text-sm font-medium text-text-muted">Sort:</label><select id="catalog-sort" class="rounded-lg border border-bg-alt bg-surface px-3 py-2 text-sm font-semibold text-text-main outline-none focus:ring-2 focus:ring-primary/30" @change="onSortChange"><option value="created_at-desc">Newest</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="name-asc">Name: A-Z</option></select></div>
+        </div>
 
-      <!-- Page Info -->
-      <div
-        class="px-4 py-2 md:px-6 rounded-xl bg-bg-alt text-text-muted text-sm md:text-base font-semibold tracking-wide">
-        Page
-        <span class="text-text-main font-extrabold">
-          {{ productsStore.page }}
-        </span>
-        /
-        <span>
-          {{ productsStore.totalPages }}
-        </span>
-      </div>
+        <div class="mt-5 flex flex-wrap items-center gap-2 text-sm text-text-muted"><span>Showing <strong class="text-text-main">{{ productsStore.total }}</strong> products</span><button v-for="slug in selectedCategory" :key="slug" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="setCategory(slug)">{{ categoryName(slug) }} <span>&times;</span></button><button v-if="productsStore.minPrice !== null || productsStore.maxPrice !== null" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="clearPriceFilter">{{ priceFilterLabel }} <span>&times;</span></button></div>
 
-      <!-- Next -->
-      <button :disabled="productsStore.page === productsStore.totalPages"
-        @click="productsStore.stAll(productsStore.page + 1)"
-        class="flex items-center gap-1.5 md:gap-2 px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base rounded-xl font-semibold bg-primary text-white shadow-md shadow-primary/30 hover:bg-primary-dark hover:shadow-lg hover:shadow-primary/40 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary">
-        <span class="hidden sm:inline">Next</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+        <div v-if="loading" class="flex flex-col items-center justify-center py-24"><span class="h-12 w-12 animate-spin rounded-full border-4 border-primary/25 border-t-primary"></span><p class="mt-4 font-medium text-text-muted">Loading products...</p></div>
+        <div v-else-if="error" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700"><strong>Unable to load products.</strong><p class="mt-1 text-sm">{{ error }}</p></div>
+        <div v-else-if="!products.length" class="mt-6 rounded-2xl border border-dashed border-bg-alt bg-surface p-12 text-center"><h2 class="text-xl font-black text-text-main">No products found</h2><p class="mt-2 text-text-muted">Try changing your search or filters.</p><button class="mt-5 font-bold text-primary hover:underline" @click="resetFilters">Clear all filters</button></div>
+
+        <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <article v-for="product in products" :key="product.id" class="group relative flex min-h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-bg-alt bg-surface transition duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10" @click="router.push(`/products/${product.slug}`)">
+            <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt"><img v-if="getMainImage(product)" :src="getMainImage(product)" :alt="product.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><defaultProduct v-else class="h-full w-full p-12 text-text-muted/50" /><div class="absolute left-3 top-3 flex flex-wrap gap-1.5"><span v-for="category in product.categories?.slice(0, 2)" :key="category.id" class="rounded-full bg-surface/90 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary backdrop-blur">{{ category.name }}</span><span v-if="isNewProduct(product.created_at)" class="rounded-full bg-primary px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">New</span></div><button type="button" :aria-label="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :aria-pressed="wishlistStore.isWishlisted(product.id)" :title="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :disabled="wishlistStore.isToggling(product.id)" class="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition duration-200 hover:scale-110 disabled:cursor-wait disabled:opacity-70" :class="wishlistStore.isWishlisted(product.id) ? 'bg-red-500 text-white ring-2 ring-white/80 hover:bg-red-600' : 'bg-surface/90 text-text-muted hover:bg-red-50 hover:text-red-500'" @click.stop="toggleWishlist(product.id)"><svg xmlns="http://www.w3.org/2000/svg" :fill="wishlistStore.isWishlisted(product.id) ? 'currentColor' : 'none'" class="h-5 w-5 transition-transform duration-200" :class="wishlistStore.isWishlisted(product.id) ? 'scale-110' : 'scale-100'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 0 0 0 6.364L12 20.364l7.682-7.682a4.5 4.5 0 0 0-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 0 0-6.364 0Z" /></svg></button></div>
+            <div class="flex flex-1 flex-col p-5"><h2 class="line-clamp-1 text-lg font-black text-text-main transition group-hover:text-primary">{{ product.name }}</h2><div v-if="product.reviewCount" class="mt-2 flex items-center gap-1.5 text-sm"><span class="text-amber-500">&#9733;</span><span class="font-bold text-text-main">{{ product.averageRating.toFixed(1) }}</span><span class="text-text-muted">({{ product.reviewCount }})</span></div><p v-else class="mt-2 text-sm text-text-muted">No reviews yet</p><p class="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-text-muted">{{ product.description }}</p><div class="mt-5 flex items-center justify-between border-t border-bg-alt pt-4"><span class="text-xl font-black text-text-main">{{ formatIDR(product.price) }}</span><button class="flex h-9 w-9 items-center justify-center rounded-full bg-bg-alt text-text-main transition hover:bg-primary hover:text-white" :disabled="addingToCart === product.id" @click.stop="isInCart(product.id) ? router.push('/cart') : addToCart(product.id)"><span v-if="addingToCart === product.id" class="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current"></span><svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.3 2.3A1 1 0 0 0 5.8 17H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" /></svg></button></div></div>
+          </article>
+        </div>
+
+        <div v-if="products.length && productsStore.totalPages > 1" class="mt-10 flex items-center justify-center gap-4"><button :disabled="productsStore.page === 1" class="rounded-xl border border-bg-alt bg-surface px-4 py-2 text-sm font-bold text-text-main disabled:cursor-not-allowed disabled:opacity-40" @click="productsStore.stAll(productsStore.page - 1)">Previous</button><span class="text-sm font-semibold text-text-muted">Page {{ productsStore.page }} of {{ productsStore.totalPages }}</span><button :disabled="productsStore.page === productsStore.totalPages" class="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40" @click="productsStore.stAll(productsStore.page + 1)">Next</button></div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, nextTick } from "vue";
-import { useRoute } from "vue-router";
-import defaultProduct from "../components/defaultProduct.vue";
-// import { useCatalogUI } from "../composables/useCatalogUI";
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import defaultProduct from '../../components/defaultProduct.vue'
+import { getUser } from '../../services/authService'
 
-// import router from "../router/index";
-// import { useWishlistStore } from "../stores/wishlistStore";
-import { getUser } from "../../services/authService";
-// import { useRecentSearches } from "../composables/useRecentSearches";
+const router = useRouter()
+const route = useRoute()
+const wishlistStore = useWishlistStore()
+const profileId = ref(null)
+const searchInputEl = ref(null)
+const showRecentSearches = ref(false)
+const minPrice = ref('')
+const maxPrice = ref('')
+const priceError = ref('')
+const { recentSearches, addSearch, clearAll: clearAllSearches } = useRecentSearches()
+const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, addToCart, getMainImage, productsStore, cartStore, formatIDR } = useCatalogUI()
 
-const router = useRouter();
-const route = useRoute();
-const wishlistStore = useWishlistStore();
-const profileId = ref(null);
-const searchInputEl = ref(null);
-const showRecentSearches = ref(false);
+watch(() => productsStore.minPrice, (value) => { minPrice.value = value ?? '' }, { immediate: true })
+watch(() => productsStore.maxPrice, (value) => { maxPrice.value = value ?? '' }, { immediate: true })
 
-const { recentSearches, addSearch, removeSearch, clearAll: clearAllSearches } = useRecentSearches();
-
-const applyRecentSearch = (term) => {
-  searchInput.value = term;
-  showRecentSearches.value = false;
-};
-
-const onSearchSubmit = () => {
-  if (searchInput.value?.trim()) {
-    addSearch(searchInput.value.trim());
-  }
-  showRecentSearches.value = false;
-  searchInputEl.value?.blur();
-};
-
-const hideRecentDelayed = () => {
-  setTimeout(() => { showRecentSearches.value = false; }, 200);
-};
+const priceFilterLabel = computed(() => `${productsStore.minPrice !== null ? formatIDR(productsStore.minPrice) : 'Any'} - ${productsStore.maxPrice !== null ? formatIDR(productsStore.maxPrice) : 'Any'}`)
+const categoryName = (slug) => categories.value.find((category) => category.slug === slug)?.name || slug
+const isNewProduct = (createdAt) => createdAt && (Date.now() - new Date(createdAt).getTime()) / 86400000 <= 3
+const isInCart = (productId) => (cartStore?.items || []).some((item) => item.product_id === productId) || cartStore?.addingProducts?.[productId]
+const applyRecentSearch = (term) => { searchInput.value = term; showRecentSearches.value = false }
+const onSearchSubmit = () => { if (searchInput.value?.trim()) addSearch(searchInput.value.trim()); showRecentSearches.value = false; searchInputEl.value?.blur() }
+const hideRecentDelayed = () => setTimeout(() => { showRecentSearches.value = false }, 200)
+const applyPriceFilter = async () => { priceError.value = ''; try { await productsStore.setPriceRange(minPrice.value, maxPrice.value) } catch (error) { priceError.value = error.message } }
+const clearPriceFilter = async () => { minPrice.value = ''; maxPrice.value = ''; await productsStore.setPriceRange(null, null) }
+const resetFilters = async () => { searchInput.value = ''; minPrice.value = ''; maxPrice.value = ''; priceError.value = ''; productsStore.categorySlug = []; productsStore.search = ''; await productsStore.setPriceRange(null, null) }
+const toggleWishlist = async (productId) => { if (!profileId.value) return router.push('/login'); await wishlistStore.stToggleWishlist(profileId.value, productId) }
 
 onMounted(async () => {
-  const user = await getUser();
-  if (user) {
-    profileId.value = user.id;
-    await wishlistStore.stGetWishlists(user.id);
-  }
-
-  // Handle ?category=slug from Home
-  if (route.query.category) {
-    productsStore.setCategory(route.query.category);
-  }
-
-  // Handle ?focus=search from Home — auto-focus the search input
-  if (route.query.focus === 'search') {
-    await nextTick();
-    setTimeout(() => {
-      searchInputEl.value?.focus();
-    }, 300);
-  }
-});
-
-const toggleWishlist = async (productId) => {
-  if (!profileId.value) {
-    router.push('/login');
-    return;
-  }
-  await wishlistStore.stToggleWishlist(profileId.value, productId);
-};
-
-const {
-  products,
-  categories,
-  selectedCategory,
-  loading,
-  error,
-  searchInput,
-  addingToCart,
-  onSortChange,
-  setCategory,
-  addToCart,
-  getMainImage,
-  productsStore,
-  cartStore,
-  formatIDR
-} = useCatalogUI();
-
-const isNewProduct = (createdAt) => {
-  if (!createdAt) return false;
-  const createdDate = new Date(createdAt);
-  const now = new Date();
-  const diffTime = Math.abs(now - createdDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays <= 3; // within the last 3 days
-};
-
-// reactive check
-const isInCart = (productId) => {
-  if (!productId) return false;
-  const inList = (cartStore?.items ?? []).some((item) => item.product_id === productId);
-  const isAdding = cartStore?.addingProducts?.[productId];
-  return inList || isAdding;
-};
+  const user = await getUser()
+  if (user) { profileId.value = user.id; await wishlistStore.stGetWishlists(user.id) }
+  if (route.query.category) productsStore.setCategory(route.query.category)
+  if (route.query.focus === 'search') { await nextTick(); setTimeout(() => searchInputEl.value?.focus(), 300) }
+})
 </script>

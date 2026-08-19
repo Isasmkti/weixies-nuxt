@@ -10,7 +10,7 @@ const PRODUCT_SELECT = `
   product_files(*)
 `
 
-export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = []) {
+export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = [], minPrice = null, maxPrice = null) {
     let query = supabase
         .from('products')
         .select(PRODUCT_SELECT, { count: 'exact' })
@@ -19,6 +19,14 @@ export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrde
 
     if (search) {
         query = query.ilike('name', `%${search}%`)
+    }
+
+    if (minPrice !== null && minPrice !== '' && Number.isFinite(Number(minPrice)) && Number(minPrice) >= 0) {
+        query = query.gte('price', Number(minPrice))
+    }
+
+    if (maxPrice !== null && maxPrice !== '' && Number.isFinite(Number(maxPrice)) && Number(maxPrice) >= 0) {
+        query = query.lte('price', Number(maxPrice))
     }
 
     if (categorySlug.length > 0) {
@@ -154,7 +162,8 @@ export async function rCreateProductFile(productId, file) {
         .insert({
             product_id: productId,
             file_url: filePath,
-            file_name: file.name
+            file_name: file.name,
+            file_size: file.size
         })
         .select()
         .single()

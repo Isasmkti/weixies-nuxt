@@ -1,8 +1,8 @@
 import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertImages, rUpsertProductCategories, rCreateProductFile } from '../repositories/productsRepository'
 
-export async function sAll(page, limit, sortBy, sortOrder, search, categorySlug) {
+export async function sAll(page, limit, sortBy, sortOrder, search, categorySlug, minPrice, maxPrice) {
     try {
-        return await rAll(page, limit, sortBy, sortOrder, search, categorySlug)
+        return await rAll(page, limit, sortBy, sortOrder, search, categorySlug, minPrice, maxPrice)
     } catch (error) {
         throw error
     }
