@@ -28,6 +28,16 @@ const menuItems = [
         icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
     },
     {
+        name: 'Sellers',
+        to: '/admin/sellers',
+        icon: 'M3 9.75L5.25 4.5h13.5L21 9.75M3 9.75h18M3 9.75v8.625A1.125 1.125 0 004.125 19.5h15.75A1.125 1.125 0 0021 18.375V9.75M9 19.5v-4.125A1.125 1.125 0 0110.125 14.25h3.75A1.125 1.125 0 0115 15.375V19.5'
+    },
+    {
+        name: 'Activity Logs',
+        to: '/admin/logs',
+        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+    },
+    {
         name: 'Back to Shop',
         to: '/',
         icon: 'M10 19l-7-7m0 0l7-7m-7 7h18'

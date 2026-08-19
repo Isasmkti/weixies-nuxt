@@ -1,0 +1,124 @@
+<script setup>
+import { computed, ref, watch } from 'vue'
+import { useCategoriesStore } from '../../stores/categoriesStore'
+import { createProductSlug } from '../../services/sellerProductsService'
+
+const props = defineProps({
+  initialProduct: { type: Object, default: null },
+  submitting: { type: Boolean, default: false },
+  submitLabel: { type: String, default: 'Submit for review' },
+})
+
+const emit = defineEmits(['submit'])
+const categoriesStore = useCategoriesStore()
+const zipFile = ref(null)
+const form = ref({ name: '', slug: '', description: '', price: 0, images: [], categoryIds: [] })
+const categories = computed(() => categoriesStore.categories)
+const existingZipFile = computed(() => props.initialProduct?.product_files?.[0] || null)
+
+watch(() => props.initialProduct, (product) => {
+  form.value = {
+    name: product?.name || '',
+    slug: product?.slug || '',
+    description: product?.description || '',
+    price: product?.price ?? 0,
+    images: product?.product_images
+      ? [...product.product_images].sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+      : [],
+    categoryIds: product?.product_categories?.map((item) => item.category_id) || [],
+  }
+  zipFile.value = null
+}, { immediate: true })
+
+categoriesStore.fetchCategories()
+
+const addImageUrl = () => form.value.images.push({ image_url: '', is_primary: form.value.images.length === 0 })
+const removeImage = (index) => {
+  const wasPrimary = form.value.images[index].is_primary
+  form.value.images.splice(index, 1)
+  if (wasPrimary && form.value.images.length) form.value.images[0].is_primary = true
+}
+const setMainImage = (index) => form.value.images.forEach((image, imageIndex) => { image.is_primary = imageIndex === index })
+const handleZipChange = (event) => {
+  const file = event.target.files?.[0] || null
+  if (file && !file.name.toLowerCase().endsWith('.zip')) {
+    event.target.value = ''
+    zipFile.value = null
+    return
+  }
+  zipFile.value = file
+}
+const suggestedSlug = computed(() => createProductSlug(form.value.name))
+const submit = () => emit('submit', {
+  ...form.value,
+  slug: form.value.slug || suggestedSlug.value,
+  images: form.value.images.filter((image) => String(image.image_url || '').trim()),
+  zipFile: zipFile.value,
+})
+</script>
+
+<template>
+  <form class="rounded-2xl border border-bg-alt bg-surface p-6 sm:p-8 space-y-6" @submit.prevent="submit">
+    <div>
+      <label class="mb-2 block text-sm font-bold text-text-main">Product name</label>
+      <input v-model="form.name" required maxlength="160" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30" placeholder="e.g. Premium design template">
+    </div>
+    <div>
+      <label class="mb-2 block text-sm font-bold text-text-main">Product URL</label>
+      <input v-model="form.slug" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 font-mono text-sm outline-none focus:ring-2 focus:ring-primary/30" :placeholder="suggestedSlug">
+      <p class="mt-1 text-xs text-text-muted">Leave blank to generate it from the product name.</p>
+    </div>
+    <div>
+      <label class="mb-2 block text-sm font-bold text-text-main">Description</label>
+      <textarea v-model="form.description" required rows="6" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30" placeholder="Explain what buyers will receive."></textarea>
+    </div>
+    <div>
+      <label class="mb-2 block text-sm font-bold text-text-main">Price (Rp)</label>
+      <input v-model.number="form.price" required type="number" min="0" step="1" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30">
+    </div>
+
+    <div>
+      <label class="mb-3 block text-sm font-bold text-text-main">Categories</label>
+      <p v-if="categoriesStore.loading" class="text-sm text-text-muted">Loading categories...</p>
+      <div v-else-if="categories.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <label v-for="category in categories" :key="category.id" class="flex cursor-pointer items-center gap-2 rounded-xl border border-bg-alt bg-bg/50 p-3 text-sm font-medium text-text-main hover:border-primary/30">
+          <input v-model="form.categoryIds" :value="category.id" type="checkbox" class="h-4 w-4 rounded border-bg-alt text-primary focus:ring-primary/30">
+          <span>{{ category.name }}</span>
+        </label>
+      </div>
+      <p v-else class="rounded-xl border border-dashed border-bg-alt p-4 text-sm text-text-muted">No categories are available.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <div class="mb-2 flex items-center justify-between gap-3">
+          <label class="block text-sm font-bold text-text-main">Product images</label>
+          <button type="button" class="text-sm font-bold text-primary hover:text-primary-dark" @click="addImageUrl">+ Add image</button>
+        </div>
+        <div v-if="form.images.length" class="space-y-3">
+          <div v-for="(image, index) in form.images" :key="`${index}-${image.id || ''}`" class="rounded-xl border border-bg-alt bg-bg/50 p-4">
+            <div class="flex gap-2">
+              <input v-model="image.image_url" required type="url" class="min-w-0 flex-1 rounded-lg border border-bg-alt bg-bg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30" placeholder="https://example.com/image.jpg">
+              <button type="button" class="rounded-lg px-3 text-sm font-bold text-red-600 hover:bg-red-50" @click="removeImage(index)">Remove</button>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <label class="flex cursor-pointer items-center gap-2 text-sm text-text-muted"><input :checked="image.is_primary" type="radio" name="seller-main-image" class="text-primary focus:ring-primary" @change="setMainImage(index)"> Main image</label>
+              <img v-if="image.image_url" :src="image.image_url" alt="Image preview" class="h-12 w-12 rounded-lg border border-bg-alt object-cover">
+            </div>
+          </div>
+        </div>
+        <p v-else class="rounded-xl border border-dashed border-bg-alt p-4 text-sm text-text-muted">Add one or more external image URLs.</p>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-sm font-bold text-text-main">Product ZIP file</label>
+        <input type="file" accept=".zip" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" @change="handleZipChange">
+        <p class="mt-1 text-xs text-text-muted">The ZIP stays private and is delivered to buyers after payment.</p>
+        <p v-if="zipFile" class="mt-2 text-sm font-semibold text-text-main">Selected: {{ zipFile.name }}</p>
+        <p v-else-if="existingZipFile" class="mt-2 text-sm text-text-muted">Current file: {{ existingZipFile.file_name }}</p>
+      </div>
+    </div>
+
+    <button :disabled="submitting" class="w-full rounded-xl bg-primary px-5 py-3 font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70">{{ submitting ? 'Saving...' : submitLabel }}</button>
+  </form>
+</template>
