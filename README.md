@@ -13,6 +13,11 @@ plugins/        ← Nuxt plugins
 middleware/     ← route guard
 layouts/        ← page layouts
 
+# supabase migrate
+
+npx.cmd supabase db push --dry-run
+npx.cmd supabase db push
+
 
 ## Setup
 

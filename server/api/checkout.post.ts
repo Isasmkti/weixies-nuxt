@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: product, error: productError } = await reqSupabase
     .from('products')
-    .select('id, name, price')
+    .select('id, name, price, seller_id')
     .eq('id', productId)
     .single();
 
@@ -93,6 +93,29 @@ export default defineEventHandler(async (event) => {
   const totalAmount = Number(product.price);
   if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid product price.' });
+  }
+
+  // Snapshot seller attribution at checkout. Future commission-rate changes
+  // must not alter the amount owed for an already-created order item.
+  let sellerId: string | null = product.seller_id || null;
+  let commissionAmount = 0;
+  let sellerEarning = 0;
+
+  if (sellerId) {
+    const { data: seller, error: sellerError } = await adminSupabase
+      .from('sellers')
+      .select('id, commission_rate')
+      .eq('id', sellerId)
+      .single();
+
+    const commissionRate = Number(seller?.commission_rate);
+    if (sellerError || !seller || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) {
+      console.error('[Checkout] Failed to resolve seller commission rate:', sellerError);
+      throw createError({ statusCode: 500, statusMessage: 'Seller commission configuration is invalid.' });
+    }
+
+    commissionAmount = Math.round(totalAmount * commissionRate);
+    sellerEarning = totalAmount - commissionAmount;
   }
 
   const { data: pendingOrders, error: pendingOrderError } = await reqSupabase
@@ -185,6 +208,9 @@ export default defineEventHandler(async (event) => {
     order_id: order.id,
     product_id: productId,
     price: totalAmount,
+    seller_id: sellerId,
+    commission_amount: commissionAmount,
+    seller_earning: sellerEarning,
   });
 
   if (orderItemError) {

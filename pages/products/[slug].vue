@@ -97,6 +97,15 @@
                                     </span>
                                 </div>
 
+                                <NuxtLink v-if="sellerStore" :to="`/stores/${sellerStore.store_slug}`"
+                                    class="group mt-4 flex items-center justify-between rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 transition-colors hover:border-primary/35 hover:bg-primary/10">
+                                    <span>
+                                        <span class="block text-xs font-bold uppercase tracking-wider text-text-muted">Sold by</span>
+                                        <span class="mt-1 block font-black text-text-main group-hover:text-primary">{{ sellerStore.store_name }}</span>
+                                    </span>
+                                    <span class="text-sm font-bold text-primary">Visit store →</span>
+                                </NuxtLink>
+
                                 <!-- Review Stars -->
                                 <div class="flex items-center gap-2 pt-2" v-if="product.reviewCount > 0">
                                   <div class="flex text-yellow-500">
@@ -354,6 +363,7 @@ import { onMounted, ref, watch } from 'vue'
 import defaultProduct from '../../components/defaultProduct.vue'
 import { getUser } from '../../services/authService'
 import { useReviewsStore } from '../../stores/reviewsStore'
+import { supabase } from '../../utils/supabase'
 
 const props = defineProps({
     slug: {
@@ -366,6 +376,7 @@ const router = useRouter();
 const wishlistStore = useWishlistStore();
 const reviewsStore = useReviewsStore();
 const profileId = ref(null);
+const sellerStore = ref(null)
 
 onMounted(async () => {
     const user = await getUser();
@@ -405,6 +416,19 @@ watch(product, (newProduct) => {
     if (newProduct?.id) {
         reviewsStore.fetchReviews(newProduct.id)
     }
+}, { immediate: true })
+
+watch(product, async (newProduct) => {
+    sellerStore.value = null
+    if (!newProduct?.seller_id) return
+
+    const { data, error } = await supabase
+        .from('approved_seller_stores')
+        .select('store_name, store_slug, store_description')
+        .eq('id', newProduct.seller_id)
+        .maybeSingle()
+
+    if (!error) sellerStore.value = data
 }, { immediate: true })
 
 // reactive check
