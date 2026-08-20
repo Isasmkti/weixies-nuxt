@@ -118,12 +118,16 @@ export default defineEventHandler(async (event) => {
     return { status: 'ignored', reason: 'unknown_status' };
   }
 
+  if (order.status === 'refunded' || (order.status === 'paid' && normalizedStatus !== 'paid')) {
+    return { status: 'ignored', reason: 'terminal_order_status', orderStatus: order.status };
+  }
+
   const paymentMethod = String(invoice.payment_method || invoice.payment_channel || '').trim() || null;
   const paidAt = normalizedStatus === 'paid'
     ? (invoice.paid_at || new Date().toISOString())
     : null;
 
-  const { error: paymentError } = await supabase.from('payments').upsert({
+  const paymentPayload = {
     order_id: order.id,
     provider: 'xendit',
     provider_invoice_id: invoice.id,
@@ -132,47 +136,36 @@ export default defineEventHandler(async (event) => {
     paid_at: paidAt,
     raw_response: invoice,
     created_at: invoice.created || new Date().toISOString(),
-  }, { onConflict: 'provider_invoice_id' });
+  };
 
-  if (paymentError) {
-    await logPaymentEvent({
-      order_id: order.id,
-      order_number: order.order_number,
-      event_type: 'error',
-      old_status: order.status,
-      new_status: normalizedStatus,
-      error_message: 'Could not write payment row',
-      metadata: { invoice_id: invoice.id },
-      created_at: new Date().toISOString(),
-    });
-    throw createError({ statusCode: 500, statusMessage: 'Could not write payment row.' });
-  }
-
-  const orderUpdate: Record<string, string | null> = {
-    status: normalizedStatus,
+  const persistPayment = async () => {
+    const { error } = await supabase.from('payments').upsert(paymentPayload, { onConflict: 'provider_invoice_id' });
+    if (error) throw createError({ statusCode: 500, statusMessage: 'Could not write payment row.' });
   };
 
   if (normalizedStatus === 'paid') {
-    orderUpdate.paid_at = paidAt;
-  }
+    await persistPayment();
+    await grantDigitalAccessForOrder(order.id, order.profile_id, paidAt || new Date().toISOString());
+  } else {
+    const orderUpdate: Record<string, string | null> = { status: normalizedStatus };
+    if (normalizedStatus === 'expired') {
+      orderUpdate.expired_at = invoice.expiry_date || new Date().toISOString();
+    }
 
-  if (normalizedStatus === 'expired') {
-    orderUpdate.expired_at = invoice.expiry_date || new Date().toISOString();
-  }
-
-  const { error: orderUpdateError } = await supabase.from('orders').update(orderUpdate).eq('id', order.id);
-  if (orderUpdateError) {
-    await logPaymentEvent({
-      order_id: order.id,
-      order_number: order.order_number,
-      event_type: 'error',
-      old_status: order.status,
-      new_status: normalizedStatus,
-      error_message: 'Could not update order',
-      metadata: { invoice_id: invoice.id },
-      created_at: new Date().toISOString(),
-    });
-    throw createError({ statusCode: 500, statusMessage: 'Could not update order.' });
+    const { data: updatedOrder, error: orderUpdateError } = await supabase
+      .from('orders')
+      .update(orderUpdate)
+      .eq('id', order.id)
+      .eq('status', order.status)
+      .select('id')
+      .maybeSingle();
+    if (orderUpdateError) {
+      throw createError({ statusCode: 500, statusMessage: 'Could not update order.' });
+    }
+    if (!updatedOrder) {
+      return { status: 'ignored', reason: 'concurrent_order_update' };
+    }
+    await persistPayment();
   }
 
   await logPaymentEvent({
@@ -195,8 +188,6 @@ export default defineEventHandler(async (event) => {
       metadata: { invoice_id: invoice.id },
       created_at: new Date().toISOString(),
     });
-
-    await grantDigitalAccessForOrder(order.id, order.profile_id);
 
     await logPaymentEvent({
       order_id: order.id,

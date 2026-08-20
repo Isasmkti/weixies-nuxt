@@ -13,6 +13,8 @@ export interface PaymentLogEntry {
     | 'invoice_created'
     | 'invoice_paid'
     | 'invoice_expired'
+    | 'refund_received'
+    | 'refund_processed'
     | 'product_delivered';
   old_status?: string;
   new_status?: string;
