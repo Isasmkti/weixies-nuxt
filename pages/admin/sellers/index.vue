@@ -7,6 +7,8 @@ const statusFilter = ref('pending')
 const loading = ref(false)
 const updatingId = ref(null)
 const errorMessage = ref('')
+const rejectingSeller = ref(null)
+const rejectionReason = ref('')
 
 const filteredSellers = computed(() => {
   if (statusFilter.value === 'all') return sellers.value
@@ -38,7 +40,7 @@ const loadSellers = async () => {
   }
 }
 
-const updateStatus = async (seller, status) => {
+const updateStatus = async (seller, status, reason = null) => {
   if (seller.status === status) return
 
   const action = status === 'approved'
@@ -54,14 +56,30 @@ const updateStatus = async (seller, status) => {
   updatingId.value = seller.id
   errorMessage.value = ''
   try {
-    const updatedSeller = await sUpdateSellerStatus(seller.id, status)
+    const updatedSeller = await sUpdateSellerStatus(seller.id, status, reason)
     const index = sellers.value.findIndex((item) => item.id === seller.id)
     if (index !== -1) sellers.value[index] = updatedSeller
+    rejectingSeller.value = null
+    rejectionReason.value = ''
   } catch (error) {
     errorMessage.value = error.message || 'Failed to update seller status.'
   } finally {
     updatingId.value = null
   }
+}
+
+const openRejectDialog = (seller) => {
+  rejectingSeller.value = seller
+  rejectionReason.value = seller.rejection_reason || ''
+}
+
+const confirmRejection = async () => {
+  if (!rejectingSeller.value) return
+  if (!rejectionReason.value.trim()) {
+    errorMessage.value = 'A rejection reason is required.'
+    return
+  }
+  await updateStatus(rejectingSeller.value, 'rejected', rejectionReason.value)
 }
 
 onMounted(loadSellers)
@@ -121,8 +139,16 @@ onMounted(loadSellers)
             </tr>
             <tr v-for="seller in filteredSellers" :key="seller.id" class="transition-colors hover:bg-bg-alt/30">
               <td class="p-6">
-                <p class="font-bold text-text-main">{{ seller.store_name }}</p>
-                <p class="mt-1 text-xs font-medium text-primary">/stores/{{ seller.store_slug }}</p>
+                <div class="flex items-center gap-3">
+                  <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-bg-alt bg-bg-alt text-sm font-black text-text-muted">
+                    <img v-if="seller.store_image_url" :src="seller.store_image_url" :alt="seller.store_name" class="h-full w-full object-cover">
+                    <span v-else>{{ seller.store_name?.charAt(0) || 'S' }}</span>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-bold text-text-main">{{ seller.store_name }}</p>
+                    <p class="mt-1 text-xs font-medium text-primary">/stores/{{ seller.store_slug }}</p>
+                  </div>
+                </div>
               </td>
               <td class="p-6 max-w-sm text-sm text-text-muted">{{ seller.store_description || 'No store description provided.' }}</td>
               <td class="p-6 text-sm text-text-muted">{{ formatDate(seller.created_at) }}</td>
@@ -131,6 +157,7 @@ onMounted(loadSellers)
               </td>
               <td class="p-6">
                 <div class="flex justify-end gap-2">
+                  <NuxtLink :to="`/admin/sellers/${seller.id}`" class="rounded-lg border border-bg-alt px-3 py-2 text-xs font-bold text-text-main transition hover:text-primary">Details</NuxtLink>
                   <button
                     v-if="seller.status !== 'approved'"
                     :disabled="updatingId === seller.id"
@@ -141,7 +168,7 @@ onMounted(loadSellers)
                     v-if="seller.status === 'pending'"
                     :disabled="updatingId === seller.id"
                     class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                    @click="updateStatus(seller, 'rejected')"
+                    @click="openRejectDialog(seller)"
                   >Reject</button>
                   <button
                     v-if="seller.status === 'approved'"
@@ -154,6 +181,19 @@ onMounted(loadSellers)
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <div v-if="rejectingSeller" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="rejectingSeller = null">
+      <div class="w-full max-w-lg rounded-2xl border border-bg-alt bg-surface p-6 shadow-2xl">
+        <p class="text-xs font-bold uppercase tracking-wider text-red-600">Reject application</p>
+        <h2 class="mt-2 text-2xl font-black text-text-main">{{ rejectingSeller.store_name }}</h2>
+        <p class="mt-2 text-sm text-text-muted">Explain what the seller needs to improve before resubmitting.</p>
+        <textarea v-model="rejectionReason" rows="5" maxlength="1000" class="mt-5 w-full resize-y rounded-xl border border-bg-alt bg-bg px-4 py-3 text-text-main outline-none focus:border-primary" placeholder="Rejection reason..."></textarea>
+        <div class="mt-5 flex justify-end gap-3">
+          <button class="rounded-xl px-4 py-2.5 font-bold text-text-muted hover:bg-bg-alt" :disabled="updatingId === rejectingSeller.id" @click="rejectingSeller = null">Cancel</button>
+          <button class="rounded-xl bg-red-600 px-4 py-2.5 font-bold text-white hover:bg-red-700 disabled:opacity-60" :disabled="updatingId === rejectingSeller.id" @click="confirmRejection">{{ updatingId === rejectingSeller.id ? 'Rejecting...' : 'Reject seller' }}</button>
+        </div>
       </div>
     </div>
   </div>

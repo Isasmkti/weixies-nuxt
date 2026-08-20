@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createSellerApplication, createStoreSlug, getCurrentSeller, resubmitSellerApplication } from '../services/sellerService'
 
@@ -10,8 +10,40 @@ const errorMessage = ref('')
 const isLoading = ref(false)
 const isChecking = ref(true)
 const rejectedSeller = ref(null)
+const storeImageFile = ref(null)
+const storeImagePreview = ref('')
 
 const slugPreview = computed(() => createStoreSlug(storeName.value))
+const displayedStoreImage = computed(() => storeImagePreview.value || rejectedSeller.value?.store_image_url || '')
+
+const clearStoreImagePreview = () => {
+  if (storeImagePreview.value) URL.revokeObjectURL(storeImagePreview.value)
+  storeImagePreview.value = ''
+}
+
+const handleStoreImage = (event) => {
+  const file = event.target.files?.[0] || null
+  errorMessage.value = ''
+  clearStoreImagePreview()
+  storeImageFile.value = null
+
+  if (!file) return
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+    event.target.value = ''
+    errorMessage.value = 'Store photo must be a JPG, PNG, WEBP, or GIF image.'
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    event.target.value = ''
+    errorMessage.value = 'Store photo must be 5 MB or smaller.'
+    return
+  }
+
+  storeImageFile.value = file
+  storeImagePreview.value = URL.createObjectURL(file)
+}
+
+onBeforeUnmount(clearStoreImagePreview)
 
 onMounted(async () => {
   try {
@@ -38,9 +70,15 @@ const submitApplication = async () => {
 
   try {
     if (rejectedSeller.value) {
-      await resubmitSellerApplication(rejectedSeller.value.id, storeName.value, storeDescription.value)
+      await resubmitSellerApplication(
+        rejectedSeller.value.id,
+        storeName.value,
+        storeDescription.value,
+        storeImageFile.value,
+        rejectedSeller.value.store_image_url,
+      )
     } else {
-      await createSellerApplication(storeName.value, storeDescription.value)
+      await createSellerApplication(storeName.value, storeDescription.value, storeImageFile.value)
     }
     await router.push('/seller/pending')
   } catch (error) {
@@ -93,6 +131,29 @@ const submitApplication = async () => {
             placeholder="Tell buyers what you sell and what makes your store special."
             class="w-full resize-y rounded-xl border border-bg-alt bg-bg px-4 py-3 text-text-main outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
           ></textarea>
+        </div>
+
+        <div>
+          <label for="store-image" class="block text-sm font-bold text-text-main mb-2">Store photo</label>
+          <div class="flex flex-col gap-4 rounded-2xl border border-bg-alt bg-bg/50 p-4 sm:flex-row sm:items-center">
+            <div class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-bg-alt bg-surface">
+              <img v-if="displayedStoreImage" :src="displayedStoreImage" alt="Store photo preview" class="h-full w-full object-cover">
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8M8.5 8.5h.01" /></svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <input
+                id="store-image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                :required="!rejectedSeller?.store_image_url"
+                class="block w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 text-sm text-text-main file:mr-4 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:font-bold file:text-primary"
+                @change="handleStoreImage"
+              >
+              <p class="mt-2 text-xs text-text-muted">JPG, PNG, WEBP, or GIF. Maximum 5 MB. Use a clear square shop logo or photo.</p>
+              <p v-if="storeImageFile" class="mt-1 truncate text-xs font-semibold text-primary">Selected: {{ storeImageFile.name }}</p>
+              <p v-else-if="rejectedSeller?.store_image_url" class="mt-1 text-xs font-semibold text-text-main">Current store photo will be kept unless you choose a new one.</p>
+            </div>
+          </div>
         </div>
 
         <div v-if="rejectedSeller?.rejection_reason" class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">

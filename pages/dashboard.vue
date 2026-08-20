@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import { useThemeStore } from '../stores/themeStore'
 import { useAuth } from '../composables/useAuth'
+import { getCurrentSeller } from '../services/sellerService'
 import Swal from 'sweetalert2'
 
 const theme = useThemeStore()
@@ -11,6 +12,61 @@ const { profile, fetchProfile, updateProfile, uploadProfileImage, loading } = us
 const isEditing = ref(false)
 const selectedFile = ref(null)
 const previewUrl = ref(null)
+const sellerApplication = ref(null)
+
+const sellerCallToAction = computed(() => {
+    const status = sellerApplication.value?.status
+
+    if (profile.value?.is_seller === true || status === 'approved') {
+        return {
+            eyebrow: 'Seller account active',
+            title: 'Your shop is ready to grow',
+            description: 'Manage your products, store page, and marketplace activity from the seller workspace.',
+            label: 'Manage Shop',
+            to: '/seller',
+            tone: 'active'
+        }
+    }
+    if (status === 'pending') {
+        return {
+            eyebrow: 'Application submitted',
+            title: 'Your shop is under review',
+            description: 'An admin is reviewing your store information. Seller tools become available after approval.',
+            label: 'View Application',
+            to: '/seller/pending',
+            tone: 'pending'
+        }
+    }
+    if (status === 'rejected') {
+        return {
+            eyebrow: 'Application needs changes',
+            title: 'Ready to improve your shop application?',
+            description: 'Review the admin feedback, update your store information and photo, then submit it again.',
+            label: 'Update Application',
+            to: '/become-seller',
+            tone: 'rejected'
+        }
+    }
+    if (status === 'suspended') {
+        return {
+            eyebrow: 'Seller access suspended',
+            title: 'Your shop needs attention',
+            description: 'Seller access is temporarily unavailable. Open the status page for more information.',
+            label: 'View Status',
+            to: '/seller/pending',
+            tone: 'suspended'
+        }
+    }
+
+    return {
+        eyebrow: 'Start selling on Weixies',
+        title: 'Do you want to become a seller?',
+        description: 'Open your own shop, publish digital products, and reach buyers across the marketplace.',
+        label: 'Become a Seller',
+        to: '/become-seller',
+        tone: 'new'
+    }
+})
 
 const editForm = ref({
     full_name: '',
@@ -95,6 +151,11 @@ const handleUpdate = async () => {
 
 onMounted(async () => {
     await fetchProfile()
+    try {
+        sellerApplication.value = await getCurrentSeller()
+    } catch (error) {
+        console.error('Failed to load seller application:', error)
+    }
     startEditing()
 })
 </script>
@@ -155,6 +216,22 @@ onMounted(async () => {
                     </div>
                 </div>
             </div>
+
+            <!-- Seller onboarding / workspace CTA -->
+            <section class="relative overflow-hidden rounded-[2.5rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-surface to-surface p-8 shadow-xl shadow-black/[0.02] md:p-10">
+                <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl"></div>
+                <div class="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="max-w-3xl">
+                        <p class="text-xs font-black uppercase tracking-[0.2em]" :class="sellerCallToAction.tone === 'rejected' || sellerCallToAction.tone === 'suspended' ? 'text-red-600' : 'text-primary'">{{ sellerCallToAction.eyebrow }}</p>
+                        <h2 class="mt-3 text-3xl font-black tracking-tight text-text-main">{{ sellerCallToAction.title }}</h2>
+                        <p class="mt-3 leading-relaxed text-text-muted">{{ sellerCallToAction.description }}</p>
+                    </div>
+                    <NuxtLink :to="sellerCallToAction.to" class="inline-flex shrink-0 items-center justify-center gap-3 rounded-2xl bg-primary px-7 py-4 font-black text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary-dark">
+                        {{ sellerCallToAction.label }}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m9 5 7 7-7 7" /></svg>
+                    </NuxtLink>
+                </div>
+            </section>
 
             <!-- Standalone Edit Profile Section -->
             <div class="bg-surface rounded-[2.5rem] p-10 shadow-xl shadow-black/[0.02] border border-bg-alt/50">

@@ -15,13 +15,38 @@ export async function rGetReviewsByProductId(productId) {
 
 export async function rCreateReview(reviewData) {
     const { data, error } = await supabase
-        .from('reviews')
-        .insert(reviewData)
-        .select(`
-            *,
-            profiles (full_name, profile_img)
-        `)
-        .single()
+        .rpc('submit_verified_review', {
+            p_product_id: reviewData.product_id,
+            p_rating: reviewData.rating,
+            p_comment: reviewData.comment
+        })
     if (error) throw error
-    return data
+
+    const review = Array.isArray(data) ? data[0] : data
+    if (!review) throw new Error('Review could not be created.')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, profile_img')
+        .eq('id', review.profile_id)
+        .maybeSingle()
+
+    return {
+        ...review,
+        profiles: profile || null
+    }
+}
+
+export async function rGetReviewsByProfileAndProductIds(profileId, productIds) {
+    if (!profileId || !Array.isArray(productIds) || productIds.length === 0) return []
+
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('id, product_id, profile_id, rating, comment, created_at')
+        .eq('profile_id', profileId)
+        .in('product_id', productIds)
+        .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
 }

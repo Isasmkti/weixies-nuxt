@@ -17,6 +17,7 @@ layouts/        ← page layouts
 
 npx.cmd supabase db push --dry-run
 npx.cmd supabase db push
+npx.cmd supabase migration list
 
 
 ## Setup

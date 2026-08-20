@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daftar Produk - Creator Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#f3f3fe",
+                      "surface-container-highest": "#e1e2ed",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "on-error": "#ffffff",
+                      "inverse-primary": "#b4c5ff",
+                      "outline-variant": "#c3c6d7",
+                      "surface-dim": "#d9d9e5",
+                      "surface": "#faf8ff",
+                      "surface-bright": "#faf8ff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#434655",
+                      "tertiary": "#525657",
+                      "tertiary-fixed": "#e0e3e5",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "surface-tint": "#0053db",
+                      "secondary-container": "#dae2fd",
+                      "secondary": "#565e74",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed": "#dae2fd",
+                      "surface-container": "#ededf9",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#eeefff",
+                      "inverse-on-surface": "#f0f0fb",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#e7e7f3",
+                      "on-surface": "#191b23",
+                      "on-secondary": "#ffffff",
+                      "inverse-surface": "#2e3039",
+                      "primary-container": "#2563eb",
+                      "outline": "#737686",
+                      "on-background": "#191b23",
+                      "background": "#faf8ff",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "on-secondary-container": "#5c647a",
+                      "primary": "#004ac6",
+                      "on-primary-fixed": "#00174b",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e2ed",
+                      "on-tertiary-container": "#eff1f3",
+                      "tertiary-container": "#6b6e70",
+                      "primary-fixed": "#dbe1ff",
+                      "on-secondary-fixed": "#131b2e",
+                      "on-tertiary-fixed": "#191c1e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "8px",
+                      "margin-desktop": "32px",
+                      "stack-md": "16px",
+                      "margin-mobile": "16px",
+                      "gutter": "24px",
+                      "base-unit": "4px",
+                      "container-max-width": "1280px",
+                      "stack-lg": "32px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                      "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                      "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                      "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                      "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                      "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                      "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                      "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                      "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface shadow-sm docked full-width top-0 h-16 flex justify-between items-center w-full px-margin-desktop ml-0 md:ml-64 max-w-full md:max-w-[calc(100%-256px)] fixed z-50">
+<div class="flex items-center gap-stack-md w-full max-w-md">
+<span class="text-headline-md font-headline-md font-bold text-primary block md:hidden">TechStore Marketplace</span>
+<div class="relative w-full hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-body-md font-body-md placeholder-on-surface-variant" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="text-on-surface-variant hover:text-primary transition-all p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-all p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<img alt="Seller Profile Avatar" class="w-10 h-10 rounded-full border border-outline-variant object-cover ml-2" data-alt="A professional headshot of a young digital artist and seller, looking confidently at the camera. The background is a clean, modern studio setting with soft, high-key lighting. The overall color palette is neutral with hints of professional blue, matching the modern UI aesthetic. The image conveys trust and expertise in a high-end digital marketplace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXT42UH4qvxttSUUv5_4GrSJiKk9SeLY2Uajk2Zb_pWzHgUUqI-AWdJMKOIq2_aMptWm7FXNFVWTT6cWgL2jDoy6JRvoF5zc1U1g6Td9Fl3_IrKksPWwiFUEwTmDDTDwuyh9sQ34wz3tNQzmwqTatr8oen40fmtFhqc7kbklid6zUjKWqK1d-iKWm3z3UaO5PjfBvOe4ea7K3kr3mJE55TN97nOW2DnbknC98Tk5LJm5RwmwDQpFmZLA"/>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest h-screen w-64 fixed left-0 top-0 hidden md:flex flex-col border-r border-outline-variant z-40">
+<div class="p-margin-desktop flex flex-col gap-stack-sm border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<img alt="Seller Store Logo" class="w-12 h-12 rounded-lg object-cover border border-outline-variant" data-alt="A sleek, minimalist logo for a premium digital asset store. The design features an abstract geometric shape in a professional blue color palette, set against a pristine white background. The lighting is flat and even, emphasizing the clean lines and modern corporate aesthetic suitable for a developer-grade marketplace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc-53ks_lHXaka5NYN6uEt04o2xeXNrPtoEpq7i6jeSKz7_JT_67JApjm8oozRG38itSJX3aIdYzo3Y8X-ay8G1DzcAdBbrTlqUSegxElK8vRsJfbNfJQcjUljrnjr4xdk031nuyFH5In74NSAwgMDFuvFH2Nj4CJVxo4OuHvum4BiS5RU6P68EYjf5ulc2Pb3gFfmvsGo3Dqrb5z6IBLuAh3IovCclJJsBD5HoesNomxz8fCgU1L_JQ"/>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Creator Hub</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">Premium Seller</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-stack-sm py-stack-md px-stack-md flex-grow overflow-y-auto mt-[64px]">
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-surface-container-low text-label-md font-label-md transition-transform scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+                My Products
+            </a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+                Orders
+            </a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">payments</span>
+                Earnings
+            </a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+<div class="p-stack-md border-t border-outline-variant">
+<button class="w-full py-3 px-4 bg-primary text-on-primary rounded-lg text-label-md font-label-md hover:bg-surface-tint transition-colors flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+<span class="material-symbols-outlined">upload</span>
+                Upload Asset
+            </button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-[80px] pb-margin-desktop px-margin-mobile md:px-margin-desktop md:ml-64 transition-all duration-300">
+<div class="max-w-container-max-width mx-auto flex flex-col gap-stack-lg">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<h2 class="text-display-lg font-display-lg text-on-surface mb-2">Manajemen Produk</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Kelola katalog aset digital Anda, perbarui harga, dan pantau status inventaris.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg text-label-md font-label-md hover:bg-surface-tint transition-all shadow-sm hover:shadow-md flex items-center gap-2 whitespace-nowrap h-[44px]">
+<span class="material-symbols-outlined">add</span>
+                    Tambah Produk Baru
+                </button>
+</div>
+<!-- Filters & Search Bar -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl border border-outline-variant shadow-[0_4px_24px_rgba(15,23,42,0.05)] flex flex-col md:flex-row gap-stack-md justify-between items-center">
+<div class="relative w-full md:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-body-md font-body-md placeholder-on-surface-variant transition-all" placeholder="Cari nama produk..." type="text"/>
+</div>
+<div class="flex items-center gap-stack-sm w-full md:w-auto">
+<span class="text-label-md font-label-md text-on-surface-variant hidden md:block">Status:</span>
+<select class="bg-surface border border-outline-variant rounded-lg px-4 py-2 text-body-md font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full md:w-auto appearance-none cursor-pointer">
+<option value="all">Semua Status</option>
+<option value="active">Aktif</option>
+<option value="draft">Draft</option>
+</select>
+<select class="bg-surface border border-outline-variant rounded-lg px-4 py-2 text-body-md font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full md:w-auto appearance-none cursor-pointer">
+<option value="all">Semua Kategori</option>
+<option value="ui">UI Kits</option>
+<option value="icons">Icons</option>
+<option value="templates">Templates</option>
+</select>
+</div>
+</div>
+<!-- Data Table / Bento List -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0_4px_24px_rgba(15,23,42,0.05)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-4 px-6 text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Produk</th>
+<th class="py-4 px-6 text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Kategori</th>
+<th class="py-4 px-6 text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Harga</th>
+<th class="py-4 px-6 text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="py-4 px-6 text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-4">
+<img alt="Product Thumbnail" class="w-12 h-12 rounded-lg border border-outline-variant object-cover" data-alt="A clean, modern preview image for a SaaS UI Kit. The graphic features abstract dashboard components with minimalist charts and professional blue accents, set against a light background. The style is sharp, corporate, and highly polished, representing a premium digital product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcR1qMhBbBtvo3QBACtGW9GjHoksuvhBh0hF6--Wi4RIjgJprVobVCHPX9NODKo6rr2RZgm4xAZ8clbWy8FE3SBZLrEJiv8wAhNJXVpjXRfgzPrIH9QBRLIOmdtA4F3Ju3_m1kU2T9lHVouCPIw30J8T24xaWnDoud3oYqva9jRC7rLR5SIjlYR1XU27eR_Pkqx0xZbkoDq_5qinu3-keGsORSw1WZHqWKYeaowgPAoG1trgEXVBWXBw"/>
+<div>
+<p class="font-bold text-on-surface">Modern SaaS Dashboard UI Kit</p>
+<p class="text-on-surface-variant text-label-sm mt-1">V 2.1 • Terjual: 45</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant">UI Kits</td>
+<td class="py-4 px-6 font-medium text-on-surface">$49.00</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary border border-primary/20">
+                                        Aktif
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Lihat">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Hapus">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-lowest hover:bg-surface transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg border border-outline-variant bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">image</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">E-Commerce App Wireframes</p>
+<p class="text-on-surface-variant text-label-sm mt-1">V 1.0 • Terjual: 0</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant">Templates</td>
+<td class="py-4 px-6 font-medium text-on-surface">$24.00</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary/10 text-tertiary border border-tertiary/20">
+                                        Draft
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Lihat">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Hapus">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface transition-colors group">
+<td class="py-4 px-6">
+<div class="flex items-center gap-4">
+<img alt="Product Thumbnail" class="w-12 h-12 rounded-lg border border-outline-variant object-cover" data-alt="A premium set of 500 line icons presented in a sleek, dark mode preview card. The icons are meticulously crafted with consistent stroke widths, glowing slightly against a deep navy background. The visual style is highly technical and precise, perfect for modern digital interfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGu4bF2jrD4XAnZRT_goaxf5MWnKPavxsioKgDnHqDNjaHucuuy8Q3IYXLV0wqUWpvD3YXjiM-nTen35EFYw1KOi8oCsqMiddCX0PnRAvPREbBoqx_g-UzlJ1iNS3pCy0lKq5bLMzRr7_IdwcitwWdn9gfSa2Mm-_X0UDllHWrsr6PZI-eK7kD2js3MdTjeAfDq6l2Rec_0VGjCPShH3_8sRiG0x2mJHJ8hq1Dx6Ktwg6-weVTtoi4TQ"/>
+<div>
+<p class="font-bold text-on-surface">Essential Line Icons Pack (500+)</p>
+<p class="text-on-surface-variant text-label-sm mt-1">V 3.4 • Terjual: 128</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant">Icons</td>
+<td class="py-4 px-6 font-medium text-on-surface">$19.00</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary border border-primary/20">
+                                        Aktif
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Lihat">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Hapus">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-4 border-t border-outline-variant bg-surface flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Menampilkan 1-3 dari 12 produk</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded-md text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-md bg-primary text-on-primary text-label-sm font-label-sm flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded-md text-on-surface-variant hover:bg-surface-container-low text-label-sm font-label-sm flex items-center justify-center transition-colors">2</button>
+<button class="w-8 h-8 rounded-md text-on-surface-variant hover:bg-surface-container-low text-label-sm font-label-sm flex items-center justify-center transition-colors">3</button>
+<button class="p-1 rounded-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

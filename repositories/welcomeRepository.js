@@ -1,28 +1,35 @@
 import { supabase } from '../utils/supabase'
 
 export async function rAll() {
-    const [
-        { data: hero },
-        { data: about },
-        { data: features },
-        { data: products },
-        { data: testimonials },
-        { data: cta }
-    ] = await Promise.all([
-        supabase.from('welcome_hero').select('*').maybeSingle(),
-        supabase.from('welcome_about').select('*').maybeSingle(),
-        supabase.from('welcome_features').select('*').order('order'),
-        supabase.from('welcome_products').select('*, product:products(*)').order('order'),
-        supabase.from('welcome_testimonials').select('*').order('order'),
-        supabase.from('welcome_cta').select('*').maybeSingle()
-    ])
+    const { data, error } = await supabase
+        .from('welcome_content')
+        .select('section, content, updated_at, updated_by')
 
-    return {
-        hero,
-        about,
-        features: features || [],
-        products: products || [],
-        testimonials: testimonials || [],
-        cta
-    }
+    if (error) throw error
+
+    return Object.fromEntries(
+        (data || []).map((row) => [row.section, row.content])
+    )
+}
+
+export async function rUpsertSection(section, content) {
+    const { data, error } = await supabase
+        .from('welcome_content')
+        .upsert({ section, content }, { onConflict: 'section' })
+        .select('section, content, updated_at, updated_by')
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export async function rUploadAsset(filePath, file) {
+    const { error } = await supabase.storage
+        .from('welcome-assets')
+        .upload(filePath, file, { contentType: file.type, upsert: false })
+
+    if (error) throw error
+
+    const { data } = supabase.storage.from('welcome-assets').getPublicUrl(filePath)
+    return data.publicUrl
 }

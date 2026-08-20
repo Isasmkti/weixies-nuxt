@@ -15,3 +15,7 @@ export async function sCreateReview(reviewData) {
         throw error
     }
 }
+
+export async function sGetReviewsByProfileAndProductIds(profileId, productIds) {
+    return await reviewsRepository.rGetReviewsByProfileAndProductIds(profileId, productIds)
+}

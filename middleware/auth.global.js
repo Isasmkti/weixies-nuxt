@@ -62,6 +62,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   if (to.path === '/welcome' && user) {
+    if (to.query.preview === '1') {
+      const profile = await getUserProfile()
+      if (profile?.role === 'admin') return
+    }
     return navigateTo('/')
   }
 })

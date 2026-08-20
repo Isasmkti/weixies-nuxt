@@ -14,6 +14,7 @@ export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrde
     let query = supabase
         .from('products')
         .select(PRODUCT_SELECT, { count: 'exact' })
+        .eq('status', 'published')
         .order(sortBy, { ascending: sortOrder === 'asc' })
         .range((page - 1) * limit, page * limit - 1)
 

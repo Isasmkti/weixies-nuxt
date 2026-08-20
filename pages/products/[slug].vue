@@ -40,7 +40,10 @@
           </div>
 
           <div class="mt-4 flex items-center gap-4 border-t border-bg-alt pt-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-bg-alt bg-bg-alt text-lg font-bold text-primary">{{ sellerName.charAt(0) }}</div>
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-bg-alt bg-bg-alt text-lg font-bold text-primary">
+              <img v-if="sellerStore?.store_image_url" :src="sellerStore.store_image_url" :alt="sellerName" class="h-full w-full object-cover">
+              <span v-else>{{ sellerName.charAt(0) }}</span>
+            </div>
             <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-text-main">{{ sellerName }}</p><p class="mt-1 text-xs text-text-muted">{{ sellerMeta }}</p></div>
             <NuxtLink v-if="sellerStore" :to="`/stores/${sellerStore.store_slug}`" class="shrink-0 rounded-lg border border-primary px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10">Lihat Toko</NuxtLink>
           </div>
@@ -134,7 +137,7 @@ watch(product, (nextProduct) => { if (nextProduct?.id) reviewsStore.fetchReviews
 watch(product, async (nextProduct) => {
   sellerStore.value = null
   if (!nextProduct?.seller_id) return
-  const { data } = await supabase.from('approved_seller_stores').select('store_name, store_slug, store_description, created_at').eq('id', nextProduct.seller_id).maybeSingle()
+  const { data } = await supabase.from('approved_seller_stores').select('store_name, store_slug, store_description, store_image_url, created_at').eq('id', nextProduct.seller_id).maybeSingle()
   sellerStore.value = data || null
 }, { immediate: true })
 </script>

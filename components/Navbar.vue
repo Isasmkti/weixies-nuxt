@@ -8,25 +8,25 @@
 ]">
     <div class="flex items-center gap-2">
       <img src="../assets/weixies-logo.svg" alt="Weixies Logo" class="w-8 h-8 object-contain" />
-      <span class="text-xl font-bold">Weixies</span>
+      <span class="text-xl font-bold">{{ welcomeStore.navbar.brandName }}</span>
     </div>
 
     <div class="flex items-center space-x-6">
       <template v-if="profile">
         <NuxtLink to="/dashboard"
           class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg hover:bg-primary-dark transition transform hover:-translate-y-0.5 font-medium">
-          Dashboard
+          {{ welcomeStore.navbar.dashboardLabel }}
         </NuxtLink>
       </template>
 
       <template v-if="!profile">
         <NuxtLink to="/login" class=" hover:text-primary transition font-medium">
-          Login
+          {{ welcomeStore.navbar.loginLabel }}
         </NuxtLink>
 
         <NuxtLink to="/signup"
           class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg hover:bg-primary-dark transition transform hover:-translate-y-0.5">
-          Sign Up
+          {{ welcomeStore.navbar.signupLabel }}
         </NuxtLink>
       </template>
 
@@ -37,8 +37,10 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useAuth } from '../composables/useAuth'
+import { useWelcomeStore } from '../stores/welcomeStore'
 
 const { profile, fetchProfile } = useAuth()
+const welcomeStore = useWelcomeStore()
 const isScrolled = ref(false)
 
 const handleScroll = () => {
@@ -47,7 +49,7 @@ const handleScroll = () => {
 
 onMounted(async () => {
   window.addEventListener('scroll', handleScroll)
-  await fetchProfile()
+  await Promise.all([fetchProfile(), welcomeStore.stAll()])
 })
 
 onUnmounted(() => {

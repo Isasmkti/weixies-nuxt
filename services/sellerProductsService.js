@@ -1,6 +1,7 @@
 import {
   rCreateSellerProduct,
   rGetSellerProduct,
+  rGetSellerProductSales,
   rGetSellerProducts,
   rUpdateSellerProduct,
 } from '../repositories/sellerProductsRepository'
@@ -47,7 +48,20 @@ async function saveProductContent(productId, { images, categoryIds, zipFile }) {
 }
 
 export async function sGetSellerProducts(sellerId) {
-  return rGetSellerProducts(sellerId)
+  const [products, paidItems] = await Promise.all([
+    rGetSellerProducts(sellerId),
+    rGetSellerProductSales(sellerId),
+  ])
+  const salesByProduct = paidItems.reduce((result, item) => {
+    const key = String(item.product_id)
+    result[key] = (result[key] || 0) + 1
+    return result
+  }, {})
+
+  return products.map((product) => ({
+    ...product,
+    sales_count: salesByProduct[String(product.id)] || 0,
+  }))
 }
 
 export async function sGetSellerProduct(productId, sellerId) {

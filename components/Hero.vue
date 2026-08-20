@@ -1,5 +1,5 @@
 <template>
-  <div class="relative min-h-[100vh] flex items-center justify-center overflow-hidden bg-bg-alt">
+  <section id="hero" class="relative min-h-[100vh] flex items-center justify-center overflow-hidden bg-bg-alt">
 
     <div
       v-if="store.loading"
@@ -47,24 +47,24 @@
           </p>
 
           <div class="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:w-auto sm:flex-row md:gap-6">
-            <a
-              href="#"
-              class="inline-flex w-full items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/40 sm:w-auto sm:text-base"
+            <NuxtLink
+              :to="currentItem.primaryUrl || '/products'"
+              class="inline-flex w-full items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-bold text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:bg-primary-dark hover:shadow-primary/40 sm:w-auto sm:text-base"
             >
-              Get Started
-            </a>
+              {{ currentItem.primaryLabel }}
+            </NuxtLink>
 
-            <a
-              href="#"
-              class="inline-flex w-full items-center justify-center rounded-full border-2 border-white/50 bg-transparent px-8 py-4 text-sm font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-black sm:w-auto sm:text-base"
+            <NuxtLink
+              :to="currentItem.secondaryUrl || '#about'"
+              class="inline-flex w-full items-center justify-center rounded-full border-2 border-white/50 bg-transparent px-8 py-4 text-sm font-bold text-white backdrop-blur-sm transition-all duration-300 hover:border-primary hover:bg-primary hover:text-white sm:w-auto sm:text-base"
             >
-              Live Demo
-            </a>
+              {{ currentItem.secondaryLabel }}
+            </NuxtLink>
           </div>
         </main>
       </MotionGroup>
     </template>
-  </div>
+  </section>
 </template>
 
 <style scoped>

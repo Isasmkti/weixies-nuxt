@@ -13,8 +13,9 @@ const userMenuItems = [
         icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
     },
     {
-        name: 'Sell',
-        to: '/become-seller',
+        name: 'Shop',
+        to: '/seller',
+        sellerOnly: true,
         icon: 'M3 9.75L5.25 4.5h13.5L21 9.75M3 9.75h18M3 9.75v8.625A1.125 1.125 0 004.125 19.5h15.75A1.125 1.125 0 0021 18.375V9.75M9 19.5v-4.125A1.125 1.125 0 0110.125 14.25h3.75A1.125 1.125 0 0115 15.375V19.5'
     },
     {
@@ -81,7 +82,7 @@ const menuItems = computed(() => {
     if (profile.value?.role === 'admin') {
         return adminMenuItems
     }
-    return userMenuItems
+    return userMenuItems.filter((item) => !item.sellerOnly || profile.value?.is_seller === true)
 })
 </script>
 

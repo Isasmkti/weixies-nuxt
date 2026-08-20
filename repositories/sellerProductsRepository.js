@@ -4,7 +4,7 @@ const SELLER_PRODUCT_SELECT = 'id, seller_id, name, slug, description, price, st
 const SELLER_PRODUCT_DETAIL_SELECT = `
   ${SELLER_PRODUCT_SELECT},
   product_images(id, image_url, is_primary),
-  product_categories(category_id),
+  product_categories(category_id, categories(id, name, slug)),
   product_files(id, file_name, file_url, created_at)
 `
 
@@ -53,4 +53,15 @@ export async function rUpdateSellerProduct(productId, sellerId, product) {
 
   if (error) throw error
   return data
+}
+
+export async function rGetSellerProductSales(sellerId) {
+  const { data, error } = await supabase
+    .from('order_items')
+    .select('product_id, orders!inner(id, status)')
+    .eq('seller_id', sellerId)
+    .eq('orders.status', 'paid')
+
+  if (error) throw error
+  return data || []
 }
