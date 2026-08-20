@@ -28,6 +28,8 @@ export const useProductsStore = defineStore('products', {
         sortOrder: 'desc',
         search: '',
         categorySlug: [],
+        minPrice: null,
+        maxPrice: null,
         requestId: 0,
         loading: false,
         error: null
@@ -94,6 +96,8 @@ export const useProductsStore = defineStore('products', {
                 sortOrder = this.sortOrder,
                 search = this.search,
                 categorySlug = this.categorySlug,
+                minPrice = this.minPrice,
+                maxPrice = this.maxPrice,
                 force = false
             } = options
 
@@ -107,7 +111,9 @@ export const useProductsStore = defineStore('products', {
                 sortBy !== this.sortBy ||
                 sortOrder !== this.sortOrder ||
                 search !== this.search ||
-                JSON.stringify(normalizedCategorySlug) !== JSON.stringify(this.categorySlug)
+                JSON.stringify(normalizedCategorySlug) !== JSON.stringify(this.categorySlug) ||
+                Number(minPrice) !== Number(this.minPrice) ||
+                Number(maxPrice) !== Number(this.maxPrice)
             )
 
             const shouldSkip = !force && !this.loading && this.products.length > 0 && this.total > 0 && !filtersChanged
@@ -128,7 +134,9 @@ export const useProductsStore = defineStore('products', {
                         sortBy,
                         sortOrder,
                         search,
-                        normalizedCategorySlug
+                        normalizedCategorySlug,
+                        minPrice,
+                        maxPrice
                     )
                 )
 
@@ -143,6 +151,8 @@ export const useProductsStore = defineStore('products', {
                 this.sortOrder = sortOrder
                 this.search = search
                 this.categorySlug = normalizedCategorySlug
+                this.minPrice = minPrice !== null && minPrice !== '' && Number.isFinite(Number(minPrice)) && Number(minPrice) >= 0 ? Number(minPrice) : null
+                this.maxPrice = maxPrice !== null && maxPrice !== '' && Number.isFinite(Number(maxPrice)) && Number(maxPrice) >= 0 ? Number(maxPrice) : null
 
                 return { data: this.products, total: this.total, page: this.page }
             } catch (err) {
@@ -164,7 +174,7 @@ export const useProductsStore = defineStore('products', {
         setSearch(val) {
             this.search = val
             this.page = 1
-            this.stAll(1)
+            this.stAll(1, { force: true })
         },
 
         setCategory(slug) {
@@ -178,20 +188,34 @@ export const useProductsStore = defineStore('products', {
                 this.categorySlug.push(slug) // tambah jika belum ada
             }
             this.page = 1
-            this.stAll(1)
+            this.stAll(1, { force: true })
         },
 
         clearCategories() {
             this.categorySlug = []
             this.page = 1
-            this.stAll(1)
+            this.stAll(1, { force: true })
+        },
+
+        setPriceRange(minPrice, maxPrice) {
+            const normalizedMin = minPrice !== null && minPrice !== '' && Number.isFinite(Number(minPrice)) && Number(minPrice) >= 0 ? Number(minPrice) : null
+            const normalizedMax = maxPrice !== null && maxPrice !== '' && Number.isFinite(Number(maxPrice)) && Number(maxPrice) >= 0 ? Number(maxPrice) : null
+
+            if (normalizedMin !== null && normalizedMax !== null && normalizedMin > normalizedMax) {
+                throw new Error('Minimum price cannot be greater than maximum price.')
+            }
+
+            this.minPrice = normalizedMin
+            this.maxPrice = normalizedMax
+            this.page = 1
+            return this.stAll(1, { force: true })
         },
 
         changeSort(sort) {
             this.sortBy = sort.by
             this.sortOrder = sort.order
             this.page = 1
-            this.stAll(1)
+            this.stAll(1, { force: true })
         },
 
         async sGetBySlug(slug) {

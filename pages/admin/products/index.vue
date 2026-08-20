@@ -28,7 +28,7 @@
                                 <th class="p-6 font-semibold">Product</th>
                                 <th class="p-6 font-semibold">Price</th>
                                 <th class="p-6 font-semibold">Categories</th>
-                                <th class="p-6 font-semibold">Stock</th>
+                                <th class="p-6 font-semibold">Status</th>
                                 <th class="p-6 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
@@ -72,8 +72,10 @@
                                         <span v-if="!product.categories?.length" class="text-[10px] text-text-muted italic">Untagged</span>
                                     </div>
                                 </td>
-                                <td class="p-6 text-text-muted">
-                                    {{ product.stock || '-' }}
+                                <td class="p-6">
+                                    <span class="rounded-full px-2.5 py-1 text-xs font-bold capitalize" :class="product.status === 'published' ? 'bg-emerald-100 text-emerald-800' : product.status === 'pending_review' ? 'bg-amber-100 text-amber-800' : product.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'">
+                                        {{ String(product.status || 'published').replace('_', ' ') }}
+                                    </span>
                                 </td>
                                 <td class="p-6">
                                     <div class="flex items-center justify-end gap-3">

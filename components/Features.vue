@@ -1,20 +1,20 @@
 <template>
-    <div class="bg-surface py-20 md:py-28 lg:py-36">
+    <section id="features" class="bg-surface py-20 md:py-28 lg:py-36">
         <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
             <div class="mb-14 text-center lg:mb-16">
-                <h2 class="flex h-8 items-center justify-center text-xs font-black uppercase tracking-[0.25em] text-primary md:text-sm">Why Choose Us</h2>
+                <h2 class="flex h-8 items-center justify-center text-xs font-black uppercase tracking-[0.25em] text-primary md:text-sm">{{ store.featuresContent.eyebrow }}</h2>
                 <h3 class="mt-4 text-3xl font-black leading-tight tracking-tight text-text-main sm:text-4xl md:text-5xl lg:text-6xl">
-                    A better way to shop online
+                    {{ store.featuresContent.title }}
                 </h3>
                 <p class="mx-auto mt-6 max-w-2xl text-base font-medium leading-relaxed text-text-muted sm:text-lg md:text-xl">
-                    We prioritize your experience with top-tier services and premium quality products.
+                    {{ store.featuresContent.description }}
                 </p>
             </div>
 
             <div class="mt-12 md:mt-14">
                 <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
-                    <div v-for="feature in store.features" :key="feature.name"
-                        class="group relative flex flex-col rounded-[1.75rem] border border-text-main/5 bg-bg-alt/60 p-6 transition-all duration-300 hover:-translate-y-2 hover:bg-white hover:shadow-2xl sm:p-8">
+                    <div v-for="feature in store.features" :key="feature.id || feature.name"
+                        class="group relative flex flex-col rounded-[1.75rem] border border-text-main/5 bg-bg-alt/60 p-6 transition-all duration-300 hover:-translate-y-2 hover:border-primary/20 hover:bg-surface hover:shadow-2xl hover:shadow-primary/10 sm:p-8">
                         <div
                             class="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-xl shadow-primary/30 transition-transform duration-300 group-hover:scale-110 sm:h-16 sm:w-16">
                             <component :is="getIcon(feature.icon)" class="h-7 w-7 sm:h-8 sm:w-8" aria-hidden="true" />
@@ -27,7 +27,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 </template>
 
 <script setup>

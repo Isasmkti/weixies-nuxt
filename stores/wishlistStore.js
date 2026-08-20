@@ -10,7 +10,10 @@ export const useWishlistStore = defineStore('wishlist', {
     }),
     getters: {
         isWishlisted: (state) => (productId) => {
-            return state.items.some(item => item.product_id === productId)
+            return state.items.some(item => String(item.product_id) === String(productId))
+        },
+        isToggling: (state) => (productId) => {
+            return Boolean(state.togglingProducts[String(productId)])
         }
     },
     actions: {
@@ -30,36 +33,39 @@ export const useWishlistStore = defineStore('wishlist', {
 
         async stToggleWishlist(profileId, productId) {
             if (!profileId) return
-            if (this.togglingProducts[productId]) return;
+            const productKey = String(productId)
+            if (this.togglingProducts[productKey]) return
 
-            this.togglingProducts[productId] = true;
-            this.error = null;
+            this.togglingProducts = { ...this.togglingProducts, [productKey]: true }
+            this.error = null
 
             // Find if currently wishlisted locally
             const currentlyWishlisted = this.isWishlisted(productId)
             
             // OPTIMISTIC UPDATE
-            let backupItems = [...this.items];
+            const backupItems = [...this.items]
             if (currentlyWishlisted) {
-                this.items = this.items.filter(item => item.product_id !== productId);
+                this.items = this.items.filter(item => String(item.product_id) !== productKey)
             } else {
                 // just a placeholder, full product data will be fetch on next reload or we can just fetch it all again
-                this.items.push({ profile_id: profileId, product_id: productId, product: {} });
+                this.items = [...this.items, { profile_id: profileId, product_id: productId, product: {} }]
             }
 
             try {
-                const nowWishlisted = await wishlistService.sToggleWishlist(profileId, productId, currentlyWishlisted)
+                await wishlistService.sToggleWishlist(profileId, productId, currentlyWishlisted)
                 
                 // Fetch the list again to have exact relationships and data
-                this.items = await wishlistService.sGetWishlists(profileId);
+                this.items = await wishlistService.sGetWishlists(profileId)
             } catch (err) {
                 this.error = err.message
                 // ROLLBACK
-                this.items = backupItems;
+                this.items = backupItems
                 console.error('Toggle Wishlist failed:', err)
                 throw err
             } finally {
-                delete this.togglingProducts[productId];
+                const remainingProducts = { ...this.togglingProducts }
+                delete remainingProducts[productKey]
+                this.togglingProducts = remainingProducts
             }
         }
     }

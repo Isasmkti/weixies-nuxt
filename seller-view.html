@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard - TechStore Marketplace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#f3f3fe",
+                      "surface-container-highest": "#e1e2ed",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "on-error": "#ffffff",
+                      "inverse-primary": "#b4c5ff",
+                      "outline-variant": "#c3c6d7",
+                      "surface-dim": "#d9d9e5",
+                      "surface": "#faf8ff",
+                      "surface-bright": "#faf8ff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#434655",
+                      "tertiary": "#525657",
+                      "tertiary-fixed": "#e0e3e5",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "surface-tint": "#0053db",
+                      "secondary-container": "#dae2fd",
+                      "secondary": "#565e74",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed": "#dae2fd",
+                      "surface-container": "#ededf9",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#eeefff",
+                      "inverse-on-surface": "#f0f0fb",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#e7e7f3",
+                      "on-surface": "#191b23",
+                      "on-secondary": "#ffffff",
+                      "inverse-surface": "#2e3039",
+                      "primary-container": "#2563eb",
+                      "outline": "#737686",
+                      "on-background": "#191b23",
+                      "background": "#faf8ff",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "on-secondary-container": "#5c647a",
+                      "primary": "#004ac6",
+                      "on-primary-fixed": "#00174b",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e2ed",
+                      "on-tertiary-container": "#eff1f3",
+                      "tertiary-container": "#6b6e70",
+                      "primary-fixed": "#dbe1ff",
+                      "on-secondary-fixed": "#131b2e",
+                      "on-tertiary-fixed": "#191c1e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "8px",
+                      "margin-desktop": "32px",
+                      "stack-md": "16px",
+                      "margin-mobile": "16px",
+                      "gutter": "24px",
+                      "base-unit": "4px",
+                      "container-max-width": "1280px",
+                      "stack-lg": "32px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #faf8ff; /* surface */
+        }
+        /* Ambient shadows for depth */
+        .ambient-shadow {
+            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.05);
+        }
+        .ambient-shadow-hover:hover {
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-md bg-background antialiased">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim docked full-width top-0 h-16 shadow-sm fixed z-50 flex justify-between items-center w-full px-margin-desktop ml-0 md:ml-64 max-w-[calc(100%-256px)]">
+<div class="flex items-center gap-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">TechStore Marketplace</h1>
+</div>
+<div class="flex-1 max-w-md mx-8 hidden md:block">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2 pl-10 pr-4 text-body-sm font-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="Cari..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Seller Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a modern software developer or digital creator. The individual is looking directly at the camera with a confident, slight smile. The background is a clean, well-lit modern office space with subtle hints of technology. The lighting is soft and flattering, highlighting the subject's features while maintaining a professional and approachable aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvWvPRBRRjFuPBusr6r_jwHfrQd9MJv_PBncOhtROVKyrmWxEoYnbEm_rWf0ADbSexwdsi2fgZXmlSUnGkRm5-hDe9NZs69UQkMHMXVFOSfzhqSElZIZiHO9dRPbQcr-IFCs9vYf2ZUxOLuwbpqpzTexiDj8NLxb0KXAaVgwhdCKxnOMiILmAWwvYptFFwyndXDeYxI3O6lc1IXQ-PIwlHMvwrDbT3OcGRpXKnAulVwBvt_xz-hqBk_g"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 hidden md:flex flex-col border-r border-outline-variant dark:border-outline z-40 flex flex-col gap-stack-md py-stack-lg px-stack-md">
+<div class="flex items-center gap-3 px-4 mb-6">
+<div class="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Seller Store Logo" class="w-full h-full object-cover" data-alt="A clean, minimalist logo mark suitable for a premium digital asset seller. The logo features a stylized, geometric representation of a cloud or code bracket in a vibrant professional blue color. It sits on a pristine white background. The design is modern, sharp, and conveys a sense of high-quality software engineering and digital design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEYEX2B6BdBmXIvRQ3_lzQ2UWy22atXAF0vdLFAhfBfsWV9wU-V4rLJ0w4BVmOEj8-CV3U6C7ktL_5A2130cy8rnIcevtvDIJ2wrBlwWpFbwQiGt7hW4T98MqCzV5507k3DO9RCPd2SoHzd8S7MxAoLXVaR2bNmK9KNWy-T5D8e3xhG3JE63J1riB857vWjeYWVyyJlfkxe_2cLNynSp98OZp9DH1_GsB3meC0x2GqIVwtR5Qxc4pFWA"/>
+</div>
+<div>
+<h2 class="text-label-md font-label-md font-bold text-on-surface">Creator Hub</h2>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Premium Seller</p>
+</div>
+</div>
+<ul class="flex flex-col gap-2 flex-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed-dim font-bold border-r-4 border-primary dark:border-primary-fixed-dim bg-surface-container-low dark:bg-surface-container-highest transition-colors scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-md font-label-md">My Products</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="text-label-md font-label-md">Orders</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-md font-label-md">Earnings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto px-4">
+<button class="w-full bg-primary text-on-primary py-2 px-4 rounded-lg text-label-md font-label-md font-bold hover:opacity-90 transition-opacity">
+                Upload Asset
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-24 px-margin-mobile md:px-margin-desktop pb-stack-lg max-w-container-max-width mx-auto">
+<div class="mb-stack-lg">
+<h2 class="text-headline-lg font-headline-lg text-on-surface">Ringkasan Dashboard</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-2">Pantau performa penjualan dan aktivitas terbaru toko Anda.</p>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md border border-outline-variant ambient-shadow ambient-shadow-hover transition-all">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant mb-1">Total Penjualan</p>
+<h3 class="text-headline-md font-headline-md text-on-surface font-bold">1,248</h3>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm">
+<span class="text-emerald-600 flex items-center"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> 12%</span>
+<span class="text-on-surface-variant">vs bulan lalu</span>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md border border-outline-variant ambient-shadow ambient-shadow-hover transition-all">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant mb-1">Total Pendapatan</p>
+<h3 class="text-headline-md font-headline-md text-on-surface font-bold">Rp 45.2M</h3>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">payments</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm">
+<span class="text-emerald-600 flex items-center"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> 8.5%</span>
+<span class="text-on-surface-variant">vs bulan lalu</span>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md border border-outline-variant ambient-shadow ambient-shadow-hover transition-all">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant mb-1">Produk Aktif</p>
+<h3 class="text-headline-md font-headline-md text-on-surface font-bold">156</h3>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">+3 ditambahkan minggu ini</span>
+</div>
+</div>
+</div>
+<!-- Charts and Activity Area (Bento Layout) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Revenue Trend Chart Area -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant ambient-shadow p-stack-md">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-body-lg font-body-lg font-bold text-on-surface">Tren Pendapatan</h3>
+<select class="bg-surface rounded-lg border border-outline-variant text-label-sm font-label-sm py-1 px-2 focus:ring-primary focus:border-primary outline-none">
+<option>30 Hari Terakhir</option>
+<option>Bulan Ini</option>
+<option>Tahun Ini</option>
+</select>
+</div>
+<!-- Placeholder for Chart -->
+<div class="w-full h-64 bg-surface-container-low rounded-lg flex items-center justify-center border border-outline-variant border-dashed">
+<p class="text-on-surface-variant text-body-sm font-body-sm">[Area Grafik Bar/Line Tren Pendapatan]</p>
+</div>
+</div>
+<!-- Recent Orders / Activity -->
+<div class="lg:col-span-1 bg-surface-container-lowest rounded-xl border border-outline-variant ambient-shadow p-stack-md flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-body-lg font-body-lg font-bold text-on-surface">Pesanan Terbaru</h3>
+<a class="text-primary text-label-sm font-label-sm hover:underline" href="#">Lihat Semua</a>
+</div>
+<div class="flex flex-col gap-4 flex-1">
+<!-- Order Item 1 -->
+<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer">
+<div class="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
+<img alt="Product Thumbnail" class="w-full h-full object-cover" data-alt="A thumbnail image of a modern React website dashboard template. It shows a sleek dark mode interface with various charts and data tables. The design is highly professional, clean, and uses a vibrant primary blue accent color. It represents a premium digital product listing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjyFkj1TpLPmC7lDi8ue5A1xmm4GIaEvbc_BbIcuccnohqlWpHU4w9T9FSWCCkRdv2edNDDTRf_gFsZLM6QYa2Ty8v_ReD_6zYZAfNzfNMoDuzGwNAlz5g8wHeMHTobJbOltvYPm6D4-p3tqFqz7CzNNfUiK4j4Emr_MRb61qstFtW0iKoLHaOaMYrnQBJ1GiNjQpnMNjk1GqFmVjFHkF7e14rHvEAuqg5KBe0yGO_F4w2zGmFaEDgVA"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">Admin Dashboard Pro (React)</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">2 mnt lalu • oleh Alex W.</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md font-bold text-on-surface">Rp 850k</p>
+</div>
+</div>
+<!-- Order Item 2 -->
+<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer">
+<div class="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
+<img alt="Product Thumbnail" class="w-full h-full object-cover" data-alt="A thumbnail image showing a premium set of UI icons. The icons are minimalist, line-based, and rendered in a crisp, dark slate gray color on a clean white background. The collection looks highly polished and ready for modern app development." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAonFnXtUUaLetE3VQ_Kr0ZEKEwNzWZCUoecR-POIX63M-Y2y4QC5LXBhDykN4ZWQV4oGEGULNGRfTbLN2QgFgh8YRbCtc2kSyt0hrMmjRgJQIfogS4uL8zLqnKgSC9dff268UW1xTNuS6l0NzfL_R9Fu3YAnhUH1aPEpreUHo8V3hBZmBUXCK6MnueHb-RvRS6Q_dfl4Mow6pLa9ha-9bLlC3492XEv6jaOLhRi4mQfZZ37rHEKBG-GA"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">Essential UI Icon Pack</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">15 mnt lalu • oleh Sarah J.</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md font-bold text-on-surface">Rp 250k</p>
+</div>
+</div>
+<!-- Order Item 3 -->
+<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer">
+<div class="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
+<img alt="Product Thumbnail" class="w-full h-full object-cover" data-alt="A thumbnail preview of a comprehensive Figma design system. It displays an array of well-organized UI components like buttons, input fields, and typography scales arranged neatly on a canvas. The overall aesthetic is structural, clean, and highly professional, typical of an enterprise design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3rocfD0HXhLfWQP-jZlrft_nY8QDUE7vDEBdxiiB1eapu_D4Y-wzukEn05elMUrAFfImUJ3P1olPY3wh7iAFmnZ01RSVrcfLjjT0E9Ge0l_mbvI2sCBoRSe0cBJTLgL8dLvJ2jnZRKP9Docka7kZcyxAlBC8P1YenALfLRunRNHjHOfYCrczqdTh1Z-R2nSc8q6oHmfgu1476j9RF4ovRp4TQ0wMVZTc_fELDfbP8RfZDIkU2dRXS6Q"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">Enterprise Design System (Figma)</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">1 jam lalu • oleh TechCorp</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md font-bold text-on-surface">Rp 1.2M</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

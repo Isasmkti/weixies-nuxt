@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Katalog Produk Digital - AssetHub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#dbe1ff",
+                        "inverse-primary": "#b4c5ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary-fixed": "#00174b",
+                        "tertiary": "#525657",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#faf8ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#191c1e",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "outline": "#737686",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e1e2ed",
+                        "background": "#faf8ff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "primary": "#004ac6",
+                        "inverse-surface": "#2e3039",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e7e7f3",
+                        "outline-variant": "#c3c6d7",
+                        "on-secondary-fixed": "#131b2e",
+                        "secondary-fixed": "#dae2fd",
+                        "tertiary-container": "#6b6e70",
+                        "secondary-container": "#dae2fd",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#f3f3fe",
+                        "on-surface-variant": "#434655",
+                        "surface-variant": "#e1e2ed",
+                        "surface-dim": "#d9d9e5",
+                        "on-surface": "#191b23",
+                        "surface-container": "#ededf9",
+                        "primary-container": "#2563eb",
+                        "on-background": "#191b23",
+                        "on-primary-container": "#eeefff",
+                        "on-secondary-container": "#5c647a",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface": "#faf8ff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "secondary": "#565e74",
+                        "surface-tint": "#0053db",
+                        "inverse-on-surface": "#f0f0fb",
+                        "on-tertiary-container": "#eff1f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "margin-desktop": "32px",
+                        "base-unit": "4px",
+                        "gutter": "24px",
+                        "container-max-width": "1280px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant shadow-sm z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max-width mx-auto h-16">
+<div class="flex items-center gap-stack-lg">
+<a class="font-headline-md text-headline-md font-bold text-primary flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">layers</span>
+                    AssetHub
+                </a>
+<nav class="hidden md:flex gap-stack-lg ml-stack-lg">
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 font-medium transition-colors" href="#">Marketplace</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Categories</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Sellers</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Community</a>
+</nav>
+</div>
+<div class="flex items-center gap-stack-md">
+<button aria-label="shopping_cart" class="p-2 text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="absolute top-1 right-1 bg-error text-on-error font-label-sm text-[10px] w-4 h-4 flex items-center justify-center rounded-full">2</span>
+</button>
+<div class="hidden md:flex items-center gap-stack-sm">
+<button class="font-label-md text-label-md text-primary px-4 py-2 hover:bg-surface-container-low rounded-lg transition-colors">Log In</button>
+<button class="font-label-md text-label-md bg-primary text-on-primary px-4 py-2 rounded-lg hover:bg-on-primary-fixed-variant transition-colors shadow-sm">Sign Up</button>
+</div>
+<button aria-label="Menu" class="md:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow w-full max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col md:flex-row gap-gutter">
+<!-- Sidebar Filter -->
+<aside class="w-full md:w-64 flex-shrink-0 mb-stack-lg md:mb-0">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md sticky top-24">
+<div class="flex items-center justify-between mb-stack-md border-b border-outline-variant pb-stack-sm">
+<h2 class="font-headline-md text-headline-md text-on-surface">Filter</h2>
+<button class="text-primary font-label-sm hover:underline">Reset</button>
+</div>
+<!-- Categories -->
+<div class="mb-stack-lg">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-stack-sm uppercase tracking-wider">Kategori</h3>
+<ul class="space-y-2">
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary rounded-sm" type="checkbox"/>
+<span class="font-body-sm text-on-surface group-hover:text-primary transition-colors">UI Kits</span>
+<span class="ml-auto font-label-sm text-outline">124</span>
+</label>
+</li>
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary rounded-sm" type="checkbox"/>
+<span class="font-body-sm text-on-surface group-hover:text-primary transition-colors">Templates</span>
+<span class="ml-auto font-label-sm text-outline">89</span>
+</label>
+</li>
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary rounded-sm" type="checkbox"/>
+<span class="font-body-sm text-on-surface group-hover:text-primary transition-colors">Icons</span>
+<span class="ml-auto font-label-sm text-outline">342</span>
+</label>
+</li>
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded border-outline-variant text-primary focus:ring-primary rounded-sm" type="checkbox"/>
+<span class="font-body-sm text-on-surface group-hover:text-primary transition-colors">3D Assets</span>
+<span class="ml-auto font-label-sm text-outline">56</span>
+</label>
+</li>
+</ul>
+</div>
+<!-- Price Range -->
+<div class="mb-stack-lg">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-stack-sm uppercase tracking-wider">Rentang Harga</h3>
+<div class="flex items-center gap-2 mb-2">
+<div class="relative w-full">
+<span class="absolute left-2 top-1/2 -translate-y-1/2 text-outline-variant font-body-sm">$</span>
+<input class="w-full pl-6 pr-2 py-1.5 border border-outline-variant rounded-md font-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Min" type="number"/>
+</div>
+<span class="text-outline-variant">-</span>
+<div class="relative w-full">
+<span class="absolute left-2 top-1/2 -translate-y-1/2 text-outline-variant font-body-sm">$</span>
+<input class="w-full pl-6 pr-2 py-1.5 border border-outline-variant rounded-md font-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Max" type="number"/>
+</div>
+</div>
+<button class="w-full py-1.5 border border-outline-variant rounded-md font-label-md text-on-surface hover:bg-surface-container-low transition-colors mt-2">Terapkan Harga</button>
+</div>
+<!-- Rating -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-stack-sm uppercase tracking-wider">Rating Seller</h3>
+<ul class="space-y-2">
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="text-primary focus:ring-primary" name="rating" type="radio"/>
+<div class="flex items-center text-amber-500">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+</div>
+<span class="font-body-sm text-on-surface">&amp; Up</span>
+</label>
+</li>
+<li>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="text-primary focus:ring-primary" name="rating" type="radio"/>
+<div class="flex items-center text-amber-500">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 18px;">star</span>
+<span class="material-symbols-outlined text-outline-variant" style="font-size: 18px;">star</span>
+</div>
+<span class="font-body-sm text-on-surface">&amp; Up</span>
+</label>
+</li>
+</ul>
+</div>
+</div>
+</aside>
+<!-- Product Grid Area -->
+<div class="flex-grow flex flex-col">
+<!-- Search & Sort Header -->
+<div class="mb-stack-lg flex flex-col sm:flex-row gap-stack-md justify-between items-start sm:items-center">
+<div class="relative w-full max-w-2xl group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all shadow-sm" placeholder="Cari template, UI kit, atau aset..." type="text"/>
+</div>
+<div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+<span class="font-body-sm text-on-surface-variant whitespace-nowrap">Urutkan:</span>
+<div class="relative w-full sm:w-auto">
+<select class="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer">
+<option>Paling Relevan</option>
+<option>Terbaru</option>
+<option>Harga: Terendah</option>
+<option>Harga: Tertinggi</option>
+<option>Rating Tertinggi</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Active Filters / Meta -->
+<div class="flex items-center gap-2 mb-stack-md flex-wrap">
+<span class="font-body-sm text-on-surface-variant">Menampilkan <strong>124</strong> hasil untuk "UI Kits"</span>
+<span class="inline-flex items-center gap-1 bg-surface-container-highest px-2 py-1 rounded-full font-label-sm text-on-surface">
+                    UI Kits
+                    <button class="hover:text-error transition-colors flex items-center justify-center"><span class="material-symbols-outlined" style="font-size: 14px;">close</span></button>
+</span>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter mb-stack-lg">
+<!-- Product Card 1 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A highly detailed, modern software dashboard UI kit presentation mockup. Clean minimal design with soft lighting, high-end corporate aesthetic. Displayed on a slight isometric angle against a neutral soft grey background. Professional, developer-grade quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXt_6QFqFFO-cDEgJrtIS15GkeiBK8Qfqr0sR2oTsS-0GCLG73BgoaCav9jxCdzFO3LH-qn-w12aDwWXh2WzuU5YNtIBEsv6ljJEZhoSsvxHMLfdl2g4VZyOWGxftR2_rNwIPkYixThe6dEIIyJ9Y54vWdxcpBVCQubGMaGK92CMPoMXLbSkdD6WWg2L-4sUrql7chyV5w9iot3qsMaCZJEKXje4WotbNeT0gkDxdCteoKEP-x8r2v0w"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">UI Kit</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">FinDash - Admin Dashboard UI Kit</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">PixelCrafters</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">4.9</span>
+<span class="font-body-sm text-outline text-[11px]">(128)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$49.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A premium set of minimalist linear icons displayed on a crisp white background. The icons are meticulously crafted with consistent stroke weights, representing modern web and app interface elements. The presentation is clean, professional, and developer-grade." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDddJZOgUYwTsxWVI2VauYf9PjWUjBI-Qzfy1WJWLqfREP1t5fZU0YMun4yCo9mZSFcEIN1eKVYvHElBkT3_ERxpFYF76pGvKqWMwjnsapfinlOmaJLj9vVrbIX6ymCNlaTC3SAiTz2a2G1jCuCgZ_FiY3Veif20LGYz5juqMUfegRNCE7igRPI66HV1gpSirAKSXkTmpk8hX9C6MzC_Jv1HcqeeNbv31m6sYicwdKtU-LbP2pB36PJCw"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">Icons</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">Nova Essential Icon Set (1000+)</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">IconicLabs</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">5.0</span>
+<span class="font-body-sm text-outline text-[11px]">(342)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$24.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A sleek, dark mode SaaS landing page template presentation. High contrast, modern typography, with glowing subtle blue accents. The design is laid out flat on a dark slate background, conveying high-tech, premium software quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYFW_7m8p-_F_K80H5zNramoOVSNZjttJK7Jf9P-f7N1gRrdkIEx_DKz5jX4fzYpxjM6x03v-gz9Y80QGQxyK00ph6Zo3Id7p48utJn0s4b8dD8GlZsocLplYFNkwAchy5AkLFmRBYOEqiw7qkTyTXlJOYB6my50kL2haynMtuMqslZL5TmeWnjLvjhYphIlc2FdPMmI9mW_OwAk-ODB8B4iXO2cuSmZord9p7RJj9xCX_q_YqR1Ksqw"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">Template</span>
+<span class="bg-surface-container-highest text-on-surface font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">React</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">Nexus - Dark SaaS Landing Page</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">CodeForge</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">4.7</span>
+<span class="font-body-sm text-outline text-[11px]">(89)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$59.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A collection of highly polished 3D geometric shapes and abstract objects floating against a soft gradient background. Rendered with glossy and matte materials in a modern corporate color palette of blues, whites, and subtle grays. Perfect for modern web design assets." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeS5OPH3pmgH0XTpwhWYLDew1cYcEcyrSVvKHvm1TNXkRWxp2kyFHojZ2MAkFFCPCjGSVfa4OQl7G71wiva8awzKaote-H7nKFlNf24EICpcHGJ5Ittcv3eD_4Uk5bi-gAU7Kia2KMunnNdrmE_v-kpD7c0P7lDgrBpjs9L-1vDr_ZjvfNjdLB6zVADpGjTDNhvO_rkfoY6iUSXTLiK4n_qHSh7OEK3Blc0tblAxPmc3L6uZlMloDM6g"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">3D Asset</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">Abstract 3D Shape Pack V2</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">PolyRender</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">4.8</span>
+<span class="font-body-sm text-outline text-[11px]">(45)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$35.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A comprehensive e-commerce mobile app UI kit displayed on multiple overlapping smartphone screens. Minimalist white UI, clear typography, and professional blue accent colors. High fidelity, production-ready design presentation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYKbpX-MRkBPlPfoz8Rq3v3f_wvLvTTW5SDZFI5Qw6qwdiGc-AiWjOX38WqNVN9too64cWDweDM3eRa0KaDQMBRdxaKCDXHeTiRGKtiHmJmby_spJU6kkjdtWXYpd5Zkqa3S1KeBu-G6cgEFGZgEKTafk56JDL56S8dGFIXEtHJLaMZZxV_LiwtY0ZFD68PsXc1T1akBI2vVbsXQxqZLRpiaxp-bBiHMEnz6VPq7rioFRM4rlr8bSVWA"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">UI Kit</span>
+<span class="bg-surface-container-highest text-on-surface font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">Mobile</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">ShopFlow - Mobile App UI Kit</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">PixelCrafters</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">4.9</span>
+<span class="font-body-sm text-outline text-[11px]">(210)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$42.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-lg hover:border-primary-fixed-dim transition-all duration-300 flex flex-col h-full cursor-pointer relative">
+<div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A wireframe toolkit presentation featuring various low-fidelity UI components spread out systematically. Blueprint style aesthetic with subtle grid lines on the background. Technical, clean, and highly organized." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlJbi3yzdKtX77hAyivqM9bY73SfsD7ZD-_muknx0l7MqF7KXjUVxKvkDzcD2TOY-wlLyL-mZmzy8czRUmvTn8hWy7AR4LBar1MExpXQFdfnEFMB2m4gldtEoZfz81D2t0yGfowFFWiw9Go6DO6VA1VM6TpevymHE5vArjrjZBYgFNHV1iAPcCdVmbY-xDIvwxG9EGn0oc8gfPVfGYDUeF2MHwAkFWVnsipoNE5kk3UPNXfDF1VIFo9w"/>
+<div class="absolute top-2 left-2 flex gap-1">
+<span class="bg-surface-tint bg-opacity-10 text-primary font-label-sm px-2 py-0.5 rounded-full backdrop-blur-sm">UI Kit</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface leading-tight mb-1 group-hover:text-primary transition-colors">WirePro - Ultimate Wireframe Kit</h3>
+<div class="flex items-center gap-1 mb-3">
+<span class="font-body-sm text-on-surface-variant">by</span>
+<span class="font-label-md text-primary hover:underline">DesignSystemKit</span>
+</div>
+<div class="mt-auto flex items-end justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1; font-size: 16px;">star</span>
+<span class="font-label-sm text-on-surface">4.6</span>
+<span class="font-body-sm text-outline text-[11px]">(76)</span>
+</div>
+<span class="font-headline-md text-[20px] font-bold text-on-surface">$29.00</span>
+</div>
+<button aria-label="Add to cart" class="w-8 h-8 rounded-full bg-surface-container hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-auto flex justify-center py-stack-md border-t border-outline-variant pt-stack-lg">
+<nav class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors" disabled="">
+<span class="material-symbols-outlined" style="font-size: 20px;">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-label-md transition-colors shadow-sm">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface hover:border-primary hover:text-primary font-label-md transition-colors">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface hover:border-primary hover:text-primary font-label-md transition-colors">3</button>
+<span class="w-10 h-10 flex items-center justify-center text-outline-variant">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface hover:border-primary hover:text-primary font-label-md transition-colors">12</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface hover:border-primary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">chevron_right</span>
+</button>
+</nav>
+</div>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-container dark:bg-surface-container-high full-width border-t border-outline-variant dark:border-outline mt-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-stack-lg max-w-container-max-width mx-auto">
+<div class="flex flex-col gap-stack-sm">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface dark:text-inverse-on-surface mb-2">AssetHub</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant">© 2024 AssetHub Marketplace. All rights reserved.</span>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">About Us</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">Privacy Policy</a>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">Seller Guide</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">Support</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-inverse-primary hover:underline transition-all duration-200" href="#">API Documentation</a>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<div class="flex gap-4">
+<!-- Placeholder for social icons -->
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">language</span></a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">share</span></a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

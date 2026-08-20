@@ -17,6 +17,19 @@ layouts/        ← page layouts
 
 npx.cmd supabase db push --dry-run
 npx.cmd supabase db push
+npx.cmd supabase migration list
+
+## Xendit webhooks
+
+Configure the Xendit callback token as `XENDIT_WEBHOOK_TOKEN` (or
+`NUXT_XENDIT_WEBHOOK_TOKEN` in the deployed Nitro runtime), then register both
+public HTTPS endpoints in the Xendit dashboard:
+
+- Invoice/payment callback: `/api/webhook/xendit`
+- Successful refund callback: `/api/webhook/xendit-refund`
+
+The refund endpoint currently accepts full-order refunds. It rejects partial
+refunds so seller earnings cannot be reversed by an ambiguous amount.
 
 
 ## Setup

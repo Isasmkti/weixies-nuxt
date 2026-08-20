@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
@@ -16,15 +16,16 @@ const handleLogout = async () => {
     router.push('/')
 }
 
-const menuItems = [
+const baseMenuItems = [
     {
         name: 'Dashboard',
         to: '/dashboard',
         icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
     },
     {
-        name: 'Open a Store',
-        to: '/become-seller',
+        name: 'Shop',
+        to: '/seller',
+        sellerOnly: true,
         icon: 'M3 9.75L5.25 4.5h13.5L21 9.75M3 9.75h18M3 9.75v8.625A1.125 1.125 0 004.125 19.5h15.75A1.125 1.125 0 0021 18.375V9.75M9 19.5v-4.125A1.125 1.125 0 0110.125 14.25h3.75A1.125 1.125 0 0115 15.375V19.5'
     },
     {
@@ -58,6 +59,10 @@ const menuItems = [
         icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
     }
 ]
+
+const menuItems = computed(() => baseMenuItems.filter((item) => (
+    !item.sellerOnly || profile.value?.is_seller === true
+)))
 </script>
 
 <template>

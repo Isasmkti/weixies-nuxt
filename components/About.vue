@@ -1,5 +1,5 @@
 <template>
-    <div class="overflow-hidden bg-bg-alt py-20 md:py-28 lg:py-36" v-if="store.about">
+    <section id="about" class="overflow-hidden bg-bg-alt py-20 md:py-28 lg:py-36" v-if="store.about">
         <div class="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
             <div class="flex flex-col items-center text-center">
                 <h2 class="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-primary md:text-base">{{ store.about.title }}</h2>
@@ -12,7 +12,7 @@
                 <div class="mt-10 h-1 w-24 rounded-full bg-primary"></div>
             </div>
         </div>
-    </div>
+    </section>
 </template>
 
 <script setup>

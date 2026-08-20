@@ -104,12 +104,22 @@ export default defineEventHandler(async (event) => {
   if (sellerId) {
     const { data: seller, error: sellerError } = await adminSupabase
       .from('sellers')
-      .select('id, commission_rate')
+      .select('id, profile_id, status, commission_rate')
       .eq('id', sellerId)
       .single();
 
     const commissionRate = Number(seller?.commission_rate);
-    if (sellerError || !seller || !Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) {
+    if (sellerError || !seller) {
+      console.error('[Checkout] Failed to resolve the product seller:', sellerError);
+      throw createError({ statusCode: 400, statusMessage: 'This product is not available from an active seller.' });
+    }
+    if (seller.status !== 'approved') {
+      throw createError({ statusCode: 409, statusMessage: 'This seller is not currently accepting orders.' });
+    }
+    if (seller.profile_id === user.id) {
+      throw createError({ statusCode: 400, statusMessage: 'You cannot purchase your own product.' });
+    }
+    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) {
       console.error('[Checkout] Failed to resolve seller commission rate:', sellerError);
       throw createError({ statusCode: 500, statusMessage: 'Seller commission configuration is invalid.' });
     }
