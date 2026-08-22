@@ -9,6 +9,8 @@ const PRODUCT_SELECT = `
   reviews(*),
   product_files(*)
 `
+const MAX_PRODUCT_FILE_SIZE = 200 * 1024 * 1024
+const ZIP_MIME_TYPES = new Set(['application/zip', 'application/x-zip-compressed', 'application/octet-stream', ''])
 
 export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = [], minPrice = null, maxPrice = null) {
     let query = supabase
@@ -147,6 +149,13 @@ export async function rUpsertProductCategories(productId, categoryIds) {
 
 export async function rCreateProductFile(productId, file) {
     if (!file) return null
+    if (!Number.isSafeInteger(Number(productId)) || Number(productId) <= 0) throw new Error('A valid product is required.')
+    if (!String(file.name || '').toLowerCase().endsWith('.zip') || !ZIP_MIME_TYPES.has(String(file.type || '').toLowerCase())) {
+        throw new Error('Product content must be a ZIP file.')
+    }
+    if (file.size <= 0 || file.size > MAX_PRODUCT_FILE_SIZE) {
+        throw new Error('Product ZIP must be 200 MB or smaller.')
+    }
 
     const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
     const filePath = `${productId}/${Date.now()}-${safeName}`
@@ -154,7 +163,7 @@ export async function rCreateProductFile(productId, file) {
     const { error: uploadError } = await supabase
         .storage
         .from('products')
-        .upload(filePath, file)
+        .upload(filePath, file, { contentType: file.type || 'application/zip', upsert: false })
 
     if (uploadError) throw uploadError
 

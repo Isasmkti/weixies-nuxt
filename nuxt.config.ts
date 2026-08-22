@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV === 'development' },
 
   modules: [
     '@pinia/nuxt',
@@ -58,7 +58,7 @@ export default defineNuxtConfig({
     routeRules: {
       '/**': {
         headers: {
-          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pay.google.com https://gwk.gopayapi.com/sdk/stable/gp-container.min.js https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'self' https://pay.google.com https://gwk.gopayapi.com; object-src 'self'"
+          'Content-Security-Policy': "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'none'; object-src 'none'"
         }
       }
     },
@@ -88,6 +88,7 @@ export default defineNuxtConfig({
     xenditWebhookToken: process.env.NUXT_XENDIT_WEBHOOK_TOKEN || process.env.XENDIT_WEBHOOK_TOKEN || '',
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',
       supabaseAnonKey: 'sb_publishable_WCN1OssVUJja7c159tuslQ_ouBV5LGC',
     },

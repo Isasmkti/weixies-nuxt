@@ -1,34 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
+import { requireRequestUser } from '~/server/utils/request-auth';
+import { enforceRateLimit } from '~/server/utils/rate-limit';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
 import { createXenditInvoice, getXenditInvoice } from '~/server/utils/xendit';
 
-function generateOrderNumber(): string {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10).replace(/-/g, '');
-  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `ORD-${date}-${rand}`;
-}
-
-async function persistInvoice(
-  reqSupabase: any,
-  orderId: string,
-  invoice: Record<string, any>,
-) {
+async function persistInvoice(supabase: any, orderId: string, invoice: Record<string, any>) {
   const paymentMethod = String(invoice.payment_method || invoice.payment_channel || '').trim() || null;
-
-  const { error: orderUpdateError } = await reqSupabase
-    .from('orders')
-    .update({
-      status: 'pending',
-    } as any)
-    .eq('id', orderId);
-
-  if (orderUpdateError) {
-    throw orderUpdateError;
-  }
-
-  const { error: paymentError } = await reqSupabase.from('payments').upsert({
+  const { error } = await supabase.from('payments').upsert({
     order_id: orderId,
     provider: 'xendit',
     provider_invoice_id: invoice.id,
@@ -37,236 +15,136 @@ async function persistInvoice(
     raw_response: invoice,
     created_at: invoice.created || new Date().toISOString(),
   }, { onConflict: 'provider_invoice_id' });
+  if (error) throw error;
+}
 
-  if (paymentError) {
-    throw paymentError;
+function checkoutOrigin(config: any, event: any): string {
+  const configuredUrl = String(config.public.siteUrl || '').trim();
+  if (configuredUrl) {
+    try {
+      return new URL(configuredUrl).origin;
+    } catch {
+      throw createError({ statusCode: 500, statusMessage: 'NUXT_PUBLIC_SITE_URL is invalid.' });
+    }
   }
+  if (process.env.NODE_ENV === 'production') {
+    throw createError({ statusCode: 500, statusMessage: 'NUXT_PUBLIC_SITE_URL is not configured.' });
+  }
+  return getRequestURL(event).origin;
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+  const body = await readBody(event).catch(() => ({}));
   const config = useRuntimeConfig();
-  const authHeader = getRequestHeader(event, 'authorization');
-
-  const reqSupabase: any = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseAnonKey,
-    {
-      global: {
-        headers: {
-          Authorization: authHeader || '',
-        },
-      },
-    },
-  );
-
-  const adminSupabase = useSupabaseAdmin();
-
+  const { user } = await requireRequestUser(event);
+  const supabase = useSupabaseAdmin();
   const secretKey = String(config.xenditSecretKey || '').trim();
+
   if (!secretKey) {
     throw createError({ statusCode: 500, statusMessage: 'XENDIT_SECRET_KEY is not configured.' });
   }
 
-  const { data: { user }, error: userError } = await reqSupabase.auth.getUser();
-  if (userError || !user) {
-    throw createError({ statusCode: 401, statusMessage: 'User not authenticated.' });
+  const productId = Number(body?.product_id);
+  if (!Number.isSafeInteger(productId) || productId <= 0) {
+    throw createError({ statusCode: 400, statusMessage: 'A valid product_id is required.' });
   }
 
-  const productId = body?.product_id;
-  if (!productId) {
-    throw createError({ statusCode: 400, statusMessage: 'product_id is required.' });
-  }
+  await enforceRateLimit(`checkout:${user.id}`, 10, 60);
 
-  const customerEmail = String(user.email || body?.customerEmail || 'customer@example.com');
-  const customerName = String(body?.customerName || user.user_metadata?.full_name || customerEmail.split('@')[0] || 'Customer');
-
-  const { data: product, error: productError } = await reqSupabase
-    .from('products')
-    .select('id, name, price, seller_id')
-    .eq('id', productId)
-    .single();
-
-  if (productError || !product) {
-    throw createError({ statusCode: 404, statusMessage: 'Product not found.' });
-  }
-
-  const totalAmount = Number(product.price);
-  if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid product price.' });
-  }
-
-  // Snapshot seller attribution at checkout. Future commission-rate changes
-  // must not alter the amount owed for an already-created order item.
-  let sellerId: string | null = product.seller_id || null;
-  let commissionAmount = 0;
-  let sellerEarning = 0;
-
-  if (sellerId) {
-    const { data: seller, error: sellerError } = await adminSupabase
-      .from('sellers')
-      .select('id, profile_id, status, commission_rate')
-      .eq('id', sellerId)
-      .single();
-
-    const commissionRate = Number(seller?.commission_rate);
-    if (sellerError || !seller) {
-      console.error('[Checkout] Failed to resolve the product seller:', sellerError);
-      throw createError({ statusCode: 400, statusMessage: 'This product is not available from an active seller.' });
-    }
-    if (seller.status !== 'approved') {
-      throw createError({ statusCode: 409, statusMessage: 'This seller is not currently accepting orders.' });
-    }
-    if (seller.profile_id === user.id) {
-      throw createError({ statusCode: 400, statusMessage: 'You cannot purchase your own product.' });
-    }
-    if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) {
-      console.error('[Checkout] Failed to resolve seller commission rate:', sellerError);
-      throw createError({ statusCode: 500, statusMessage: 'Seller commission configuration is invalid.' });
-    }
-
-    commissionAmount = Math.round(totalAmount * commissionRate);
-    sellerEarning = totalAmount - commissionAmount;
-  }
-
-  const { data: pendingOrders, error: pendingOrderError } = await reqSupabase
-    .from('orders')
-    .select(`
-      id,
-      order_number,
-      total_amount,
-      status,
-      order_items (
-        product_id
-      )
-    `)
-    .eq('profile_id', user.id)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
-
-  if (pendingOrderError) {
-    console.error('[Checkout] Failed to look up pending orders:', {
-      message: pendingOrderError.message,
-      details: pendingOrderError.details,
-      hint: pendingOrderError.hint,
-      code: pendingOrderError.code,
-    });
-    throw createError({ statusCode: 500, statusMessage: 'Failed to look up pending order.' });
-  }
-
-  const pendingOrder = (pendingOrders || []).find((order: any) =>
-    (order.order_items || []).some((item: any) => item.product_id === productId),
-  );
-
-  if (pendingOrder) {
-    const { data: paymentRows, error: paymentLookupError } = await adminSupabase
-      .from('payments')
-      .select('id, provider, provider_invoice_id, status, raw_response')
-      .eq('order_id', pendingOrder.id)
-      .eq('provider', 'xendit')
-      .order('created_at', { ascending: false });
-
-    if (paymentLookupError) {
-      console.warn('[Checkout] Failed to look up payment rows for a pending order:', {
-        message: paymentLookupError.message,
-        details: paymentLookupError.details,
-        hint: paymentLookupError.hint,
-        code: paymentLookupError.code,
-      });
-    }
-
-    const existingPayment = (paymentRows || []).find((payment: any) => payment.provider_invoice_id);
-    if (existingPayment && String(existingPayment.status || 'pending').toLowerCase() === 'pending') {
-      const invoice = existingPayment.raw_response?.invoice_url
-        ? existingPayment.raw_response
-        : await getXenditInvoice(existingPayment.provider_invoice_id, secretKey).catch((error) => {
-          console.error('[Checkout] Failed to fetch existing invoice:', error);
-          return null;
-        });
-
-      if (invoice?.invoice_url) {
-        await persistInvoice(adminSupabase, pendingOrder.id, invoice);
-        return {
-          resumed: true,
-          order_id: pendingOrder.id,
-          order_number: pendingOrder.order_number,
-          payment_url: invoice.invoice_url,
-          status: 'pending',
-        };
-      }
-    }
-  }
-
-  const orderNumber = generateOrderNumber();
-  const { data: order, error: orderError } = await adminSupabase
-    .from('orders')
-    .insert({
-      profile_id: user.id,
-      order_number: orderNumber,
-      total_amount: totalAmount,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    })
-    .select('id, order_number')
-    .single();
-
-  if (orderError || !order) {
-    console.error('[Checkout] Failed to create order:', orderError);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to create order.' });
-  }
-
-  const { error: orderItemError } = await adminSupabase.from('order_items').insert({
-    order_id: order.id,
-    product_id: productId,
-    price: totalAmount,
-    seller_id: sellerId,
-    commission_amount: commissionAmount,
-    seller_earning: sellerEarning,
+  const { data: checkoutRows, error: checkoutError } = await supabase.rpc('create_checkout_order', {
+    p_profile_id: user.id,
+    p_product_id: productId,
   });
+  const checkout = Array.isArray(checkoutRows) ? checkoutRows[0] : checkoutRows;
 
-  if (orderItemError) {
-    console.error('[Checkout] Failed to create order item:', orderItemError);
-    await adminSupabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to create order item.' });
+  if (checkoutError || !checkout) {
+    console.error('[Checkout] Could not create or resume order:', checkoutError);
+    throw createError({
+      statusCode: checkoutError?.code === 'P0002' ? 404 : 409,
+      statusMessage: checkoutError?.message || 'Checkout could not be started.',
+    });
   }
 
-  const requestUrl = getRequestURL(event);
+  const { data: paymentRows, error: paymentLookupError } = await supabase
+    .from('payments')
+    .select('provider_invoice_id, status, raw_response')
+    .eq('order_id', checkout.order_id)
+    .eq('provider', 'xendit')
+    .order('created_at', { ascending: false });
+  if (paymentLookupError) throw paymentLookupError;
+
+  const existingPayment = (paymentRows || []).find((payment: any) => payment.provider_invoice_id);
+  if (existingPayment) {
+    if (String(existingPayment.status || '').toLowerCase() !== 'pending') {
+      throw createError({ statusCode: 409, statusMessage: 'The existing payment is no longer pending.' });
+    }
+    const existingInvoice = existingPayment.raw_response?.invoice_url
+      ? existingPayment.raw_response
+      : await getXenditInvoice(existingPayment.provider_invoice_id, secretKey).catch(() => null);
+    if (!existingInvoice?.invoice_url) {
+      throw createError({ statusCode: 409, statusMessage: 'The existing payment link is unavailable.' });
+    }
+    return {
+      resumed: true,
+      order_id: checkout.order_id,
+      order_number: checkout.order_number,
+      payment_url: existingInvoice.invoice_url,
+      status: 'pending',
+    };
+  }
+
+  if (!checkout.should_create_invoice || !checkout.invoice_creation_token) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'A payment link is already being prepared. Please retry shortly.',
+    });
+  }
+
+  const customerEmail = String(user.email || '').trim().slice(0, 254);
+  const customerName = String(
+    body?.customerName || user.user_metadata?.full_name || customerEmail.split('@')[0] || 'Customer',
+  ).trim().slice(0, 100);
+  const origin = checkoutOrigin(config, event);
+
   const invoice = await createXenditInvoice({
-    externalId: `ORDER-${order.id}`,
-    amount: totalAmount,
-    description: `${product.name} - ${customerEmail}`,
+    externalId: `ORDER-${checkout.order_id}`,
+    amount: Number(checkout.total_amount),
+    description: `${String(checkout.product_name).slice(0, 120)} - ${customerEmail}`,
     customerEmail,
     customerName,
-    successRedirectUrl: `${requestUrl.origin}/orders/${order.id}`,
-    failureRedirectUrl: `${requestUrl.origin}/orders/${order.id}`,
+    successRedirectUrl: `${origin}/orders/${checkout.order_id}`,
+    failureRedirectUrl: `${origin}/orders/${checkout.order_id}`,
   }, secretKey).catch(async (error) => {
     console.error('[Checkout] Failed to create Xendit invoice:', error);
-    await adminSupabase.from('orders').update({ status: 'failed' }).eq('id', order.id);
-    throw createError({
-      statusCode: 502,
-      statusMessage: error?.message || 'Invoice creation failed.',
-    });
+    await supabase
+      .from('orders')
+      .update({ status: 'failed', invoice_creation_token: null, invoice_creation_started_at: null })
+      .eq('id', checkout.order_id)
+      .eq('status', 'pending')
+      .eq('invoice_creation_token', checkout.invoice_creation_token);
+    throw createError({ statusCode: 502, statusMessage: 'Payment provider could not create an invoice.' });
   });
 
-  await persistInvoice(adminSupabase, order.id, invoice);
+  await persistInvoice(supabase, checkout.order_id, invoice);
+  await supabase
+    .from('orders')
+    .update({ invoice_creation_token: null, invoice_creation_started_at: null })
+    .eq('id', checkout.order_id)
+    .eq('invoice_creation_token', checkout.invoice_creation_token);
   await logPaymentEvent({
-    order_id: order.id,
-    order_number: order.order_number,
+    order_id: checkout.order_id,
+    order_number: checkout.order_number,
     event_type: 'invoice_created',
     new_status: 'pending',
     provider_status: String(invoice.status || '').toUpperCase() || undefined,
-    metadata: {
-      invoice_id: invoice.id,
-      payment_url: invoice.invoice_url,
-    },
+    metadata: { invoice_id: invoice.id },
     created_at: new Date().toISOString(),
   });
 
-  console.log(`[Checkout] Invoice created for order ${order.id}: ${invoice.id}`);
-
   return {
-    resumed: false,
-    order_id: order.id,
-    order_number: order.order_number,
+    resumed: Boolean(checkout.resumed),
+    order_id: checkout.order_id,
+    order_number: checkout.order_number,
     payment_url: invoice.invoice_url,
     status: 'pending',
   };

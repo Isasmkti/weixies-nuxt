@@ -2,6 +2,9 @@
   "name": "weixies-nuxt",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
     "supabase": "supabase",
     "build": "nuxt build",
@@ -17,9 +20,9 @@
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.13.0",
     "autoprefixer": "^10.5.0",
-    "nuxt": "^4.4.6",
+    "nuxt": "^4.5.1",
     "pinia": "^3.0.4",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.26",
     "sweetalert2": "^11.26.25",
     "tailwindcss": "^3.4.19",
     "vue": "^3.5.34",

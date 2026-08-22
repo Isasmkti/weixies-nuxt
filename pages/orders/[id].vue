@@ -199,14 +199,14 @@ const getPaymentUrl = (incomingOrder) => {
   const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
   const xenditPayment = payments.find((payment) => {
     const provider = String(payment?.provider || '').toLowerCase()
-    return provider === 'xendit' && payment?.raw_response?.invoice_url
+    return provider === 'xendit' && payment?.payment_url
   })
 
-  if (xenditPayment?.raw_response?.invoice_url) {
-    return xenditPayment.raw_response.invoice_url
+  if (xenditPayment?.payment_url) {
+    return xenditPayment.payment_url
   }
 
-  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+  return payments.find((payment) => payment?.payment_url)?.payment_url || null
 }
 
 const formatDate = (dateStr) => {
@@ -266,7 +266,6 @@ onMounted(async () => {
     const token = sessionData?.session?.access_token
 
     const data = await $fetch(`/api/orders/${orderId.value}`, {
-      query: { profile_id: user.id },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     order.value = data.order
@@ -288,7 +287,6 @@ const handleDownload = async (item) => {
 
     const data = await $fetch(`/api/orders/${orderId.value}/download`, {
       query: {
-        profile_id: currentUser.value?.id,
         product_id: productId
       },
       headers: { Authorization: token ? `Bearer ${token}` : '' }

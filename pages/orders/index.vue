@@ -461,8 +461,7 @@ const fetchOrders = async (profileId, silent = false) => {
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token
 
-    const data = await $fetch('/api/orders', { 
-      query: { profile_id: profileId },
+    const data = await $fetch('/api/orders', {
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     orders.value = data.orders || []
@@ -484,7 +483,6 @@ const handleDownload = async (order, item) => {
 
     const data = await $fetch(`/api/orders/${order.id}/download`, {
       query: {
-        profile_id: currentUser.value?.id,
         product_id: item.product?.id
       },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
@@ -509,14 +507,14 @@ const getPaymentUrl = (incomingOrder) => {
   const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
   const xenditPayment = payments.find((payment) => {
     const provider = String(payment?.provider || '').toLowerCase()
-    return provider === 'xendit' && payment?.raw_response?.invoice_url
+    return provider === 'xendit' && payment?.payment_url
   })
 
-  if (xenditPayment?.raw_response?.invoice_url) {
-    return xenditPayment.raw_response.invoice_url
+  if (xenditPayment?.payment_url) {
+    return xenditPayment.payment_url
   }
 
-  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+  return payments.find((payment) => payment?.payment_url)?.payment_url || null
 }
 
 const continuePayment = async (order) => {

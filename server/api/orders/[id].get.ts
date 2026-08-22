@@ -1,28 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { requireRequestUser } from '~/server/utils/request-auth';
+import { sanitizeBuyerOrder } from '~/server/utils/order-response';
 
 export default defineEventHandler(async (event) => {
   const orderId = getRouterParam(event, 'id');
-  const query = getQuery(event);
-  const config = useRuntimeConfig();
-
-  const authHeader = getRequestHeader(event, 'authorization');
-  const reqSupabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseAnonKey,
-    {
-      global: {
-        headers: { Authorization: authHeader || '' }
-      }
-    }
-  );
-  const profileId = query.profile_id as string;
+  const { supabase: reqSupabase, user } = await requireRequestUser(event);
 
   if (!orderId) {
     throw createError({ statusCode: 400, statusMessage: 'Order ID is required.' });
-  }
-
-  if (!profileId) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: profile_id required.' });
   }
 
   const { data: order, error } = await reqSupabase
@@ -58,12 +42,12 @@ export default defineEventHandler(async (event) => {
       )
     `)
     .eq('id', orderId)
-    .eq('profile_id', profileId)
+    .eq('profile_id', user.id)
     .single();
 
   if (error || !order) {
     throw createError({ statusCode: 404, statusMessage: 'Order not found.' });
   }
 
-  return { order };
+  return { order: sanitizeBuyerOrder(order) };
 });

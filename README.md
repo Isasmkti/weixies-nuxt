@@ -1,5 +1,7 @@
 # Nuxt Minimal Starter
 
+Required runtime: Node.js 22.19.0 or newer.
+
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
 repositories/   ← NEW: Supabase queries
@@ -18,6 +20,10 @@ layouts/        ← page layouts
 npx.cmd supabase db push --dry-run
 npx.cmd supabase db push
 npx.cmd supabase migration list
+
+Apply database migrations before deploying matching server code. Security RPCs
+used by checkout and downloads must exist before the new application build is
+started.
 
 ## Xendit webhooks
 
