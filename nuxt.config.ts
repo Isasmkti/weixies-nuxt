@@ -86,6 +86,8 @@ export default defineNuxtConfig({
     // unprefixed fallbacks keep the existing local `.env` convention working.
     xenditSecretKey: process.env.NUXT_XENDIT_SECRET_KEY || process.env.XENDIT_SECRET_KEY || '',
     xenditWebhookToken: process.env.NUXT_XENDIT_WEBHOOK_TOKEN || process.env.XENDIT_WEBHOOK_TOKEN || '',
+    xenditPayoutWebhookToken: process.env.NUXT_XENDIT_PAYOUT_WEBHOOK_TOKEN || process.env.XENDIT_PAYOUT_WEBHOOK_TOKEN || '',
+    xenditBusinessId: process.env.NUXT_XENDIT_BUSINESS_ID || process.env.XENDIT_BUSINESS_ID || '',
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',

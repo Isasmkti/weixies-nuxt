@@ -32,6 +32,61 @@ export interface XenditInvoice {
   [key: string]: any;
 }
 
+export interface XenditPayout {
+  payout_id: string;
+  status: string;
+  reference_id: string;
+  processor_reference?: string | null;
+  source_currency?: string | null;
+  source_amount?: number | null;
+  destination_currency?: string | null;
+  destination_amount?: number | null;
+  failure_code?: string | null;
+  created?: string | null;
+  updated?: string | null;
+  business_id?: string | null;
+  [key: string]: any;
+}
+
+export interface CreateXenditPayoutInput {
+  referenceId: string;
+  idempotencyKey: string;
+  amount: number;
+  sellerId: string;
+  recipientType: 'INDIVIDUAL' | 'BUSINESS';
+  accountHolderName: string;
+  accountNumber: string;
+  routingType: string;
+  routingValue: string;
+  givenName?: string | null;
+  surname?: string | null;
+  businessName?: string | null;
+  addressLine1: string;
+  city: string;
+  province: string;
+  postalCode: string;
+}
+
+export class XenditApiError extends Error {
+  statusCode: number;
+  errorCode: string | null;
+  payload: any;
+
+  constructor(message: string, statusCode: number, errorCode: string | null, payload: any) {
+    super(message);
+    this.name = 'XenditApiError';
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.payload = payload;
+  }
+
+  get isDefinitiveClientError(): boolean {
+    return this.statusCode >= 400
+      && this.statusCode < 500
+      && ![408, 409, 425, 429].includes(this.statusCode);
+  }
+}
+
 const XENDIT_API_BASE_URL = 'https://api.xendit.co';
 
 function getXenditAuthHeader(secretKey: string): string {
@@ -53,7 +108,12 @@ async function xenditFetch<T>(path: string, secretKey: string, init: RequestInit
 
   if (!response.ok) {
     const message = payload?.message || payload?.error_message || `Xendit request failed (${response.status})`;
-    throw new Error(message);
+    throw new XenditApiError(
+      message,
+      response.status,
+      payload?.error_code || payload?.code || null,
+      payload,
+    );
   }
 
   return payload as T;
@@ -82,6 +142,68 @@ export async function createXenditInvoice(
 export async function getXenditInvoice(invoiceId: string, secretKey: string): Promise<XenditInvoice> {
   return xenditFetch<XenditInvoice>(`/v2/invoices/${encodeURIComponent(invoiceId)}`, secretKey, {
     method: 'GET',
+  });
+}
+
+export async function createXenditPayout(
+  input: CreateXenditPayoutInput,
+  secretKey: string,
+): Promise<XenditPayout> {
+  const recipient: Record<string, any> = {
+    type: input.recipientType,
+    relationship: 'BUSINESS_PARTNER',
+    account_details: {
+      currency: 'IDR',
+      account_country: 'ID',
+      account_holder_name: input.accountHolderName,
+      account_number: input.accountNumber,
+      routing_type_1: input.routingType,
+      routing_value_1: input.routingValue,
+    },
+    address: {
+      country: 'ID',
+      street_line_1: input.addressLine1,
+      city: input.city,
+      province_state: input.province,
+      postal_code: input.postalCode,
+    },
+  };
+
+  if (input.recipientType === 'BUSINESS') {
+    recipient.business_name = input.businessName;
+  } else {
+    recipient.given_name = input.givenName;
+    recipient.surname = input.surname;
+  }
+
+  return xenditFetch<XenditPayout>('/v3/payouts', secretKey, {
+    method: 'POST',
+    headers: {
+      'Api-version': '2025-09-01',
+      'Idempotency-key': input.idempotencyKey,
+    },
+    body: JSON.stringify({
+      reference_id: input.referenceId,
+      recipient,
+      payout_details: {
+        source_currency: 'IDR',
+        source_amount: input.amount,
+        destination_currency: 'IDR',
+      },
+      source_of_fund: 'BUSINESS_REVENUE',
+      purpose_code: 'TRADES',
+      description: `Weixies payout ${input.referenceId.slice(-12)}`,
+      metadata: {
+        seller_id: input.sellerId,
+      },
+    }),
+  });
+}
+
+export async function getXenditPayout(payoutId: string, secretKey: string): Promise<XenditPayout> {
+  return xenditFetch<XenditPayout>(`/v3/payouts/${encodeURIComponent(payoutId)}`, secretKey, {
+    method: 'GET',
+    headers: { 'Api-version': '2025-09-01' },
   });
 }
 

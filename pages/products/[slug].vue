@@ -65,6 +65,16 @@
         <div class="mt-5 max-w-4xl whitespace-pre-line text-sm leading-6 text-text-muted md:text-base md:leading-7">{{ product.description || 'Belum ada deskripsi untuk produk ini.' }}</div>
       </section>
 
+      <section v-if="productSpecs.length" class="border-t border-bg-alt pt-8">
+        <h2 class="text-2xl font-semibold text-text-main">Product Specifications</h2>
+        <dl class="mt-5 overflow-hidden rounded-xl border border-bg-alt bg-surface">
+          <div v-for="spec in productSpecs" :key="spec.id" class="grid gap-1 border-b border-bg-alt px-5 py-4 last:border-b-0 sm:grid-cols-[minmax(10rem,0.8fr)_minmax(0,1.2fr)] sm:gap-6">
+            <dt class="text-sm font-semibold text-text-main">{{ spec.spec_name }}</dt>
+            <dd class="break-words text-sm leading-6 text-text-muted">{{ spec.spec_value }}</dd>
+          </div>
+        </dl>
+      </section>
+
       <section class="border-t border-bg-alt pt-8">
         <h2 class="text-2xl font-semibold text-text-main">Ulasan Pelanggan</h2>
         <div v-if="reviewsStore.loading" class="py-10 text-center text-text-muted">Memuat ulasan...</div>
@@ -99,6 +109,8 @@ const sellerStore = ref(null)
 const { product, loading, error, addingToCart, formattedPrice, addToCart, productImages, selectedImage, cartStore } = useProductDetailUI(props.slug)
 
 const shortDescription = computed(() => String(product.value?.description || '').slice(0, 220) || 'Produk digital yang siap digunakan untuk proyek Anda berikutnya.')
+const productSpecs = computed(() => [...(product.value?.product_specs || [])]
+  .sort((a, b) => Number(a.sort_order) - Number(b.sort_order)))
 const latestProductFile = computed(() => [...(product.value?.product_files || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null)
 const productFileFormat = computed(() => {
   const fileName = latestProductFile.value?.file_name

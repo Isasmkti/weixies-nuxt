@@ -4,6 +4,7 @@ const SELLER_SALE_SELECT = `
   id,
   price,
   seller_earning,
+  commission_rate_snapshot,
   commission_amount,
   payout_status,
   products(
@@ -40,4 +41,3 @@ export async function rGetSellerPaidSales(sellerId) {
   if (error) throw error
   return data || []
 }
-

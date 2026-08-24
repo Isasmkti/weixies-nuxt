@@ -120,7 +120,7 @@ const menuItems = [
 
             <!-- Sign Out -->
             <button @click="handleLogout"
-                :class="['flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-all duration-200 group', isCollapsed ? 'justify-center' : 'w-full']">
+                :class="['flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all duration-200 group', isCollapsed ? 'justify-center' : 'w-full']">
                 <svg xmlns="http://www.w3.org/2000/svg"
                     class="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform duration-200" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">

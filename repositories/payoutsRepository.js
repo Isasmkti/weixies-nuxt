@@ -13,8 +13,18 @@ const PAYOUT_SELECT = `
   reference_no,
   bank_name_snapshot,
   bank_account_snapshot,
+  account_holder_name_snapshot,
+  provider,
+  provider_payout_id,
+  provider_reference_id,
+  provider_status,
+  provider_failure_code,
+  provider_submitted_at,
+  provider_updated_at,
+  provider_submission_attempts,
+  reversed_at,
   created_at,
-  seller:sellers(id, store_name, store_slug, bank_name, bank_account),
+  seller:sellers(id, store_name, store_slug, bank_name, bank_account, payout_account_holder_name),
   seller_payout_items(id, order_item_id)
 `
 

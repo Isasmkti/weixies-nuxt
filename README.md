@@ -33,9 +33,30 @@ public HTTPS endpoints in the Xendit dashboard:
 
 - Invoice/payment callback: `/api/webhook/xendit`
 - Successful refund callback: `/api/webhook/xendit-refund`
+- Payout status callback: `/api/webhook/xendit-payout`
 
 The refund endpoint currently accepts full-order refunds. It rejects partial
 refunds so seller earnings cannot be reversed by an ambiguous amount.
+
+Automated seller payouts use Xendit Payouts API v3. The secret API key must
+have `MONEY-OUT` permission. Configure `XENDIT_PAYOUT_WEBHOOK_TOKEN` with the
+PAYOUT webhook verification token (it falls back to `XENDIT_WEBHOOK_TOKEN`),
+and set `XENDIT_BUSINESS_ID` so payout callbacks are also matched to the
+expected Xendit business. Subscribe the payout endpoint above to succeeded,
+failed, reversed, rejected, and pending-compliance events.
+
+Xendit dashboard checklist for seller payouts:
+
+1. Activate Payouts for the business and make sure the account has an IDR
+   balance.
+2. Create a development/production secret API key with `MONEY-OUT` permission
+   and place it in the matching server environment as `XENDIT_SECRET_KEY`.
+3. Under Developer settings > Webhooks > PAYOUT, register
+   `https://your-domain.example/api/webhook/xendit-payout`.
+4. Copy the callback verification token to `XENDIT_PAYOUT_WEBHOOK_TOKEN` and
+   the Xendit Business ID to `XENDIT_BUSINESS_ID`.
+5. Confirm the Indonesia-to-Indonesia IDR beneficiary routing values against
+   Xendit's current Dynamic Schema Sheet before the first production payout.
 
 
 ## Setup

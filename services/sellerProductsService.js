@@ -5,7 +5,11 @@ import {
   rGetSellerProducts,
   rUpdateSellerProduct,
 } from '../repositories/sellerProductsRepository'
-import { rCreateProductFile, rUpsertImages, rUpsertProductCategories } from '../repositories/productsRepository'
+import { rCreateProductFile, rReplaceProductSpecs, rUpsertImages, rUpsertProductCategories } from '../repositories/productsRepository'
+
+const MAX_PRODUCT_SPECS = 30
+const MAX_SPEC_NAME_LENGTH = 80
+const MAX_SPEC_VALUE_LENGTH = 500
 
 export function createProductSlug(productName) {
   const normalized = String(productName || '')
@@ -20,6 +24,22 @@ export function createProductSlug(productName) {
   return normalized || 'product'
 }
 
+export function normalizeProductSpecs(specs) {
+  const normalizedSpecs = (Array.isArray(specs) ? specs : [])
+    .map((spec) => ({
+      spec_name: String(spec?.spec_name || '').trim(),
+      spec_value: String(spec?.spec_value || '').trim(),
+    }))
+    .filter((spec) => spec.spec_name || spec.spec_value)
+
+  if (normalizedSpecs.length > MAX_PRODUCT_SPECS) throw new Error(`A product can have up to ${MAX_PRODUCT_SPECS} specifications.`)
+  if (normalizedSpecs.some((spec) => !spec.spec_name || !spec.spec_value)) throw new Error('Each specification requires both a name and a value.')
+  if (normalizedSpecs.some((spec) => spec.spec_name.length > MAX_SPEC_NAME_LENGTH)) throw new Error(`Specification names cannot exceed ${MAX_SPEC_NAME_LENGTH} characters.`)
+  if (normalizedSpecs.some((spec) => spec.spec_value.length > MAX_SPEC_VALUE_LENGTH)) throw new Error(`Specification values cannot exceed ${MAX_SPEC_VALUE_LENGTH} characters.`)
+
+  return normalizedSpecs
+}
+
 function normalizeProduct(product) {
   const name = String(product?.name || '').trim()
   const description = String(product?.description || '').trim()
@@ -27,6 +47,8 @@ function normalizeProduct(product) {
 
   if (!name || !description) throw new Error('Product name and description are required.')
   if (!Number.isInteger(price) || price < 0) throw new Error('Price must be a non-negative whole number.')
+
+  const specs = normalizeProductSpecs(product?.specs)
 
   return {
     product: {
@@ -37,13 +59,15 @@ function normalizeProduct(product) {
     },
     images: Array.isArray(product?.images) ? product.images : [],
     categoryIds: Array.isArray(product?.categoryIds) ? product.categoryIds : [],
+    specs,
     zipFile: product?.zipFile || null,
   }
 }
 
-async function saveProductContent(productId, { images, categoryIds, zipFile }) {
+async function saveProductContent(productId, { images, categoryIds, specs, zipFile }) {
   await rUpsertImages(productId, images)
   await rUpsertProductCategories(productId, categoryIds)
+  await rReplaceProductSpecs(productId, specs)
   if (zipFile) await rCreateProductFile(productId, zipFile)
 }
 

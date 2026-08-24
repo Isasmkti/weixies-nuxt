@@ -19,7 +19,23 @@ const settingsForm = reactive({
   storeDescription: '',
   bankName: '',
   bankAccount: '',
+  payoutRecipientType: 'INDIVIDUAL',
+  payoutAccountHolderName: '',
+  payoutGivenName: '',
+  payoutSurname: '',
+  payoutBusinessName: '',
+  payoutRoutingType: 'SWIFT',
+  payoutRoutingValue: '',
+  payoutAddressLine1: '',
+  payoutCity: '',
+  payoutProvince: '',
+  payoutPostalCode: '',
 })
+
+const payoutRoutingTypes = [
+  'SWIFT', 'IBAN', 'SORT_CODE', 'ABA', 'BSB', 'WALLET',
+  'CLABE', 'MOBILE_NO', 'BUSINESS_REG_NO', 'NATIONAL_ID',
+]
 
 const { data: store, error: storeError } = await useAsyncData(
   () => `store-${slug.value}`,
@@ -73,6 +89,17 @@ const resetSettingsForm = () => {
   settingsForm.storeDescription = currentSeller.value.store_description || ''
   settingsForm.bankName = currentSeller.value.bank_name || ''
   settingsForm.bankAccount = currentSeller.value.bank_account || ''
+  settingsForm.payoutRecipientType = currentSeller.value.payout_recipient_type || 'INDIVIDUAL'
+  settingsForm.payoutAccountHolderName = currentSeller.value.payout_account_holder_name || ''
+  settingsForm.payoutGivenName = currentSeller.value.payout_given_name || ''
+  settingsForm.payoutSurname = currentSeller.value.payout_surname || ''
+  settingsForm.payoutBusinessName = currentSeller.value.payout_business_name || ''
+  settingsForm.payoutRoutingType = currentSeller.value.payout_routing_type || 'SWIFT'
+  settingsForm.payoutRoutingValue = currentSeller.value.payout_routing_value || ''
+  settingsForm.payoutAddressLine1 = currentSeller.value.payout_address_line_1 || ''
+  settingsForm.payoutCity = currentSeller.value.payout_city || ''
+  settingsForm.payoutProvince = currentSeller.value.payout_province || ''
+  settingsForm.payoutPostalCode = currentSeller.value.payout_postal_code || ''
   imageFile.value = null
   removeCurrentImage.value = false
   clearImagePreview()
@@ -120,6 +147,17 @@ const saveStoreSettings = async () => {
       storeDescription: settingsForm.storeDescription,
       bankName: settingsForm.bankName,
       bankAccount: settingsForm.bankAccount,
+      payoutRecipientType: settingsForm.payoutRecipientType,
+      payoutAccountHolderName: settingsForm.payoutAccountHolderName,
+      payoutGivenName: settingsForm.payoutGivenName,
+      payoutSurname: settingsForm.payoutSurname,
+      payoutBusinessName: settingsForm.payoutBusinessName,
+      payoutRoutingType: settingsForm.payoutRoutingType,
+      payoutRoutingValue: settingsForm.payoutRoutingValue,
+      payoutAddressLine1: settingsForm.payoutAddressLine1,
+      payoutCity: settingsForm.payoutCity,
+      payoutProvince: settingsForm.payoutProvince,
+      payoutPostalCode: settingsForm.payoutPostalCode,
       storeImageFile: imageFile.value,
       currentStoreImageUrl: currentSeller.value.store_image_url,
       removeCurrentImage: removeCurrentImage.value,
@@ -234,13 +272,53 @@ const formatIDR = (value) => new Intl.NumberFormat('id-ID', {
 
           <div class="rounded-2xl border border-bg-alt bg-bg/30 p-5">
             <h3 class="font-black text-text-main">Payout account</h3>
-            <p class="mt-1 text-xs text-text-muted">This information is private and never appears on the public storefront.</p>
+            <p class="mt-1 text-xs text-text-muted">Private beneficiary information used only for Xendit payouts. Complete every field before the platform can send your balance.</p>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label class="text-sm font-bold text-text-main">Recipient type
+                <select v-model="settingsForm.payoutRecipientType" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+                  <option value="INDIVIDUAL">Individual</option>
+                  <option value="BUSINESS">Business</option>
+                </select>
+              </label>
+              <label class="text-sm font-bold text-text-main">Account holder name
+                <input v-model="settingsForm.payoutAccountHolderName" maxlength="255" autocomplete="name" placeholder="Exactly as registered at the bank" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
+              <template v-if="settingsForm.payoutRecipientType === 'INDIVIDUAL'">
+                <label class="text-sm font-bold text-text-main">Given name
+                  <input v-model="settingsForm.payoutGivenName" maxlength="50" autocomplete="given-name" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+                </label>
+                <label class="text-sm font-bold text-text-main">Surname
+                  <input v-model="settingsForm.payoutSurname" maxlength="50" autocomplete="family-name" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+                </label>
+              </template>
+              <label v-else class="text-sm font-bold text-text-main sm:col-span-2">Registered business name
+                <input v-model="settingsForm.payoutBusinessName" maxlength="50" autocomplete="organization" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
               <label class="text-sm font-bold text-text-main">Bank name
                 <input v-model="settingsForm.bankName" maxlength="100" placeholder="e.g. BCA" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
               </label>
               <label class="text-sm font-bold text-text-main">Account number
                 <input v-model="settingsForm.bankAccount" maxlength="100" inputmode="numeric" autocomplete="off" placeholder="Account number" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
+              <label class="text-sm font-bold text-text-main">Routing type
+                <select v-model="settingsForm.payoutRoutingType" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+                  <option v-for="routingType in payoutRoutingTypes" :key="routingType" :value="routingType">{{ routingType }}</option>
+                </select>
+              </label>
+              <label class="text-sm font-bold text-text-main">Routing value
+                <input v-model="settingsForm.payoutRoutingValue" maxlength="100" autocomplete="off" placeholder="e.g. bank SWIFT/BIC code" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal uppercase text-text-main outline-none focus:border-primary">
+              </label>
+              <label class="text-sm font-bold text-text-main sm:col-span-2">Recipient address
+                <input v-model="settingsForm.payoutAddressLine1" maxlength="255" autocomplete="street-address" placeholder="Street and building" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
+              <label class="text-sm font-bold text-text-main">City
+                <input v-model="settingsForm.payoutCity" maxlength="255" autocomplete="address-level2" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
+              <label class="text-sm font-bold text-text-main">Province
+                <input v-model="settingsForm.payoutProvince" maxlength="255" autocomplete="address-level1" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
+              </label>
+              <label class="text-sm font-bold text-text-main">Postal code
+                <input v-model="settingsForm.payoutPostalCode" maxlength="20" inputmode="numeric" autocomplete="postal-code" class="mt-2 w-full rounded-xl border border-bg-alt bg-surface px-4 py-3 font-normal text-text-main outline-none focus:border-primary">
               </label>
             </div>
           </div>

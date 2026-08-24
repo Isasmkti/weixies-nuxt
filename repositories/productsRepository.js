@@ -9,6 +9,10 @@ const PRODUCT_SELECT = `
   reviews(*),
   product_files(*)
 `
+const PRODUCT_DETAIL_SELECT = `
+  ${PRODUCT_SELECT},
+  product_specs(id, product_id, spec_name, spec_value, sort_order, created_at)
+`
 const MAX_PRODUCT_FILE_SIZE = 200 * 1024 * 1024
 const ZIP_MIME_TYPES = new Set(['application/zip', 'application/x-zip-compressed', 'application/octet-stream', ''])
 
@@ -60,7 +64,7 @@ export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrde
 export async function rGetById(id) {
     const { data, error } = await supabase
         .from('products')
-        .select(PRODUCT_SELECT)
+        .select(PRODUCT_DETAIL_SELECT)
         .eq('id', id)
         .single()
     if (error) throw error
@@ -70,7 +74,7 @@ export async function rGetById(id) {
 export async function rGetBySlug(slug) {
     const { data, error } = await supabase
         .from('products')
-        .select(PRODUCT_SELECT)
+        .select(PRODUCT_DETAIL_SELECT)
         .eq('slug', slug)
         .single()
     if (error) throw error
@@ -145,6 +149,35 @@ export async function rUpsertProductCategories(productId, categoryIds) {
         .from('product_categories')
         .insert(records)
     if (error) throw error
+}
+
+export async function rReplaceProductSpecs(productId, specs = []) {
+    const { error: deleteError } = await supabase
+        .from('product_specs')
+        .delete()
+        .eq('product_id', productId)
+
+    if (deleteError) throw deleteError
+
+    const records = (Array.isArray(specs) ? specs : [])
+        .map((spec, index) => ({
+            product_id: productId,
+            spec_name: String(spec?.spec_name || '').trim(),
+            spec_value: String(spec?.spec_value || '').trim(),
+            sort_order: index,
+        }))
+        .filter((spec) => spec.spec_name && spec.spec_value)
+
+    if (records.length === 0) return []
+
+    const { data, error } = await supabase
+        .from('product_specs')
+        .insert(records)
+        .select('id, product_id, spec_name, spec_value, sort_order, created_at')
+        .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data || []
 }
 
 export async function rCreateProductFile(productId, file) {
