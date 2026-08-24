@@ -1,5 +1,6 @@
 import { processPendingOrders } from '~/server/utils/xendit-payment-processor';
-import { createClient } from '@supabase/supabase-js';
+import { requireRequestUser } from '~/server/utils/request-auth';
+import { enforceRateLimit } from '~/server/utils/rate-limit';
 
 /**
  * API endpoint to manually trigger payment status checks for pending orders
@@ -11,15 +12,7 @@ import { createClient } from '@supabase/supabase-js';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const authHeader = getRequestHeader(event, 'authorization') || '';
-  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw createError({ statusCode: 401, statusMessage: 'User not authenticated.' });
-  }
+  const { supabase, user } = await requireRequestUser(event);
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
@@ -30,6 +23,8 @@ export default defineEventHandler(async (event) => {
   if (profileError || profile?.role !== 'admin') {
     throw createError({ statusCode: 403, statusMessage: 'Platform admin access is required.' });
   }
+
+  await enforceRateLimit(`payment-status-check:${user.id}`, 5, 60);
 
   const secretKey = String(config.xenditSecretKey || process.env.XENDIT_SECRET_KEY || '').trim();
 

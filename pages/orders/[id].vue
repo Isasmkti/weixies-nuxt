@@ -74,10 +74,11 @@
           <div
             v-for="item in order.order_items"
             :key="item.id"
-            class="p-6 flex items-center gap-5 group"
+            class="p-6 group"
           >
-            <!-- Image -->
-            <div class="h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border border-bg-alt bg-bg-alt">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <!-- Image -->
+              <div class="h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border border-bg-alt bg-bg-alt">
               <img
                 v-if="item.product?.product_images?.[0]?.image_url"
                 :src="item.product.product_images[0].image_url"
@@ -89,17 +90,17 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-            </div>
+              </div>
 
-            <!-- Info -->
-            <div class="flex-grow min-w-0">
-              <h3 class="font-bold text-text-main text-lg group-hover:text-primary transition-colors">{{ item.product?.name }}</h3>
-              <p class="text-sm text-text-muted font-montserrat line-clamp-2 mt-1">{{ item.product?.description }}</p>
-              <p class="font-extrabold text-primary mt-2">{{ formatIDR(item.price) }}</p>
-            </div>
+              <!-- Info -->
+              <div class="flex-grow min-w-0">
+                <h3 class="font-bold text-text-main text-lg group-hover:text-primary transition-colors">{{ item.product?.name }}</h3>
+                <p class="text-sm text-text-muted font-montserrat line-clamp-2 mt-1">{{ item.product?.description }}</p>
+                <p class="font-extrabold text-primary mt-2">{{ formatIDR(item.price) }}</p>
+              </div>
 
-            <!-- Actions -->
-            <div class="flex-shrink-0 flex flex-col items-end gap-2">
+              <!-- Actions -->
+              <div class="flex-shrink-0 flex flex-col items-end gap-2">
               <!-- Download (paid only) -->
               <button
                 v-if="order.status === 'paid'"
@@ -140,7 +141,14 @@
               >
                 View Product →
               </NuxtLink>
+              </div>
             </div>
+            <OrderProductReview
+              v-if="order.status === 'paid' && item.product?.id && currentUser?.id"
+              :order-status="order.status"
+              :product-id="item.product.id"
+              :profile-id="currentUser.id"
+            />
           </div>
         </div>
       </section>
@@ -178,6 +186,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import OrderProductReview from '../../components/orders/OrderProductReview.vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
@@ -199,14 +208,14 @@ const getPaymentUrl = (incomingOrder) => {
   const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []
   const xenditPayment = payments.find((payment) => {
     const provider = String(payment?.provider || '').toLowerCase()
-    return provider === 'xendit' && payment?.raw_response?.invoice_url
+    return provider === 'xendit' && payment?.payment_url
   })
 
-  if (xenditPayment?.raw_response?.invoice_url) {
-    return xenditPayment.raw_response.invoice_url
+  if (xenditPayment?.payment_url) {
+    return xenditPayment.payment_url
   }
 
-  return payments.find((payment) => payment?.raw_response?.invoice_url)?.raw_response?.invoice_url || null
+  return payments.find((payment) => payment?.payment_url)?.payment_url || null
 }
 
 const formatDate = (dateStr) => {
@@ -266,7 +275,6 @@ onMounted(async () => {
     const token = sessionData?.session?.access_token
 
     const data = await $fetch(`/api/orders/${orderId.value}`, {
-      query: { profile_id: user.id },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
     order.value = data.order
@@ -288,7 +296,6 @@ const handleDownload = async (item) => {
 
     const data = await $fetch(`/api/orders/${orderId.value}/download`, {
       query: {
-        profile_id: currentUser.value?.id,
         product_id: productId
       },
       headers: { Authorization: token ? `Bearer ${token}` : '' }

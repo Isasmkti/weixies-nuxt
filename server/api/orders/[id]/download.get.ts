@@ -1,44 +1,31 @@
-import { createClient } from '@supabase/supabase-js';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
+import { requireRequestUser } from '~/server/utils/request-auth';
+import { enforceRateLimit } from '~/server/utils/rate-limit';
 
 const SIGNED_URL_EXPIRES_IN = 300; // 5 minutes
 
 export default defineEventHandler(async (event) => {
   const orderId = getRouterParam(event, 'id');
   const query = getQuery(event);
-  const config = useRuntimeConfig();
-
-  const authHeader = getRequestHeader(event, 'authorization');
-  const reqSupabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseAnonKey,
-    {
-      global: {
-        headers: { Authorization: authHeader || '' }
-      }
-    }
-  );
-  const profileId = query.profile_id as string;
+  const { supabase: reqSupabase, user } = await requireRequestUser(event);
   const productId = query.product_id as string;
 
   if (!orderId) {
     throw createError({ statusCode: 400, statusMessage: 'Order ID is required.' });
   }
 
-  if (!profileId) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: profile_id required.' });
-  }
-
   if (!productId) {
     throw createError({ statusCode: 400, statusMessage: 'product_id is required.' });
   }
+
+  await enforceRateLimit(`download:${user.id}`, 30, 60);
 
   // 1. Verify order belongs to user and is paid
   const { data: order, error: orderError } = await reqSupabase
     .from('orders')
     .select('id, status')
     .eq('id', orderId)
-    .eq('profile_id', profileId)
+    .eq('profile_id', user.id)
     .single();
 
   if (orderError || !order) {
@@ -49,11 +36,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Payment not completed. Download unavailable.' });
   }
 
+  const { data: orderedItem, error: orderedItemError } = await reqSupabase
+    .from('order_items')
+    .select('id')
+    .eq('order_id', orderId)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (orderedItemError || !orderedItem) {
+    throw createError({ statusCode: 403, statusMessage: 'Product does not belong to this order.' });
+  }
+
   // 2. Verify user actually owns this product via user_products
   const { data: ownership, error: ownershipError } = await reqSupabase
     .from('user_products')
     .select('id')
-    .eq('profile_id', profileId)
+    .eq('profile_id', user.id)
     .eq('product_id', productId)
     .single();
 
@@ -80,7 +78,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // file_url stores the storage path, e.g. "products/template-admin.zip"
-  const storagePath = productFile.file_url;
+  const storagePath = String(productFile.file_url || '');
+  if (storagePath.split('/')[0] !== String(productId) || !storagePath.toLowerCase().endsWith('.zip')) {
+    throw createError({ statusCode: 500, statusMessage: 'Product file configuration is invalid.' });
+  }
 
   // 4. Generate a signed URL (private bucket, admin-only SELECT policy)
   const { data: signedData, error: signedError } = await supabaseAdmin.storage
@@ -94,7 +95,7 @@ export default defineEventHandler(async (event) => {
 
   // 5. Log the download
   await supabaseAdmin.from('download_logs').insert({
-    profile_id: profileId,
+    profile_id: user.id,
     product_id: productId,
     downloaded_at: new Date().toISOString(),
     ip_address: getRequestIP(event, { xForwardedFor: true }) || null,

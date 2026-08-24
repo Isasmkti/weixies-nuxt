@@ -4,6 +4,13 @@ import { supabase } from '../utils/supabase'
 const user = ref(null)
 const profile = ref(null)
 const loading = ref(false)
+const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024
+const PROFILE_IMAGE_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+}
 
 export function useAuth() {
 
@@ -92,7 +99,15 @@ export function useAuth() {
   const uploadProfileImage = async (file) => {
     loading.value = true
     try {
-      const fileExt = file.name.split('.').pop()
+      if (!user.value?.id) throw new Error('You must be signed in to upload a profile image.')
+      if (!file || !PROFILE_IMAGE_EXTENSIONS[file.type]) {
+        throw new Error('Profile image must be a JPG, PNG, WEBP, or GIF file.')
+      }
+      if (file.size <= 0 || file.size > MAX_PROFILE_IMAGE_SIZE) {
+        throw new Error('Profile image must be 5 MB or smaller.')
+      }
+
+      const fileExt = PROFILE_IMAGE_EXTENSIONS[file.type]
       const fileName = `${user.value.id}-${Date.now()}.${fileExt}`
 
       const oldImageUrl = profile.value?.profile_img
@@ -106,7 +121,7 @@ export function useAuth() {
 
       const { error } = await supabase.storage
         .from('profile_img')
-        .upload(fileName, file)
+        .upload(fileName, file, { contentType: file.type, upsert: false })
 
       if (error) throw error
 

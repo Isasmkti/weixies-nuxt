@@ -9,6 +9,11 @@ const STORE_IMAGE_EXTENSIONS = {
   'image/webp': 'webp',
   'image/gif': 'gif',
 }
+const PAYOUT_ROUTING_TYPES = new Set([
+  'SWIFT', 'IBAN', 'SORT_CODE', 'ABA', 'BSB', 'WALLET',
+  'CLABE', 'MOBILE_NO', 'BUSINESS_REG_NO', 'NATIONAL_ID',
+])
+const SELLER_PRIVATE_SELECT = 'id, profile_id, store_name, store_slug, store_description, store_image_url, bank_name, bank_account, payout_recipient_type, payout_account_holder_name, payout_given_name, payout_surname, payout_business_name, payout_routing_type, payout_routing_value, payout_address_line_1, payout_city, payout_province, payout_postal_code, commission_rate, status, rejection_reason, created_at'
 
 async function getAuthenticatedUser(message) {
   const { data: { session } } = await supabase.auth.getSession()
@@ -78,7 +83,7 @@ export function createStoreSlug(storeName) {
 export async function getSellerByProfileId(profileId) {
   const { data, error } = await supabase
     .from('sellers')
-    .select('id, profile_id, store_name, store_slug, store_description, store_image_url, bank_name, bank_account, commission_rate, status, rejection_reason, created_at')
+    .select(SELLER_PRIVATE_SELECT)
     .eq('profile_id', profileId)
     .maybeSingle()
 
@@ -92,6 +97,17 @@ export async function updateSellerStoreProfile({
   storeDescription = '',
   bankName = '',
   bankAccount = '',
+  payoutRecipientType = 'INDIVIDUAL',
+  payoutAccountHolderName = '',
+  payoutGivenName = '',
+  payoutSurname = '',
+  payoutBusinessName = '',
+  payoutRoutingType = '',
+  payoutRoutingValue = '',
+  payoutAddressLine1 = '',
+  payoutCity = '',
+  payoutProvince = '',
+  payoutPostalCode = '',
   storeImageFile = null,
   currentStoreImageUrl = null,
   removeCurrentImage = false,
@@ -99,14 +115,64 @@ export async function updateSellerStoreProfile({
   const trimmedStoreName = String(storeName || '').trim()
   if (!trimmedStoreName) throw new Error('Store name is required.')
 
+  const recipientType = String(payoutRecipientType || 'INDIVIDUAL').trim().toUpperCase()
+  const normalizedPayout = {
+    bankName: String(bankName || '').trim(),
+    bankAccount: String(bankAccount || '').trim(),
+    accountHolderName: String(payoutAccountHolderName || '').trim(),
+    givenName: String(payoutGivenName || '').trim(),
+    surname: String(payoutSurname || '').trim(),
+    businessName: String(payoutBusinessName || '').trim(),
+    routingType: String(payoutRoutingType || '').trim().toUpperCase(),
+    routingValue: String(payoutRoutingValue || '').trim(),
+    addressLine1: String(payoutAddressLine1 || '').trim(),
+    city: String(payoutCity || '').trim(),
+    province: String(payoutProvince || '').trim(),
+    postalCode: String(payoutPostalCode || '').trim(),
+  }
+  const hasPayoutAccount = Boolean(normalizedPayout.bankName || normalizedPayout.bankAccount)
+
+  if (!['INDIVIDUAL', 'BUSINESS'].includes(recipientType)) {
+    throw new Error('Invalid payout recipient type.')
+  }
+  if (normalizedPayout.routingType && !PAYOUT_ROUTING_TYPES.has(normalizedPayout.routingType)) {
+    throw new Error('Invalid Xendit routing type.')
+  }
+  if (hasPayoutAccount && (
+    !normalizedPayout.bankName
+    || !normalizedPayout.bankAccount
+    || !normalizedPayout.accountHolderName
+    || !normalizedPayout.routingType
+    || !normalizedPayout.routingValue
+    || !normalizedPayout.addressLine1
+    || !normalizedPayout.city
+    || !normalizedPayout.province
+    || !normalizedPayout.postalCode
+    || (recipientType === 'INDIVIDUAL' && (!normalizedPayout.givenName || !normalizedPayout.surname))
+    || (recipientType === 'BUSINESS' && !normalizedPayout.businessName)
+  )) {
+    throw new Error('Complete all Xendit beneficiary fields before saving a payout account.')
+  }
+
   const user = await getAuthenticatedUser('You must be signed in to update your store.')
   const uploadedImage = storeImageFile ? await uploadStoreImage(user.id, storeImageFile) : null
   const shouldRemoveOldImage = Boolean(currentStoreImageUrl) && (Boolean(uploadedImage) || removeCurrentImage)
   const updatePayload = {
     store_name: trimmedStoreName,
     store_description: String(storeDescription || '').trim() || null,
-    bank_name: String(bankName || '').trim() || null,
-    bank_account: String(bankAccount || '').trim() || null,
+    bank_name: normalizedPayout.bankName || null,
+    bank_account: normalizedPayout.bankAccount || null,
+    payout_recipient_type: recipientType,
+    payout_account_holder_name: normalizedPayout.accountHolderName || null,
+    payout_given_name: normalizedPayout.givenName || null,
+    payout_surname: normalizedPayout.surname || null,
+    payout_business_name: normalizedPayout.businessName || null,
+    payout_routing_type: normalizedPayout.routingType || null,
+    payout_routing_value: normalizedPayout.routingValue || null,
+    payout_address_line_1: normalizedPayout.addressLine1 || null,
+    payout_city: normalizedPayout.city || null,
+    payout_province: normalizedPayout.province || null,
+    payout_postal_code: normalizedPayout.postalCode || null,
   }
 
   if (uploadedImage) updatePayload.store_image_url = uploadedImage.publicUrl
@@ -118,7 +184,7 @@ export async function updateSellerStoreProfile({
     .eq('id', sellerId)
     .eq('profile_id', user.id)
     .eq('status', 'approved')
-    .select('id, profile_id, store_name, store_slug, store_description, store_image_url, bank_name, bank_account, commission_rate, status')
+    .select(SELLER_PRIVATE_SELECT)
     .single()
 
   if (error) {

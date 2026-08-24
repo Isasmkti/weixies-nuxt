@@ -49,11 +49,6 @@ const baseMenuItems = [
         icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
     },
     {
-        name: 'Reviews',
-        to: '/reviews',
-        icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-    },
-    {
         name: 'Home',
         to: '/',
         icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
@@ -126,7 +121,7 @@ const menuItems = computed(() => baseMenuItems.filter((item) => (
 
             <!-- Sign Out -->
             <button @click="handleLogout"
-                :class="['flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-all duration-200 group', isCollapsed ? 'justify-center' : 'w-full']">
+                :class="['flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all duration-200 group', isCollapsed ? 'justify-center' : 'w-full']">
                 <svg xmlns="http://www.w3.org/2000/svg"
                     class="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform duration-200" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">

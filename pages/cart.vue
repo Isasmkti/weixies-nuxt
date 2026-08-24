@@ -239,9 +239,7 @@ const handleCheckout = async () => {
 
         const payload = {
             product_id: item.product.id,
-            profile_id: currentUser.value?.id,
             customerName: currentUser.value?.user_metadata?.full_name || currentUser.value?.email?.split('@')[0] || 'Customer',
-            customerEmail: currentUser.value?.email || 'customer@example.com',
         }
 
         const response = await $fetch('/api/checkout', {

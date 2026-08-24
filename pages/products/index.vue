@@ -6,12 +6,26 @@
       <p class="mt-2 text-sm text-text-muted">Discover digital assets made for your next project.</p>
     </header>
 
-    <div class="grid gap-7 lg:grid-cols-[250px_minmax(0,1fr)]">
-      <aside class="h-fit lg:sticky lg:top-6">
+    <div class="grid gap-7" :class="filterInLayout ? 'lg:grid-cols-[250px_minmax(0,1fr)]' : 'grid-cols-1'">
+      <Transition
+        enter-active-class="transition-all duration-300 ease-out motion-reduce:transition-none"
+        enter-from-class="-translate-x-4 scale-[0.98] opacity-0"
+        enter-to-class="translate-x-0 scale-100 opacity-100"
+        leave-active-class="transition-all duration-200 ease-in motion-reduce:transition-none"
+        leave-from-class="translate-x-0 scale-100 opacity-100"
+        leave-to-class="-translate-x-3 scale-[0.98] opacity-0"
+        @after-leave="filterInLayout = false"
+      >
+      <aside v-if="showFilters" id="catalog-filter-panel" class="h-fit origin-top-left lg:sticky lg:top-6">
         <div class="rounded-2xl border border-bg-alt bg-surface p-5 shadow-sm">
           <div class="flex items-center justify-between border-b border-bg-alt pb-4">
             <h2 class="text-lg font-black text-text-main">Filter</h2>
-            <button class="text-xs font-bold text-primary hover:underline" @click="resetFilters">Reset</button>
+            <div class="flex items-center gap-2">
+              <button type="button" class="text-xs font-bold text-primary hover:underline" @click="resetFilters">Reset</button>
+              <button type="button" aria-label="Close filters" title="Close filters" class="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-alt hover:text-text-main" @click="closeFilters">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
           </div>
 
           <div class="border-b border-bg-alt py-5">
@@ -31,6 +45,7 @@
           </form>
         </div>
       </aside>
+      </Transition>
 
       <section class="min-w-0">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -40,7 +55,12 @@
             <button v-if="searchInput" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted hover:bg-bg-alt hover:text-text-main" @click="searchInput = ''">&times;</button>
             <div v-if="showRecentSearches && !searchInput && recentSearches.length" class="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-bg-alt bg-surface shadow-xl"><div class="flex items-center justify-between border-b border-bg-alt px-4 py-2.5"><span class="text-xs font-bold uppercase tracking-wider text-text-muted">Recent searches</span><button class="text-xs font-bold text-primary" @mousedown.prevent="clearAllSearches">Clear</button></div><button v-for="term in recentSearches" :key="term" class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-text-main hover:bg-bg-alt/50" @mousedown.prevent="applyRecentSearch(term)">{{ term }}</button></div>
           </div>
-          <div class="flex shrink-0 items-center gap-2"><label for="catalog-sort" class="text-sm font-medium text-text-muted">Sort:</label><select id="catalog-sort" class="rounded-lg border border-bg-alt bg-surface px-3 py-2 text-sm font-semibold text-text-main outline-none focus:ring-2 focus:ring-primary/30" @change="onSortChange"><option value="created_at-desc">Newest</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="name-asc">Name: A-Z</option></select></div>
+          <div class="flex shrink-0 items-center gap-2">
+            <button type="button" aria-controls="catalog-filter-panel" :aria-expanded="showFilters" :aria-label="showFilters ? 'Hide filters' : 'Show filters'" :title="showFilters ? 'Hide filters' : 'Show filters'" class="flex h-10 w-10 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 focus:ring-primary/30" :class="showFilters ? 'border-primary bg-primary text-white shadow-sm shadow-primary/20' : 'border-bg-alt bg-surface text-text-muted hover:border-primary/40 hover:text-primary'" @click="toggleFilters">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 10h12M10 16h4" /></svg>
+            </button>
+            <label for="catalog-sort" class="text-sm font-medium text-text-muted">Sort:</label><select id="catalog-sort" class="rounded-lg border border-bg-alt bg-surface px-3 py-2 text-sm font-semibold text-text-main outline-none focus:ring-2 focus:ring-primary/30" @change="onSortChange"><option value="created_at-desc">Newest</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="name-asc">Name: A-Z</option></select>
+          </div>
         </div>
 
         <div class="mt-5 flex flex-wrap items-center gap-2 text-sm text-text-muted"><span>Showing <strong class="text-text-main">{{ productsStore.total }}</strong> products</span><button v-for="slug in selectedCategory" :key="slug" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="setCategory(slug)">{{ categoryName(slug) }} <span>&times;</span></button><button v-if="productsStore.minPrice !== null || productsStore.maxPrice !== null" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="clearPriceFilter">{{ priceFilterLabel }} <span>&times;</span></button></div>
@@ -51,7 +71,7 @@
 
         <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <article v-for="product in products" :key="product.id" class="group relative flex min-h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-bg-alt bg-surface transition duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10" @click="router.push(`/products/${product.slug}`)">
-            <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt"><img v-if="getMainImage(product)" :src="getMainImage(product)" :alt="product.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><defaultProduct v-else class="h-full w-full p-12 text-text-muted/50" /><div class="absolute left-3 top-3 flex flex-wrap gap-1.5"><span v-for="category in product.categories?.slice(0, 2)" :key="category.id" class="rounded-full bg-surface/90 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary backdrop-blur">{{ category.name }}</span><span v-if="isNewProduct(product.created_at)" class="rounded-full bg-primary px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">New</span></div><button type="button" :aria-label="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :aria-pressed="wishlistStore.isWishlisted(product.id)" :title="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :disabled="wishlistStore.isToggling(product.id)" class="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition duration-200 hover:scale-110 disabled:cursor-wait disabled:opacity-70" :class="wishlistStore.isWishlisted(product.id) ? 'bg-red-500 text-white ring-2 ring-white/80 hover:bg-red-600' : 'bg-surface/90 text-text-muted hover:bg-red-50 hover:text-red-500'" @click.stop="toggleWishlist(product.id)"><svg xmlns="http://www.w3.org/2000/svg" :fill="wishlistStore.isWishlisted(product.id) ? 'currentColor' : 'none'" class="h-5 w-5 transition-transform duration-200" :class="wishlistStore.isWishlisted(product.id) ? 'scale-110' : 'scale-100'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 0 0 0 6.364L12 20.364l7.682-7.682a4.5 4.5 0 0 0-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 0 0-6.364 0Z" /></svg></button></div>
+            <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt"><img v-if="getMainImage(product)" :src="getMainImage(product)" :alt="product.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><defaultProduct v-else class="h-full w-full p-12 text-text-muted/50" /><span v-if="isNewProduct(product.created_at)" class="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">New</span><button type="button" :aria-label="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :aria-pressed="wishlistStore.isWishlisted(product.id)" :title="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'" :disabled="wishlistStore.isToggling(product.id)" class="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition duration-200 hover:scale-110 disabled:cursor-wait disabled:opacity-70" :class="wishlistStore.isWishlisted(product.id) ? 'bg-red-500 text-white ring-2 ring-white/80 hover:bg-red-600' : 'bg-surface/90 text-text-muted hover:bg-red-50 hover:text-red-500'" @click.stop="toggleWishlist(product.id)"><svg xmlns="http://www.w3.org/2000/svg" :fill="wishlistStore.isWishlisted(product.id) ? 'currentColor' : 'none'" class="h-5 w-5 transition-transform duration-200" :class="wishlistStore.isWishlisted(product.id) ? 'scale-110' : 'scale-100'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 0 0 0 6.364L12 20.364l7.682-7.682a4.5 4.5 0 0 0-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 0 0-6.364 0Z" /></svg></button></div>
             <div class="flex flex-1 flex-col p-5"><h2 class="line-clamp-1 text-lg font-black text-text-main transition group-hover:text-primary">{{ product.name }}</h2><div v-if="product.reviewCount" class="mt-2 flex items-center gap-1.5 text-sm"><span class="text-amber-500">&#9733;</span><span class="font-bold text-text-main">{{ product.averageRating.toFixed(1) }}</span><span class="text-text-muted">({{ product.reviewCount }})</span></div><p v-else class="mt-2 text-sm text-text-muted">No reviews yet</p><p class="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-text-muted">{{ product.description }}</p><div class="mt-5 flex items-center justify-between border-t border-bg-alt pt-4"><span class="text-xl font-black text-text-main">{{ formatIDR(product.price) }}</span><button class="flex h-9 w-9 items-center justify-center rounded-full bg-bg-alt text-text-main transition hover:bg-primary hover:text-white" :disabled="addingToCart === product.id" @click.stop="isInCart(product.id) ? router.push('/cart') : addToCart(product.id)"><span v-if="addingToCart === product.id" class="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current"></span><svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.3 2.3A1 1 0 0 0 5.8 17H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" /></svg></button></div></div>
           </article>
         </div>
@@ -74,6 +94,8 @@ const wishlistStore = useWishlistStore()
 const profileId = ref(null)
 const searchInputEl = ref(null)
 const showRecentSearches = ref(false)
+const showFilters = ref(false)
+const filterInLayout = ref(false)
 const minPrice = ref('')
 const maxPrice = ref('')
 const priceError = ref('')
@@ -94,6 +116,12 @@ const applyPriceFilter = async () => { priceError.value = ''; try { await produc
 const clearPriceFilter = async () => { minPrice.value = ''; maxPrice.value = ''; await productsStore.setPriceRange(null, null) }
 const resetFilters = async () => { searchInput.value = ''; minPrice.value = ''; maxPrice.value = ''; priceError.value = ''; productsStore.categorySlug = []; productsStore.search = ''; await productsStore.setPriceRange(null, null) }
 const toggleWishlist = async (productId) => { if (!profileId.value) return router.push('/login'); await wishlistStore.stToggleWishlist(profileId.value, productId) }
+const closeFilters = () => { showFilters.value = false }
+const toggleFilters = () => {
+  if (showFilters.value) return closeFilters()
+  filterInLayout.value = true
+  showFilters.value = true
+}
 
 onMounted(async () => {
   const user = await getUser()

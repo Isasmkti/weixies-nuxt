@@ -72,7 +72,7 @@ onMounted(async () => {
         </div>
         <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:min-w-[520px]">
           <div><p class="text-xs font-bold uppercase text-text-muted">Price</p><p class="mt-1 font-bold text-text-main">{{ formatIDR(item.price) }}</p></div>
-          <div><p class="text-xs font-bold uppercase text-text-muted">Commission</p><p class="mt-1 font-bold text-red-600">-{{ formatIDR(item.commission_amount) }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-text-muted">Platform commission</p><p class="mt-1 font-bold text-red-600">-{{ formatIDR(item.commission_amount) }}</p><p class="mt-1 text-[11px] text-text-muted">{{ (Number(item.commission_rate_snapshot || 0) * 100).toFixed(2).replace(/\.00$/, '') }}% snapshot</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Your earning</p><p class="mt-1 font-black text-primary">{{ formatIDR(item.seller_earning) }}</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Status</p><span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="orderStatusClass(orderOf(item)?.status)">{{ orderOf(item)?.status }}</span><p class="mt-1 text-[10px] capitalize text-text-muted">Payout: {{ item.payout_status }}</p></div>
         </div>

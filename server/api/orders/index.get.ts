@@ -1,24 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { requireRequestUser } from '~/server/utils/request-auth';
+import { sanitizeBuyerOrder } from '~/server/utils/order-response';
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const config = useRuntimeConfig();
-  
-  const authHeader = getRequestHeader(event, 'authorization');
-  const reqSupabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseAnonKey,
-    {
-      global: {
-        headers: { Authorization: authHeader || '' }
-      }
-    }
-  );
-  const profileId = query.profile_id as string;
-
-  if (!profileId) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: profile_id required.' });
-  }
+  const { supabase: reqSupabase, user } = await requireRequestUser(event);
 
   const { data: orders, error } = await reqSupabase
     .from('orders')
@@ -51,7 +35,7 @@ export default defineEventHandler(async (event) => {
         created_at
       )
     `)
-    .eq('profile_id', profileId)
+    .eq('profile_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -59,5 +43,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Failed to fetch orders.' });
   }
 
-  return { orders: orders || [] };
+  return { orders: (orders || []).map(sanitizeBuyerOrder) };
 });

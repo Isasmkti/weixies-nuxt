@@ -6,6 +6,7 @@ export async function rGetSellerOrderItems(sellerId) {
     .select(`
       id,
       price,
+      commission_rate_snapshot,
       commission_amount,
       seller_earning,
       payout_status,
