@@ -1,5 +1,6 @@
 import { verifyXenditCallbackToken } from '~/server/utils/xendit';
 import { applyXenditPayoutObject } from '~/server/utils/xendit-payout';
+import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 
 const PAYOUT_EVENTS = new Set([
   'v3_payout.succeeded',
@@ -20,6 +21,7 @@ const EVENT_STATUS = new Map([
 export default defineEventHandler(async (event) => {
   const body = await readBody(event).catch(() => null);
   const config = useRuntimeConfig();
+  const webhookId = String(getRequestHeader(event, 'webhook-id') || '').trim() || null;
   const webhookToken = String(config.xenditPayoutWebhookToken || config.xenditWebhookToken || '').trim();
   const receivedToken = String(getRequestHeader(event, 'x-callback-token') || '').trim();
 
@@ -49,6 +51,40 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Xendit payout event and status do not match.' });
   }
 
-  const result = await applyXenditPayoutObject(eventName, payout, body);
-  return { status: 'ok', result };
+  // The Xendit dashboard sends a canned payload when "Test and Save" is
+  // clicked. Its reference does not belong to this application. Acknowledge
+  // it without touching the ledger so Xendit does not retry a valid test.
+  const supabase = useSupabaseAdmin();
+  const { data: localPayout, error: lookupError } = await supabase
+    .from('seller_payouts')
+    .select('id')
+    .eq('provider', 'xendit')
+    .eq('provider_reference_id', String(payout.reference_id))
+    .maybeSingle();
+
+  if (lookupError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Payout webhook lookup failed: ${lookupError.message}`,
+    });
+  }
+  if (!localPayout) {
+    return {
+      status: 'ignored',
+      reason: 'unknown_payout_reference',
+      webhookId,
+    };
+  }
+
+  try {
+    const result = await applyXenditPayoutObject(eventName, payout, body, webhookId);
+    return { status: 'ok', webhookId, result };
+  } catch (error: any) {
+    // A payout could only disappear between lookup and the atomic RPC through
+    // an exceptional service-role operation. Treat it like an unknown event.
+    if (error?.code === 'P0002') {
+      return { status: 'ignored', reason: 'unknown_payout_reference', webhookId };
+    }
+    throw error;
+  }
 });

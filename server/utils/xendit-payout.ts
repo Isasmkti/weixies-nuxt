@@ -14,8 +14,13 @@ export async function requirePlatformAdmin(event: any) {
   return user;
 }
 
-export function xenditPayoutEventKey(eventName: string, payout: Partial<XenditPayout>): string {
+export function xenditPayoutEventKey(
+  eventName: string,
+  payout: Partial<XenditPayout>,
+  webhookId?: string | null,
+): string {
   return crypto.createHash('sha256').update(JSON.stringify([
+    webhookId || null,
     eventName,
     payout.payout_id || null,
     payout.reference_id || null,
@@ -29,6 +34,7 @@ export async function applyXenditPayoutObject(
   eventName: string,
   payout: Partial<XenditPayout>,
   payload: any,
+  webhookId?: string | null,
 ) {
   const supabase = useSupabaseAdmin();
   const amount = payout.source_amount == null ? null : Number(payout.source_amount);
@@ -37,7 +43,7 @@ export async function applyXenditPayoutObject(
   }
 
   const { data, error } = await supabase.rpc('apply_xendit_payout_event', {
-    p_event_key: xenditPayoutEventKey(eventName, payout),
+    p_event_key: xenditPayoutEventKey(eventName, payout, webhookId),
     p_event_name: eventName,
     p_provider_payout_id: payout.payout_id || null,
     p_provider_reference_id: payout.reference_id,
