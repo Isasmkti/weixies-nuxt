@@ -89,6 +89,11 @@ export default defineNuxtConfig({
     xenditPayoutWebhookToken: process.env.NUXT_XENDIT_PAYOUT_WEBHOOK_TOKEN || process.env.XENDIT_PAYOUT_WEBHOOK_TOKEN || '',
     xenditBusinessId: process.env.NUXT_XENDIT_BUSINESS_ID || process.env.XENDIT_BUSINESS_ID || '',
     supabaseServiceRoleKey: process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    // Gemini credentials stay private to Nitro. Never move these values into
+    // runtimeConfig.public or call Gemini directly from the browser.
+    geminiApiKey: process.env.NUXT_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '',
+    geminiModel: process.env.NUXT_GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.7-flash',
+    geminiEmbeddingModel: process.env.NUXT_GEMINI_EMBEDDING_MODEL || process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-2',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
       supabaseUrl: 'https://fvqvdcsbbklxmnqusrlb.supabase.co',

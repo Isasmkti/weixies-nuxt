@@ -86,6 +86,7 @@ onMounted(loadLogs)
           <option value="review">Reviews</option>
           <option value="wishlist">Wishlists</option>
           <option value="seller_payout">Seller payouts</option>
+          <option value="ai_knowledge">AI Knowledge</option>
         </select>
       </label>
     </div>

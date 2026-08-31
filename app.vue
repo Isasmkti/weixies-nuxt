@@ -2,6 +2,9 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <ClientOnly>
+    <AiCustomerServiceChat />
+  </ClientOnly>
 </template>
 
 <style>

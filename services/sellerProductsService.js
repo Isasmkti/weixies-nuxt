@@ -5,7 +5,8 @@ import {
   rGetSellerProducts,
   rUpdateSellerProduct,
 } from '../repositories/sellerProductsRepository'
-import { rCreateProductFile, rReplaceProductSpecs, rUpsertImages, rUpsertProductCategories } from '../repositories/productsRepository'
+import { rCreateProductFile, rReplaceProductSpecs, rUpsertProductCategories } from '../repositories/productsRepository'
+import { saveProductImages } from './productImagesService'
 
 const MAX_PRODUCT_SPECS = 30
 const MAX_SPEC_NAME_LENGTH = 80
@@ -65,7 +66,7 @@ function normalizeProduct(product) {
 }
 
 async function saveProductContent(productId, { images, categoryIds, specs, zipFile }) {
-  await rUpsertImages(productId, images)
+  await saveProductImages(productId, images)
   await rUpsertProductCategories(productId, categoryIds)
   await rReplaceProductSpecs(productId, specs)
   if (zipFile) await rCreateProductFile(productId, zipFile)

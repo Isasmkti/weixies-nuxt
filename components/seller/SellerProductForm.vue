@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useCategoriesStore } from '../../stores/categoriesStore'
 import { createProductSlug } from '../../services/sellerProductsService'
+import ProductImageUploader from '../products/ProductImageUploader.vue'
 
 const props = defineProps({
   initialProduct: { type: Object, default: null },
@@ -39,13 +40,6 @@ watch(() => props.initialProduct, (product) => {
 
 categoriesStore.fetchCategories()
 
-const addImageUrl = () => form.value.images.push({ image_url: '', is_primary: form.value.images.length === 0 })
-const removeImage = (index) => {
-  const wasPrimary = form.value.images[index].is_primary
-  form.value.images.splice(index, 1)
-  if (wasPrimary && form.value.images.length) form.value.images[0].is_primary = true
-}
-const setMainImage = (index) => form.value.images.forEach((image, imageIndex) => { image.is_primary = imageIndex === index })
 const addSpec = () => {
   if (form.value.specs.length < 30) form.value.specs.push(createEmptySpec())
 }
@@ -69,7 +63,7 @@ const suggestedSlug = computed(() => createProductSlug(form.value.name))
 const submit = () => emit('submit', {
   ...form.value,
   slug: form.value.slug || suggestedSlug.value,
-  images: form.value.images.filter((image) => String(image.image_url || '').trim()),
+  images: form.value.images,
   specs: form.value.specs
     .map((spec) => ({
       spec_name: String(spec.spec_name || '').trim(),
@@ -147,25 +141,7 @@ const submit = () => emit('submit', {
     </section>
 
     <div class="space-y-4">
-      <div>
-        <div class="mb-2 flex items-center justify-between gap-3">
-          <label class="block text-sm font-bold text-text-main">Product images</label>
-          <button type="button" class="text-sm font-bold text-primary hover:text-primary-dark" @click="addImageUrl">+ Add image</button>
-        </div>
-        <div v-if="form.images.length" class="space-y-3">
-          <div v-for="(image, index) in form.images" :key="`${index}-${image.id || ''}`" class="rounded-xl border border-bg-alt bg-bg/50 p-4">
-            <div class="flex gap-2">
-              <input v-model="image.image_url" required type="url" class="min-w-0 flex-1 rounded-lg border border-bg-alt bg-bg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30" placeholder="https://example.com/image.jpg">
-              <button type="button" class="rounded-lg px-3 text-sm font-bold text-red-600 hover:bg-red-50" @click="removeImage(index)">Remove</button>
-            </div>
-            <div class="mt-3 flex items-center justify-between gap-3">
-              <label class="flex cursor-pointer items-center gap-2 text-sm text-text-muted"><input :checked="image.is_primary" type="radio" name="seller-main-image" class="text-primary focus:ring-primary" @change="setMainImage(index)"> Main image</label>
-              <img v-if="image.image_url" :src="image.image_url" alt="Image preview" class="h-12 w-12 rounded-lg border border-bg-alt object-cover">
-            </div>
-          </div>
-        </div>
-        <p v-else class="rounded-xl border border-dashed border-bg-alt p-4 text-sm text-text-muted">Add one or more external image URLs.</p>
-      </div>
+      <ProductImageUploader v-model="form.images" input-name="seller-main-image" :disabled="submitting" />
 
       <div>
         <label class="mb-2 block text-sm font-bold text-text-main">Product ZIP file</label>

@@ -1,4 +1,5 @@
-import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertImages, rUpsertProductCategories, rCreateProductFile } from '../repositories/productsRepository'
+import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile } from '../repositories/productsRepository'
+import { saveProductImages } from './productImagesService'
 
 export async function sAll(page, limit, sortBy, sortOrder, search, categorySlug, minPrice, maxPrice) {
     try {
@@ -30,7 +31,7 @@ export async function sCreate(product, images, categoryIds = [], zipFile) {
     try {
         const newProduct = await rCreate(product)
         if (newProduct) {
-            if (images) await rUpsertImages(newProduct.id, images)
+            if (images) await saveProductImages(newProduct.id, images)
             if (categoryIds.length) await rUpsertProductCategories(newProduct.id, categoryIds)
             if (zipFile) await rCreateProductFile(newProduct.id, zipFile)
             return await rGetById(newProduct.id)
@@ -45,7 +46,7 @@ export async function sUpdate(id, product, images, categoryIds = [], zipFile) {
     try {
         const updatedProduct = await rUpdate(id, product)
         if (updatedProduct) {
-            if (images) await rUpsertImages(id, images)
+            if (images) await saveProductImages(id, images)
             if (categoryIds) await rUpsertProductCategories(id, categoryIds)
             if (zipFile) await rCreateProductFile(id, zipFile)
             return await rGetById(id)

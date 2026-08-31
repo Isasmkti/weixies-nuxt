@@ -1,18 +1,6 @@
 import crypto from 'node:crypto';
-import { requireRequestUser } from '~/server/utils/request-auth';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 import type { XenditPayout } from '~/server/utils/xendit';
-
-export async function requirePlatformAdmin(event: any) {
-  const { supabase, user } = await requireRequestUser(event);
-  const { data: isAdmin, error } = await supabase.rpc('is_seller_platform_admin');
-
-  if (error || !isAdmin) {
-    throw createError({ statusCode: 403, statusMessage: 'Platform admin access is required.' });
-  }
-
-  return user;
-}
 
 export function xenditPayoutEventKey(
   eventName: string,

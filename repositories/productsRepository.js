@@ -15,6 +15,7 @@ const PRODUCT_DETAIL_SELECT = `
 `
 const MAX_PRODUCT_FILE_SIZE = 200 * 1024 * 1024
 const ZIP_MIME_TYPES = new Set(['application/zip', 'application/x-zip-compressed', 'application/octet-stream', ''])
+const PRODUCT_IMAGE_BUCKET = 'product-images'
 
 export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = [], minPrice = null, maxPrice = null) {
     let query = supabase
@@ -110,28 +111,52 @@ export async function rDelete(id) {
     if (error) throw error
 }
 
-export async function rUpsertImages(productId, images) {
-    const records = images.map((img, i) => ({
-        product_id: productId,
-        image_url: typeof img === 'string' ? img : img.image_url,
-        is_primary: img.is_primary ?? (i === 0)
+export async function rReplaceProductImages(productId, images) {
+    const records = (Array.isArray(images) ? images : []).map((img, index) => ({
+        image_url: String(img?.image_url || '').trim(),
+        storage_path: String(img?.storage_path || '').trim() || null,
+        is_primary: Boolean(img?.is_primary ?? (index === 0)),
     }))
 
-    const uniqueRecords = Array.from(
-        new Map(records.map(item => [`${item.product_id}-${item.image_url}`, item]))
-            .values()
-    )
+    const { data, error } = await supabase.rpc('replace_product_images', {
+        p_product_id: Number(productId),
+        p_images: records,
+    })
 
-    await supabase
+    if (error) throw error
+    return data || []
+}
+
+export async function rGetProductImages(productId) {
+    const { data, error } = await supabase
         .from('product_images')
-        .delete()
+        .select('id, product_id, image_url, storage_path, is_primary, created_at')
         .eq('product_id', productId)
+        .order('is_primary', { ascending: false })
+        .order('created_at', { ascending: true })
 
-    if (uniqueRecords.length === 0) return
+    if (error) throw error
+    return data || []
+}
 
-    const { error } = await supabase
-        .from('product_images')
-        .insert(uniqueRecords)
+export async function rUploadProductImage(filePath, file) {
+    const { error } = await supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .upload(filePath, file, { contentType: file.type, upsert: false })
+
+    if (error) throw error
+
+    const { data } = supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(filePath)
+    return { image_url: data.publicUrl, storage_path: filePath }
+}
+
+export async function rRemoveProductImageFiles(filePaths) {
+    const uniquePaths = [...new Set((Array.isArray(filePaths) ? filePaths : []).filter(Boolean))]
+    if (uniquePaths.length === 0) return
+
+    const { error } = await supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .remove(uniquePaths)
 
     if (error) throw error
 }

@@ -3,7 +3,7 @@ import { supabase } from '../utils/supabase'
 const SELLER_PRODUCT_SELECT = 'id, seller_id, name, slug, description, price, status, created_at'
 const SELLER_PRODUCT_CONTENT_SELECT = `
   ${SELLER_PRODUCT_SELECT},
-  product_images(id, image_url, is_primary),
+  product_images(id, image_url, storage_path, is_primary),
   product_categories(category_id, categories(id, name, slug)),
   product_files(id, file_name, file_url, file_size, version, created_at)
 `
