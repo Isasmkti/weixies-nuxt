@@ -7,7 +7,7 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'changed'])
 const errorMessage = ref('')
 const MAX_IMAGES = 8
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
@@ -50,6 +50,7 @@ const selectImages = (event) => {
     is_primary: !hasPrimary && index === 0,
   }))
   emit('update:modelValue', [...props.modelValue, ...additions])
+  emit('changed')
 }
 
 const removeImage = (index) => {
@@ -61,9 +62,11 @@ const removeImage = (index) => {
       ...image,
       is_primary: imageIndex === 0,
     })))
+    emit('changed')
     return
   }
   emit('update:modelValue', nextImages)
+  emit('changed')
 }
 
 const setPrimary = (index) => {
@@ -71,6 +74,7 @@ const setPrimary = (index) => {
     ...image,
     is_primary: imageIndex === index,
   })))
+  emit('changed')
 }
 
 onBeforeUnmount(() => props.modelValue.forEach(releasePreview))

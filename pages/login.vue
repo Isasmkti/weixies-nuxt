@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { getUserProfile } from '../services/authService'
+import loginVideo from '../assets/weix-vid.mp4'
 
 definePageMeta({ layout: false })
 
@@ -37,19 +38,24 @@ const handleLogin = async () => {
 
 <template>
   <div class="flex min-h-screen w-full font-poppins bg-bg">
-    <!-- Left Side: Image / Brand Visual -->
-    <div class="relative hidden w-0 flex-1 lg:block">
-      <!-- Image with Overlay -->
-      <div class="absolute inset-0 h-full w-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1618761714954-0b8cd0026356?q=80&w=2070&auto=format&fit=crop');">
-      </div>
-      <div class="absolute inset-0 bg-primary-dark/40 mix-blend-multiply"></div>
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-      <div class="absolute bottom-0 left-0 p-12 text-white z-10">
-        <div class="mb-4 flex items-center gap-2">
-          <img src="../assets/weixies-logo.svg" alt="Weixies" class="w-10 h-10 object-contain brightness-0 invert" />
-          <span class="text-3xl font-extrabold tracking-tight">Weixies</span>
+    <!-- Left Side: Video / Brand Visual -->
+    <div class="relative hidden w-0 flex-1 overflow-hidden bg-primary-dark lg:block">
+      <video
+        :src="loginVideo"
+        class="absolute inset-0 h-full w-full object-cover"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-hidden="true"
+      ></video>
+      <div class="absolute inset-x-0 bottom-0 z-10 w-full bg-black/70 px-8 py-5 text-white shadow-2xl backdrop-blur-sm [text-shadow:0_2px_10px_rgba(0,0,0,0.85)] xl:px-12 xl:py-6">
+        <div class="mb-2 flex items-center gap-2">
+          <img src="../assets/weixies-logo.svg" alt="Weixies" class="h-8 w-8 object-contain brightness-0 invert" />
+          <span class="text-2xl font-extrabold tracking-tight">Weixies</span>
         </div>
-        <p class="max-w-md text-lg font-medium text-white/90">
+        <p class="max-w-md text-base font-medium leading-relaxed text-white/90">
           Discover premium digital assets, design resources, templates, and tools curated just for you.
         </p>
       </div>

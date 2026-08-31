@@ -68,9 +68,11 @@
                         </div>
                     </div>
 
+                    <ProductSpecificationsEditor v-model="form.specs" :disabled="loading" />
+
                     <!-- Product Images -->
                     <div>
-                        <ProductImageUploader v-model="form.images" input-name="admin-main-image" :disabled="loading" />
+                        <ProductImageUploader v-model="form.images" input-name="admin-main-image" :disabled="loading" @changed="imagesDirty = true" />
                         <div>
                             <label class="block text-sm font-semibold text-text-main mb-2">Product ZIP File</label>
                             <input type="file" accept=".zip" @change="handleZipChange"
@@ -114,6 +116,7 @@ import { useProductsStore } from '../../../../stores/productsStore'
 import { useCategoriesStore } from '../../../../stores/categoriesStore'
 import { sGetById } from '../../../../services/productsService'
 import ProductImageUploader from '../../../../components/products/ProductImageUploader.vue'
+import ProductSpecificationsEditor from '../../../../components/products/ProductSpecificationsEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -132,10 +135,12 @@ const form = ref({
     price: 0,
     slug: '',
     images: [],
-    categoryIds: [] // Array of category UUIDs
+    categoryIds: [], // Array of category UUIDs
+    specs: []
 })
 const zipFile = ref(null)
 const existingZipFile = ref(null)
+const imagesDirty = ref(false)
 
 const handleZipChange = (event) => {
     const file = event.target.files?.[0] ?? null
@@ -163,11 +168,13 @@ onMounted(async () => {
                     price: product.price,
                     slug: product.slug,
                     images: product.product_images ? [...product.product_images].sort((a,b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0)) : [],
-                    categoryIds: product.product_categories ? product.product_categories.map(pc => pc.category_id) : []
+                    categoryIds: product.product_categories ? product.product_categories.map(pc => pc.category_id) : [],
+                    specs: product.product_specs ? [...product.product_specs].sort((a, b) => Number(a.sort_order) - Number(b.sort_order)) : []
                 }
                 if (product.product_files && product.product_files.length > 0) {
                     existingZipFile.value = [...product.product_files].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
                 }
+                imagesDirty.value = false
             }
         } catch (err) {
             error.value = 'Failed to load product details'
@@ -185,6 +192,7 @@ const handleSubmit = async () => {
     try {
         const payload = {
             ...form.value,
+            syncImages: !isEditMode.value || imagesDirty.value,
             zipFile: zipFile.value
         }
 

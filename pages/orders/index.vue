@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-5xl mx-auto font-poppins px-4 sm:px-6 lg:px-0">
+  <div class="mx-auto max-w-[1600px] font-poppins">
     <!-- Header -->
     <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
       <div>

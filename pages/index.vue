@@ -16,37 +16,7 @@
     <!-- MAIN CONTENT -->
 
       <!-- HERO BANNER CAROUSEL -->
-      <section class="relative overflow-hidden">
-        <div class="relative h-[200px] sm:h-[280px] md:h-[380px]">
-          <!-- Slides -->
-          <transition name="hero-fade" mode="out-in">
-            <div :key="currentBanner" class="absolute inset-0">
-              <div :class="banners[currentBanner].bg" class="w-full h-full flex items-center">
-                <div class="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
-                  <div class="max-w-lg">
-                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white mb-3 backdrop-blur-sm">{{ banners[currentBanner].badge }}</span>
-                    <h2 class="text-2xl sm:text-3xl md:text-5xl font-black text-white leading-tight mb-3">{{ banners[currentBanner].title }}</h2>
-                    <p class="text-white/80 text-sm md:text-base mb-5 max-w-sm">{{ banners[currentBanner].desc }}</p>
-                    <button @click="goToSearch" class="bg-white text-gray-900 px-5 py-2.5 rounded-full text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                      Shop Now →
-                    </button>
-                  </div>
-                  <div class="hidden md:block text-8xl opacity-30">{{ banners[currentBanner].emoji }}</div>
-                </div>
-              </div>
-            </div>
-          </transition>
-
-          <!-- Dots -->
-          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-            <button
-              v-for="(_, i) in banners" :key="i"
-              @click="currentBanner = i"
-              :class="['w-2 h-2 rounded-full transition-all duration-300', currentBanner === i ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/60']"
-            ></button>
-          </div>
-        </div>
-      </section>
+      <HomePromoCarousel :items="carouselItems" :loading="carouselLoading" />
 
       <!-- CATEGORY GRID -->
       <section class="mt-6">
@@ -78,29 +48,6 @@
             </div>
             <span class="text-[10px] md:text-xs font-semibold text-text-muted group-hover:text-text-main transition-colors text-center line-clamp-1">{{ cat.name }}</span>
           </button>
-        </div>
-      </section>
-
-      <!-- PROMO BANNERS -->
-      <section class="mt-10">
-        <div class="grid grid-cols-2 gap-3 md:gap-4">
-          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-5 md:p-8 text-white cursor-pointer hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 group" @click="goToSearch">
-            <div class="relative z-10">
-              <span class="text-[10px] md:text-xs font-bold bg-white/20 rounded-full px-2.5 py-1 backdrop-blur-sm">🔥 Hot Deal</span>
-              <h3 class="text-sm md:text-xl font-black mt-2 md:mt-3">Flash Sale</h3>
-              <p class="text-white/70 text-[10px] md:text-sm mt-1">Up to 50% Off</p>
-            </div>
-            <div class="absolute top-2 right-2 md:top-4 md:right-4 text-4xl md:text-6xl opacity-20 group-hover:scale-110 transition-transform">⚡</div>
-          </div>
-
-          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 p-5 md:p-8 text-white cursor-pointer hover:shadow-xl hover:shadow-violet-500/20 transition-all duration-300 group" @click="goToSearch">
-            <div class="relative z-10">
-              <span class="text-[10px] md:text-xs font-bold bg-white/20 rounded-full px-2.5 py-1 backdrop-blur-sm">✨ New</span>
-              <h3 class="text-sm md:text-xl font-black mt-2 md:mt-3">New Arrivals</h3>
-              <p class="text-white/70 text-[10px] md:text-sm mt-1">Fresh & Trending</p>
-            </div>
-            <div class="absolute top-2 right-2 md:top-4 md:right-4 text-4xl md:text-6xl opacity-20 group-hover:scale-110 transition-transform">🆕</div>
-          </div>
         </div>
       </section>
 
@@ -188,18 +135,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import HomePromoCarousel from '../components/home/HomePromoCarousel.vue'
 import { useAuth } from '../composables/useAuth'
 import { useCategoriesStore } from '../stores/categoriesStore'
 import { useProductsStore } from '../stores/productsStore'
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
+import { sPublicHomeCarouselItems } from '../services/homeCarouselService'
 import { formatIDR } from '../utils/currency'
 
 
 const router = useRouter()
-const { profile, fetchProfile } = useAuth()
+const { fetchProfile } = useAuth()
 const categoriesStore = useCategoriesStore()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
@@ -208,33 +157,20 @@ const categories = computed(() => categoriesStore.categories)
 const categoriesLoading = computed(() => categoriesStore.loading)
 const productsLoading = computed(() => productsStore.loading)
 const featuredProducts = computed(() => productsStore.products.slice(0, 8))
+const carouselItems = ref([])
+const carouselLoading = ref(true)
 
-// Banner Carousel
-const banners = [
-  {
-    title: 'Premium Digital Assets',
-    desc: 'Discover hand-picked design resources, templates, and tools.',
-    badge: '🛍️ Shop Now',
-    bg: 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500',
-    emoji: '🎨'
-  },
-  {
-    title: 'New Collections',
-    desc: 'Freshly curated items added weekly to our store.',
-    badge: '🌟 New Arrivals',
-    bg: 'bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600',
-    emoji: '✨'
-  },
-  {
-    title: 'Best Sellers',
-    desc: 'Top-rated products loved by thousands of customers.',
-    badge: '🏆 Top Rated',
-    bg: 'bg-gradient-to-br from-orange-500 via-red-500 to-rose-600',
-    emoji: '🔥'
+const loadCarousel = async () => {
+  carouselLoading.value = true
+  try {
+    carouselItems.value = await sPublicHomeCarouselItems()
+  } catch (error) {
+    console.warn('[Home] Carousel content could not be loaded.', error)
+    carouselItems.value = []
+  } finally {
+    carouselLoading.value = false
   }
-]
-const currentBanner = ref(0)
-let bannerInterval = null
+}
 
 const goToSearch = () => {
   router.push({ path: '/products', query: { focus: 'search' } })
@@ -251,15 +187,10 @@ const isNewProduct = (createdAt) => {
 }
 
 onMounted(async () => {
-  // Start banner rotation
-  bannerInterval = setInterval(() => {
-    currentBanner.value = (currentBanner.value + 1) % banners.length
-  }, 5000)
-
   // Fetch data
   await fetchProfile()
 
-  const promises = [categoriesStore.fetchCategories()]
+  const promises = [categoriesStore.fetchCategories(), loadCarousel()]
 
   // Only fetch products if not already loaded
   if (!productsStore.products.length) {
@@ -274,22 +205,4 @@ onMounted(async () => {
   await Promise.all(promises)
 })
 
-onUnmounted(() => {
-  clearInterval(bannerInterval)
-})
 </script>
-
-<style scoped>
-.hero-fade-enter-active,
-.hero-fade-leave-active {
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.hero-fade-enter-from {
-  opacity: 0;
-  transform: scale(1.02);
-}
-.hero-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.98);
-}
-</style>

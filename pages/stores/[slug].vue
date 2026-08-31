@@ -201,7 +201,7 @@ const formatIDR = (value) => new Intl.NumberFormat('id-ID', {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-8 font-poppins sm:px-6 lg:px-0">
+  <div class="mx-auto max-w-6xl font-poppins">
     <div v-if="storeError || !store" class="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700">
       This store is not available.
     </div>

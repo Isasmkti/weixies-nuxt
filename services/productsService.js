@@ -1,5 +1,17 @@
-import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile } from '../repositories/productsRepository'
+import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile, rReplaceProductSpecs } from '../repositories/productsRepository'
 import { saveProductImages } from './productImagesService'
+import { normalizeProductSpecs } from '../utils/productSpecs'
+
+async function runProductSaveStage(label, operation) {
+    try {
+        return await operation()
+    } catch (error) {
+        const wrappedError = new Error(`${label}: ${error?.message || 'Unknown database error.'}`)
+        wrappedError.code = error?.code
+        wrappedError.cause = error
+        throw wrappedError
+    }
+}
 
 export async function sAll(page, limit, sortBy, sortOrder, search, categorySlug, minPrice, maxPrice) {
     try {
@@ -27,14 +39,18 @@ export async function sGetBySlug(slug) {
     }
 }
 
-export async function sCreate(product, images, categoryIds = [], zipFile) {
+export async function sCreate(product, images, categoryIds = [], zipFile, specs = [], syncImages = true) {
     try {
+        const normalizedSpecs = normalizeProductSpecs(specs)
         const newProduct = await rCreate(product)
         if (newProduct) {
-            if (images) await saveProductImages(newProduct.id, images)
-            if (categoryIds.length) await rUpsertProductCategories(newProduct.id, categoryIds)
-            if (zipFile) await rCreateProductFile(newProduct.id, zipFile)
-            return await rGetById(newProduct.id)
+            if (syncImages !== false && Array.isArray(images) && images.length > 0) {
+                await runProductSaveStage('Unable to save product images', () => saveProductImages(newProduct.id, images))
+            }
+            if (categoryIds.length) await runProductSaveStage('Unable to save product categories', () => rUpsertProductCategories(newProduct.id, categoryIds))
+            await runProductSaveStage('Unable to save product specifications', () => rReplaceProductSpecs(newProduct.id, normalizedSpecs))
+            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(newProduct.id, zipFile))
+            return await runProductSaveStage('Unable to reload the saved product', () => rGetById(newProduct.id))
         }
         return newProduct
     } catch (error) {
@@ -42,14 +58,16 @@ export async function sCreate(product, images, categoryIds = [], zipFile) {
     }
 }
 
-export async function sUpdate(id, product, images, categoryIds = [], zipFile) {
+export async function sUpdate(id, product, images, categoryIds = [], zipFile, specs = [], syncImages = true) {
     try {
+        const normalizedSpecs = normalizeProductSpecs(specs)
         const updatedProduct = await rUpdate(id, product)
         if (updatedProduct) {
-            if (images) await saveProductImages(id, images)
-            if (categoryIds) await rUpsertProductCategories(id, categoryIds)
-            if (zipFile) await rCreateProductFile(id, zipFile)
-            return await rGetById(id)
+            if (syncImages !== false) await runProductSaveStage('Unable to save product images', () => saveProductImages(id, images))
+            if (categoryIds) await runProductSaveStage('Unable to save product categories', () => rUpsertProductCategories(id, categoryIds))
+            await runProductSaveStage('Unable to save product specifications', () => rReplaceProductSpecs(id, normalizedSpecs))
+            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(id, zipFile))
+            return await runProductSaveStage('Unable to reload the saved product', () => rGetById(id))
         }
         return updatedProduct
     } catch (error) {

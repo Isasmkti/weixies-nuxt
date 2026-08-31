@@ -121,6 +121,12 @@ function focusComposer() {
   nextTick(() => composerRef.value?.focus())
 }
 
+function resetComposerHeight() {
+  nextTick(() => {
+    if (composerRef.value) composerRef.value.style.height = '2.5rem'
+  })
+}
+
 function clearError() {
   errorMessage.value = ''
   errorAction.value = null
@@ -202,7 +208,10 @@ async function submitMessage(retry = null) {
     messages.value.push(optimisticMessage)
   }
 
-  if (!retry) draft.value = ''
+  if (!retry) {
+    draft.value = ''
+    resetComposerHeight()
+  }
   pendingRetry.value = null
   clearError()
   sending.value = true
@@ -328,11 +337,12 @@ onBeforeUnmount(() => {
         :aria-busy="historyLoading || sending"
       >
         <div class="flex min-h-0 w-full flex-col">
-          <header class="flex items-center gap-3 border-b border-bg-alt/80 px-4 py-3.5 sm:px-5">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <header class="flex shrink-0 items-center gap-3 border-b border-bg-alt/80 bg-surface px-4 py-3.5 sm:px-5">
+            <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0h-.375m4.875 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0H13.5m4.875 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0h-.375M21 12c0 4.142-4.03 7.5-9 7.5a10.6 10.6 0 0 1-4.151-.82L3 20.25l1.44-3.84A6.857 6.857 0 0 1 3 12c0-4.142 4.03-7.5 9-7.5s9 3.358 9 7.5Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
               </svg>
+              <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500" aria-hidden="true" />
             </div>
             <div class="min-w-0 flex-1">
               <h2 id="ai-chat-title" class="truncate font-poppins text-sm font-bold text-text-main sm:text-base">Weixies AI Support</h2>
@@ -352,7 +362,7 @@ onBeforeUnmount(() => {
 
           <div
             ref="messageListRef"
-            class="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-bg/60 px-4 py-5 sm:px-5"
+            class="ai-chat-messages min-h-0 flex-1 overflow-y-auto overscroll-contain bg-bg/60 px-3.5 py-4 sm:px-5 sm:py-5"
             role="log"
             aria-live="polite"
             aria-relevant="additions text"
@@ -363,9 +373,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-else-if="!messages.length" class="flex h-full min-h-52 flex-col items-center justify-center px-4 text-center">
-              <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/10">
                 <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18l-.813-2.096a4.5 4.5 0 0 0-2.591-2.591L3.5 12.5l2.096-.813a4.5 4.5 0 0 0 2.591-2.591L9 7l.813 2.096a4.5 4.5 0 0 0 2.591 2.591l2.096.813-2.096.813a4.5 4.5 0 0 0-2.591 2.591ZM18.259 8.715 18 9.5l-.259-.785a2.25 2.25 0 0 0-1.456-1.456L15.5 7l.785-.259a2.25 2.25 0 0 0 1.456-1.456L18 4.5l.259.785a2.25 2.25 0 0 0 1.456 1.456L20.5 7l-.785.259a2.25 2.25 0 0 0-1.456 1.456Z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
                 </svg>
               </div>
               <h3 class="font-poppins text-lg font-bold text-text-main">How can we help?</h3>
@@ -376,15 +386,24 @@ onBeforeUnmount(() => {
               <li
                 v-for="message in messages"
                 :key="message.id"
-                :class="['flex', message.role === 'user' ? 'justify-end' : 'justify-start']"
+                :class="['flex min-w-0 items-end gap-2', message.role === 'user' ? 'justify-end' : 'justify-start']"
               >
-                <div :class="['max-w-[86%]', message.role === 'user' ? 'items-end' : 'items-start']" class="flex flex-col gap-1">
+                <div
+                  v-if="message.role === 'assistant'"
+                  class="mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm"
+                  aria-hidden="true"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
+                  </svg>
+                </div>
+                <div :class="['min-w-0 max-w-[82%]', message.role === 'user' ? 'items-end' : 'items-start']" class="flex flex-col gap-1">
                   <span class="sr-only">{{ message.role === 'user' ? 'You' : 'AI support' }}</span>
                   <div
                     :class="message.role === 'user'
                       ? 'rounded-2xl rounded-br-md bg-primary-dark text-white dark:bg-indigo-700'
                       : 'rounded-2xl rounded-bl-md border border-bg-alt bg-surface text-text-main'"
-                    class="whitespace-pre-wrap break-words px-3.5 py-2.5 text-sm leading-6 shadow-sm"
+                    class="max-w-full whitespace-pre-wrap break-words px-3.5 py-2.5 text-sm leading-6 shadow-sm"
                   >
                     {{ message.content }}
                   </div>
@@ -433,7 +452,12 @@ onBeforeUnmount(() => {
               </li>
             </ol>
 
-            <div v-if="sending" class="mt-4 flex justify-start" role="status" aria-label="AI support is typing">
+            <div v-if="sending" class="mt-4 flex items-end justify-start gap-2" role="status" aria-label="AI support is typing">
+              <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm" aria-hidden="true">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
+                </svg>
+              </div>
               <div class="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-bg-alt bg-surface px-4 py-3 shadow-sm">
                 <span class="ai-typing-dot h-1.5 w-1.5 rounded-full bg-text-muted" />
                 <span class="ai-typing-dot h-1.5 w-1.5 rounded-full bg-text-muted" />
@@ -458,30 +482,29 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <form class="border-t border-bg-alt/80 bg-surface px-3 py-3 sm:px-4" @submit.prevent="submitMessage()">
+          <form class="shrink-0 border-t border-bg-alt/80 bg-surface px-3 py-3 sm:px-4 sm:pb-3.5" @submit.prevent="submitMessage()">
             <label for="ai-customer-service-input" class="sr-only">Message AI support</label>
-            <div class="flex items-end gap-2 rounded-2xl border border-bg-alt bg-bg px-3 py-2 transition focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15">
+            <div class="grid grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-2 rounded-2xl border border-bg-alt bg-bg p-1.5 pl-3 transition focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15">
               <textarea
                 id="ai-customer-service-input"
                 ref="composerRef"
                 v-model="draft"
                 rows="1"
                 :maxlength="MAX_MESSAGE_LENGTH"
-                class="max-h-28 min-h-7 flex-1 resize-none bg-transparent py-1 text-sm leading-5 text-text-main outline-none placeholder:text-text-muted/80"
+                class="block h-10 max-h-28 min-h-10 w-full resize-none overflow-y-auto border-0 bg-transparent py-2.5 text-sm leading-5 text-text-main outline-none placeholder:text-text-muted/80 focus:ring-0"
                 placeholder="Type your question…"
                 :disabled="sending || historyLoading"
                 @keydown="handleComposerKeydown"
                 @input="resizeComposer"
-              />
+              ></textarea>
               <button
                 type="submit"
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-dark text-white shadow-sm transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg dark:bg-indigo-700 dark:hover:bg-indigo-600"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg dark:bg-indigo-700 dark:hover:bg-indigo-600"
                 :disabled="!canSend"
                 aria-label="Send message"
               >
-                <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5-15 7.5Z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 18.75v-6h-6" />
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="m5 12 7-7 7 7M12 5v14" />
                 </svg>
               </button>
             </div>
@@ -506,7 +529,7 @@ onBeforeUnmount(() => {
         @click="openChat"
       >
         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0h-.375m4.875 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0H13.5m4.875 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm.375 0h-.375M21 12c0 4.142-4.03 7.5-9 7.5a10.6 10.6 0 0 1-4.151-.82L3 20.25l1.44-3.84A6.857 6.857 0 0 1 3 12c0-4.142 4.03-7.5 9-7.5s9 3.358 9 7.5Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
         </svg>
         <span class="hidden sm:inline">AI Support</span>
       </button>

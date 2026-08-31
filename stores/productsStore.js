@@ -230,8 +230,8 @@ export const useProductsStore = defineStore('products', {
         async createProduct(payload) {
             this.loading = true
             try {
-                const { images, categoryIds, zipFile, ...productData } = payload
-                const rawProduct = await productsService.sCreate(productData, images, categoryIds, zipFile)
+                const { images, categoryIds, specs, syncImages, zipFile, ...productData } = payload
+                const rawProduct = await productsService.sCreate(productData, images, categoryIds, zipFile, specs, syncImages)
                 const newProduct = this._mapProduct(rawProduct)
                 this.products.unshift(newProduct)
                 return newProduct
@@ -246,8 +246,8 @@ export const useProductsStore = defineStore('products', {
         async updateProduct(id, payload) {
             this.loading = true
             try {
-                const { images, categoryIds, zipFile, ...productData } = payload
-                const rawUpdated = await productsService.sUpdate(id, productData, images, categoryIds, zipFile)
+                const { images, categoryIds, specs, syncImages, zipFile, ...productData } = payload
+                const rawUpdated = await productsService.sUpdate(id, productData, images, categoryIds, zipFile, specs, syncImages)
                 const updated = this._mapProduct(rawUpdated)
                 const index = this.products.findIndex(p => p.id === id)
                 if (index !== -1) {

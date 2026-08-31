@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto font-poppins px-4 sm:px-6 lg:px-0">
+  <div class="mx-auto max-w-6xl font-poppins">
     <!-- Back -->
     <div class="mb-6">
       <NuxtLink to="/orders" class="inline-flex items-center gap-2 text-text-muted hover:text-primary font-semibold transition-colors">

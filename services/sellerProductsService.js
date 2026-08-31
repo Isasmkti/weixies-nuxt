@@ -7,10 +7,9 @@ import {
 } from '../repositories/sellerProductsRepository'
 import { rCreateProductFile, rReplaceProductSpecs, rUpsertProductCategories } from '../repositories/productsRepository'
 import { saveProductImages } from './productImagesService'
+import { normalizeProductSpecs } from '../utils/productSpecs'
 
-const MAX_PRODUCT_SPECS = 30
-const MAX_SPEC_NAME_LENGTH = 80
-const MAX_SPEC_VALUE_LENGTH = 500
+export { normalizeProductSpecs } from '../utils/productSpecs'
 
 export function createProductSlug(productName) {
   const normalized = String(productName || '')
@@ -23,22 +22,6 @@ export function createProductSlug(productName) {
     .slice(0, 56)
 
   return normalized || 'product'
-}
-
-export function normalizeProductSpecs(specs) {
-  const normalizedSpecs = (Array.isArray(specs) ? specs : [])
-    .map((spec) => ({
-      spec_name: String(spec?.spec_name || '').trim(),
-      spec_value: String(spec?.spec_value || '').trim(),
-    }))
-    .filter((spec) => spec.spec_name || spec.spec_value)
-
-  if (normalizedSpecs.length > MAX_PRODUCT_SPECS) throw new Error(`A product can have up to ${MAX_PRODUCT_SPECS} specifications.`)
-  if (normalizedSpecs.some((spec) => !spec.spec_name || !spec.spec_value)) throw new Error('Each specification requires both a name and a value.')
-  if (normalizedSpecs.some((spec) => spec.spec_name.length > MAX_SPEC_NAME_LENGTH)) throw new Error(`Specification names cannot exceed ${MAX_SPEC_NAME_LENGTH} characters.`)
-  if (normalizedSpecs.some((spec) => spec.spec_value.length > MAX_SPEC_VALUE_LENGTH)) throw new Error(`Specification values cannot exceed ${MAX_SPEC_VALUE_LENGTH} characters.`)
-
-  return normalizedSpecs
 }
 
 function normalizeProduct(product) {
@@ -61,12 +44,13 @@ function normalizeProduct(product) {
     images: Array.isArray(product?.images) ? product.images : [],
     categoryIds: Array.isArray(product?.categoryIds) ? product.categoryIds : [],
     specs,
+    syncImages: product?.syncImages !== false,
     zipFile: product?.zipFile || null,
   }
 }
 
-async function saveProductContent(productId, { images, categoryIds, specs, zipFile }) {
-  await saveProductImages(productId, images)
+async function saveProductContent(productId, { images, categoryIds, specs, syncImages, zipFile }, { isNew = false } = {}) {
+  if (syncImages && (!isNew || images.length > 0)) await saveProductImages(productId, images)
   await rUpsertProductCategories(productId, categoryIds)
   await rReplaceProductSpecs(productId, specs)
   if (zipFile) await rCreateProductFile(productId, zipFile)
@@ -100,7 +84,7 @@ export async function sCreateSellerProduct(sellerId, product) {
     seller_id: sellerId,
     status: 'pending_review',
   })
-  await saveProductContent(createdProduct.id, normalized)
+  await saveProductContent(createdProduct.id, normalized, { isNew: true })
   return rGetSellerProduct(createdProduct.id, sellerId)
 }
 
