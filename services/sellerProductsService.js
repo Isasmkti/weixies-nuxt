@@ -24,6 +24,17 @@ export function createProductSlug(productName) {
   return normalized || 'product'
 }
 
+async function runSellerProductSaveStage(label, operation) {
+  try {
+    return await operation()
+  } catch (error) {
+    const wrappedError = new Error(`${label}: ${error?.message || 'Unknown database error.'}`)
+    wrappedError.code = error?.code
+    wrappedError.cause = error
+    throw wrappedError
+  }
+}
+
 function normalizeProduct(product) {
   const name = String(product?.name || '').trim()
   const description = String(product?.description || '').trim()
@@ -50,10 +61,14 @@ function normalizeProduct(product) {
 }
 
 async function saveProductContent(productId, { images, categoryIds, specs, syncImages, zipFile }, { isNew = false } = {}) {
-  if (syncImages && (!isNew || images.length > 0)) await saveProductImages(productId, images)
-  await rUpsertProductCategories(productId, categoryIds)
-  await rReplaceProductSpecs(productId, specs)
-  if (zipFile) await rCreateProductFile(productId, zipFile)
+  if (syncImages && (!isNew || images.length > 0)) {
+    await runSellerProductSaveStage('Unable to save product images', () => saveProductImages(productId, images))
+  }
+  await runSellerProductSaveStage('Unable to save product categories', () => rUpsertProductCategories(productId, categoryIds))
+  await runSellerProductSaveStage('Unable to save product specifications', () => rReplaceProductSpecs(productId, specs))
+  if (zipFile) {
+    await runSellerProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(productId, zipFile))
+  }
 }
 
 export async function sGetSellerProducts(sellerId) {
@@ -79,22 +94,26 @@ export async function sGetSellerProduct(productId, sellerId) {
 
 export async function sCreateSellerProduct(sellerId, product) {
   const normalized = normalizeProduct(product)
-  const createdProduct = await rCreateSellerProduct({
-    ...normalized.product,
-    seller_id: sellerId,
-    status: 'pending_review',
-  })
+  const createdProduct = await runSellerProductSaveStage('Unable to create the product', () => (
+    rCreateSellerProduct({
+      ...normalized.product,
+      seller_id: sellerId,
+      status: 'pending_review',
+    })
+  ))
   await saveProductContent(createdProduct.id, normalized, { isNew: true })
-  return rGetSellerProduct(createdProduct.id, sellerId)
+  return createdProduct
 }
 
 export async function sUpdateSellerProduct(productId, sellerId, product) {
   const normalized = normalizeProduct(product)
-  await rUpdateSellerProduct(productId, sellerId, {
-    ...normalized.product,
-    // Every seller edit goes back through moderation before it can be public.
-    status: 'pending_review',
-  })
+  await runSellerProductSaveStage('Unable to update the product', () => (
+    rUpdateSellerProduct(productId, sellerId, {
+      ...normalized.product,
+      // Every seller edit goes back through moderation before it can be public.
+      status: 'pending_review',
+    })
+  ))
   await saveProductContent(productId, normalized)
-  return rGetSellerProduct(productId, sellerId)
+  return { id: productId }
 }

@@ -39,7 +39,10 @@ export async function rCreateSellerProduct(product) {
   const { data, error } = await supabase
     .from('products')
     .insert(product)
-    .select(SELLER_PRODUCT_DETAIL_SELECT)
+    // Creating the base product must not depend on nested relationship cache.
+    // Images, categories, specs, and files are persisted by the following
+    // save stages and loaded only when a detail page actually needs them.
+    .select(SELLER_PRODUCT_SELECT)
     .single()
 
   if (error) throw error

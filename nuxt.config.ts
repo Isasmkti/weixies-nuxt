@@ -1,7 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: process.env.NODE_ENV === 'development' },
+  // DevTools is useful for targeted debugging, but loading it on every dev
+  // startup adds several seconds on some Windows environments. Enable it only
+  // when explicitly requested with NUXT_DEVTOOLS=true.
+  devtools: { enabled: process.env.NUXT_DEVTOOLS === 'true' },
 
   modules: [
     '@pinia/nuxt',
