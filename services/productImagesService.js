@@ -74,6 +74,7 @@ export async function saveProductImages(productId, images = []) {
       }
       retainedIds.add(String(existingImage.id))
       nextImages.push({
+        id: existingImage.id,
         image_url: existingImage.image_url,
         storage_path: existingImage.storage_path,
         is_primary: Boolean(requestedImage.is_primary),

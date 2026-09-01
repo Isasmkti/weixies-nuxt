@@ -112,19 +112,114 @@ export async function rDelete(id) {
 }
 
 export async function rReplaceProductImages(productId, images) {
+    const normalizedProductId = Number(productId)
+    if (!Number.isSafeInteger(normalizedProductId) || normalizedProductId <= 0) {
+        throw new Error('A valid product is required.')
+    }
+
     const records = (Array.isArray(images) ? images : []).map((img, index) => ({
+        id: img?.id ? String(img.id) : null,
         image_url: String(img?.image_url || '').trim(),
         storage_path: String(img?.storage_path || '').trim() || null,
         is_primary: Boolean(img?.is_primary ?? (index === 0)),
     }))
 
-    const { data, error } = await supabase.rpc('replace_product_images', {
-        p_product_id: Number(productId),
-        p_images: records,
-    })
+    if (records.some((record) => !record.image_url)) {
+        throw new Error('Every product image requires a URL.')
+    }
 
-    if (error) throw error
-    return data || []
+    const currentImages = await rGetProductImages(normalizedProductId)
+    const currentById = new Map(currentImages.map((image) => [String(image.id), image]))
+    const retainedIds = new Set()
+    const savedInOrder = []
+    const insertedIds = []
+
+    try {
+        for (const record of records) {
+            if (record.id) {
+                if (!currentById.has(record.id) || retainedIds.has(record.id)) {
+                    throw new Error('One of the selected product images does not belong to this product.')
+                }
+
+                const { data, error } = await supabase
+                    .from('product_images')
+                    .update({
+                        image_url: record.image_url,
+                        storage_path: record.storage_path,
+                    })
+                    .eq('id', record.id)
+                    .eq('product_id', normalizedProductId)
+                    .select('id, product_id, image_url, storage_path, is_primary, created_at')
+                    .single()
+
+                if (error) throw error
+                retainedIds.add(record.id)
+                savedInOrder.push({ ...data, requestedPrimary: record.is_primary })
+                continue
+            }
+
+            const { data, error } = await supabase
+                .from('product_images')
+                .insert({
+                    product_id: normalizedProductId,
+                    image_url: record.image_url,
+                    storage_path: record.storage_path,
+                    is_primary: false,
+                })
+                .select('id, product_id, image_url, storage_path, is_primary, created_at')
+                .single()
+
+            if (error) throw error
+            insertedIds.push(data.id)
+            savedInOrder.push({ ...data, requestedPrimary: record.is_primary })
+        }
+
+        if (savedInOrder.length) {
+            const primary = savedInOrder.find((image) => image.requestedPrimary) || savedInOrder[0]
+            const { error: resetPrimaryError } = await supabase
+                .from('product_images')
+                .update({ is_primary: false })
+                .eq('product_id', normalizedProductId)
+
+            if (resetPrimaryError) throw resetPrimaryError
+
+            const { error: setPrimaryError } = await supabase
+                .from('product_images')
+                .update({ is_primary: true })
+                .eq('id', primary.id)
+                .eq('product_id', normalizedProductId)
+
+            if (setPrimaryError) throw setPrimaryError
+        }
+
+        const removedIds = currentImages
+            .map((image) => String(image.id))
+            .filter((id) => !retainedIds.has(id))
+
+        if (removedIds.length) {
+            const { error: deleteError } = await supabase
+                .from('product_images')
+                .delete()
+                .eq('product_id', normalizedProductId)
+                .in('id', removedIds)
+
+            if (deleteError) throw deleteError
+        }
+
+        return rGetProductImages(normalizedProductId)
+    } catch (error) {
+        // Only remove rows created by this attempt. Existing metadata is never
+        // deleted until every insert/update and primary selection succeeds.
+        if (insertedIds.length) {
+            await supabase
+                .from('product_images')
+                .delete()
+                .eq('product_id', normalizedProductId)
+                .in('id', insertedIds)
+        }
+
+        throw error
+    }
 }
 
 export async function rGetProductImages(productId) {
@@ -144,7 +239,17 @@ export async function rUploadProductImage(filePath, file) {
         .from(PRODUCT_IMAGE_BUCKET)
         .upload(filePath, file, { contentType: file.type, upsert: false })
 
-    if (error) throw error
+    if (error) {
+        const status = Number(error?.statusCode || error?.status || 0)
+        const message = String(error?.message || '')
+        if (status === 401 || status === 403 || /row-level security|not authorized/i.test(message)) {
+            const authorizationError = new Error('Product image upload was denied. Your seller account must be approved and own this product.')
+            authorizationError.code = error?.code || 'PRODUCT_IMAGE_UPLOAD_DENIED'
+            authorizationError.cause = error
+            throw authorizationError
+        }
+        throw error
+    }
 
     const { data } = supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(filePath)
     return { image_url: data.publicUrl, storage_path: filePath }
