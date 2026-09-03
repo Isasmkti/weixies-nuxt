@@ -3,6 +3,12 @@ import { requireRequestUser } from '~/server/utils/request-auth';
 import { enforceRateLimit } from '~/server/utils/rate-limit';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
 import { createXenditInvoice, getXenditInvoice } from '~/server/utils/xendit';
+import {
+  findSelfPurchaseConflicts,
+  getCartProductIds,
+  isSelfPurchaseDatabaseError,
+  throwSelfPurchase,
+} from '~/server/utils/self-purchase';
 
 async function persistInvoice(supabase: any, orderId: string, invoice: Record<string, any>) {
   const paymentMethod = String(invoice.payment_method || invoice.payment_channel || '').trim() || null;
@@ -55,6 +61,19 @@ export default defineEventHandler(async (event) => {
 
   await enforceRateLimit(`checkout:${user.id}`, 10, 60);
 
+  // Re-read the buyer's complete cart and the requested product immediately
+  // before order creation. This catches stale items and ownership changes that
+  // happened after the browser originally loaded the cart.
+  const cartProductIds = await getCartProductIds(supabase, user.id);
+  const conflictingProductIds = await findSelfPurchaseConflicts(
+    supabase,
+    user.id,
+    [...cartProductIds, productId],
+  );
+  if (conflictingProductIds.length) {
+    throwSelfPurchase('checkout', conflictingProductIds);
+  }
+
   const { data: checkoutRows, error: checkoutError } = await supabase.rpc('create_checkout_order', {
     p_profile_id: user.id,
     p_product_id: productId,
@@ -64,6 +83,9 @@ export default defineEventHandler(async (event) => {
 
   if (checkoutError || !checkout) {
     console.error('[Checkout] Could not create or resume order:', checkoutError);
+    if (isSelfPurchaseDatabaseError(checkoutError) || String(checkoutError?.message || '').includes('cannot purchase your own product')) {
+      throwSelfPurchase('checkout', [productId]);
+    }
     throw createError({
       statusCode: checkoutError?.code === 'P0002' ? 404 : 409,
       statusMessage: checkoutError?.message || 'Checkout could not be started.',

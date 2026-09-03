@@ -65,7 +65,7 @@ const removeLicense = (index) => {
             <input :value="license.name" required maxlength="120" :disabled="disabled" class="mt-2 w-full rounded-xl border border-bg-alt bg-bg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" placeholder="Personal Use" @input="update(index, 'name', $event.target.value)">
           </label>
           <label class="block text-xs font-bold text-text-main">Price (Rp)
-            <input :value="license.price" required type="number" min="0" step="1" :disabled="disabled" class="mt-2 w-full rounded-xl border border-bg-alt bg-bg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" @input="update(index, 'price', Number($event.target.value))">
+            <input :value="license.price" required type="number" min="1" step="1" :disabled="disabled" class="mt-2 w-full rounded-xl border border-bg-alt bg-bg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" @input="update(index, 'price', Number($event.target.value))">
           </label>
           <label class="block text-xs font-bold text-text-main">Maximum end products
             <input :value="license.max_end_products" type="number" min="1" step="1" :disabled="disabled" class="mt-2 w-full rounded-xl border border-bg-alt bg-bg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" placeholder="Unlimited" @input="update(index, 'max_end_products', $event.target.value === '' ? null : Number($event.target.value))">

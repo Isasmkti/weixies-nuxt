@@ -2,6 +2,7 @@ import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCa
 import { saveProductImages } from './productImagesService'
 import { normalizeProductSpecs } from '../utils/productSpecs'
 import { normalizeProductLicenses } from '../utils/productLicenses'
+import { validateProductSubmission } from '../utils/productSubmission'
 
 async function runProductSaveStage(label, operation) {
     try {
@@ -42,6 +43,7 @@ export async function sGetBySlug(slug) {
 
 export async function sCreate(product, images, categoryIds = [], zipFile, specs = [], syncImages = true, licenses = []) {
     try {
+        validateProductSubmission({ ...product, images, zipFile })
         const normalizedSpecs = normalizeProductSpecs(specs)
         const normalizedLicenses = normalizeProductLicenses(licenses, product?.price)
         const catalogPrice = Math.min(...normalizedLicenses.filter((license) => license.is_active).map((license) => license.price))
@@ -74,6 +76,11 @@ export async function sCreate(product, images, categoryIds = [], zipFile, specs 
 
 export async function sUpdate(id, product, images, categoryIds = [], zipFile, specs = [], syncImages = true, licenses = []) {
     try {
+        const existingProduct = await rGetById(id)
+        validateProductSubmission(
+            { ...product, images, zipFile },
+            { hasExistingZip: Boolean(existingProduct?.product_files?.length) },
+        )
         const normalizedSpecs = normalizeProductSpecs(specs)
         const normalizedLicenses = normalizeProductLicenses(licenses, product?.price)
         const catalogPrice = Math.min(...normalizedLicenses.filter((license) => license.is_active).map((license) => license.price))

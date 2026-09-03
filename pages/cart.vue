@@ -46,17 +46,17 @@
             <section class="min-w-0">
                 <div class="mb-4 flex items-center justify-between rounded-xl border border-bg-alt bg-surface px-4 py-3">
                     <label class="flex cursor-pointer items-center gap-3 text-sm font-bold text-text-main">
-                        <input type="checkbox" :checked="allItemsSelected" class="h-4 w-4 cursor-pointer rounded border-bg-alt accent-primary focus:ring-primary/30" @change="toggleAllItems">
+                        <input type="checkbox" :checked="allItemsSelected" :disabled="!purchasableItems.length" class="h-4 w-4 cursor-pointer rounded border-bg-alt accent-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50" @change="toggleAllItems">
                         Select all
                     </label>
-                    <span class="text-xs font-semibold text-text-muted">{{ selectedItems.length }} of {{ items.length }} selected</span>
+                    <span class="text-xs font-semibold text-text-muted">{{ selectedItems.length }} of {{ purchasableItems.length }} available selected</span>
                 </div>
 
                 <div class="space-y-4">
-                    <article v-for="item in items" :key="item.id" class="group relative rounded-2xl border bg-surface p-4 transition duration-200 sm:p-5" :class="selectedItems.includes(item.id) ? 'border-primary/40 shadow-md shadow-primary/5' : 'border-bg-alt hover:border-primary/20 hover:shadow-md'">
+                    <article v-for="item in items" :key="item.id" class="group relative rounded-2xl border bg-surface p-4 transition duration-200 sm:p-5" :class="isConflictingItem(item) ? 'border-red-300 bg-red-50/50 dark:border-red-900/70 dark:bg-red-950/10' : selectedItems.includes(item.id) ? 'border-primary/40 shadow-md shadow-primary/5' : 'border-bg-alt hover:border-primary/20 hover:shadow-md'">
                         <div class="flex items-start gap-3 sm:gap-5">
                             <label class="mt-1 flex shrink-0 cursor-pointer items-center" :aria-label="`Select ${item.product?.name || 'product'}`">
-                                <input v-model="selectedItems" type="checkbox" :value="item.id" class="h-5 w-5 cursor-pointer rounded border-bg-alt accent-primary focus:ring-primary/30">
+                                <input v-model="selectedItems" type="checkbox" :value="item.id" :disabled="isConflictingItem(item)" class="h-5 w-5 cursor-pointer rounded border-bg-alt accent-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-40">
                             </label>
 
                             <button type="button" class="relative aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-xl border border-bg-alt bg-bg-alt sm:w-36" @click="openProduct(item)">
@@ -69,6 +69,9 @@
                                     <h2 class="line-clamp-2 text-base font-black leading-snug text-text-main transition group-hover:text-primary sm:text-lg">{{ item.product?.name || 'Unavailable product' }}</h2>
                                 </button>
                                 <p class="mt-1 hidden line-clamp-2 text-sm leading-relaxed text-text-muted sm:block">{{ item.product?.description || 'No product description available.' }}</p>
+                                <p v-if="isConflictingItem(item)" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                                    This product cannot be purchased because it belongs to your store.
+                                </p>
                                 <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <span class="text-base font-black text-primary sm:text-lg">{{ formatIDR(item.product_license?.price) }}</span>
                                     <span class="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{{ item.product_license?.name || 'License unavailable' }}</span>
@@ -103,10 +106,11 @@
                     <span class="text-right text-2xl font-black tracking-tight text-primary">{{ formatIDR(total) }}</span>
                 </div>
 
-                <div v-if="selectedItems.length > 1" class="mt-5 rounded-xl bg-amber-50 p-3 text-xs font-medium leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">Select only one product to continue with a digital purchase.</div>
+                <div v-if="conflictingItems.length" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">Remove products from your own store before checking out.</div>
+                <div v-else-if="selectedItems.length > 1" class="mt-5 rounded-xl bg-amber-50 p-3 text-xs font-medium leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">Select only one product to continue with a digital purchase.</div>
                 <div v-else-if="selectedItems.length === 0" class="mt-5 rounded-xl bg-bg-alt/60 p-3 text-xs font-medium leading-relaxed text-text-muted">Select one product from your cart to continue.</div>
 
-                <button type="button" :disabled="selectedItems.length !== 1 || isCheckingOut" class="group mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0" @click="handleCheckout">
+                <button type="button" :disabled="selectedItems.length !== 1 || conflictingItems.length > 0 || isCheckingOut" class="group mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0" @click="handleCheckout">
                     <span v-if="isCheckingOut" class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                     <span>{{ isCheckingOut ? 'Processing...' : 'Proceed to checkout' }}</span>
                     <svg v-if="!isCheckingOut" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
@@ -125,11 +129,13 @@
 import { onMounted, computed, ref } from 'vue'
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
+import { getCurrentSeller } from '../services/sellerService'
 import { supabase } from '../utils/supabase'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
 import Swal from 'sweetalert2'
 import defaultProduct from '../components/defaultProduct.vue'
+import { findSelfPurchaseProductIds } from '../utils/selfPurchase'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -140,10 +146,21 @@ const error = computed(() => cartStore.error)
 
 const selectedItems = ref([])
 const currentUser = ref(null)
+const currentSeller = ref(null)
 const isCheckingOut = ref(false)
+const serverConflictProductIds = ref([])
+
+const ownProductIds = computed(() => findSelfPurchaseProductIds(items.value, currentSeller.value?.id))
+const conflictingProductIdSet = computed(() => new Set([
+    ...ownProductIds.value,
+    ...serverConflictProductIds.value.map(Number),
+]))
+const isConflictingItem = (item) => conflictingProductIdSet.value.has(Number(item.product_id ?? item.product?.id))
+const conflictingItems = computed(() => items.value.filter(isConflictingItem))
+const purchasableItems = computed(() => items.value.filter((item) => !isConflictingItem(item)))
 
 const allItemsSelected = computed(() => {
-    return items.value.length > 0 && items.value.every(item => selectedItems.value.includes(item.id))
+    return purchasableItems.value.length > 0 && purchasableItems.value.every(item => selectedItems.value.includes(item.id))
 })
 
 const total = computed(() => {
@@ -156,7 +173,7 @@ const total = computed(() => {
 })
 
 const toggleAllItems = (event) => {
-    selectedItems.value = event.target.checked ? items.value.map(item => item.id) : []
+    selectedItems.value = event.target.checked ? purchasableItems.value.map(item => item.id) : []
 }
 
 const openProduct = (item) => {
@@ -170,7 +187,12 @@ onMounted(async () => {
         return
     }
     currentUser.value = user
-    await cartStore.stGetCart(user.id)
+    const [seller] = await Promise.all([
+        getCurrentSeller(),
+        cartStore.stGetCart(user.id),
+    ])
+    currentSeller.value = seller
+    selectedItems.value = selectedItems.value.filter((id) => purchasableItems.value.some((item) => item.id === id))
 })
 
 const removeFromCart = async (itemId) => {
@@ -195,6 +217,17 @@ const removeFromCart = async (itemId) => {
 }
 
 const handleCheckout = async () => {
+    if (conflictingItems.value.length) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Remove your store products',
+            text: 'Remove products from your own store before checking out.',
+            background: 'rgb(var(--color-surface))',
+            color: 'rgb(var(--color-text))',
+            confirmButtonColor: 'rgb(var(--color-primary))'
+        })
+        return
+    }
     const checkoutItems = items.value.filter(item => selectedItems.value.includes(item.id))
     
     if (checkoutItems.length === 0) {
@@ -252,9 +285,14 @@ const handleCheckout = async () => {
         throw new Error('Payment URL is unavailable.')
     } catch (err) {
         console.error('Checkout error:', err)
+        const errorData = err?.data?.data || err?.data || {}
+        if (Array.isArray(errorData.conflicting_product_ids)) {
+            serverConflictProductIds.value = errorData.conflicting_product_ids.map(Number)
+            selectedItems.value = selectedItems.value.filter((id) => purchasableItems.value.some((cartItem) => cartItem.id === id))
+        }
         Swal.fire({
             title: 'Error', 
-            text: err?.message || 'Failed to initialize checkout.',
+            text: errorData.message || err?.data?.statusMessage || err?.message || 'Failed to initialize checkout.',
             icon: 'error',
             background: 'rgb(var(--color-surface))',
             color: 'rgb(var(--color-text))',

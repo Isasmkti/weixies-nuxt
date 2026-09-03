@@ -9,6 +9,7 @@ import { rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses, rUpsert
 import { saveProductImages } from './productImagesService'
 import { normalizeProductSpecs } from '../utils/productSpecs'
 import { normalizeProductLicenses } from '../utils/productLicenses'
+import { validateProductSubmission } from '../utils/productSubmission'
 
 export { normalizeProductSpecs } from '../utils/productSpecs'
 
@@ -42,7 +43,7 @@ function normalizeProduct(product) {
   const price = Number(product?.price)
 
   if (!name || !description) throw new Error('Product name and description are required.')
-  if (!Number.isInteger(price) || price < 0) throw new Error('Price must be a non-negative whole number.')
+  if (!Number.isInteger(price) || price <= 0) throw new Error('Price must be a positive whole number.')
 
   const specs = normalizeProductSpecs(product?.specs)
   const licenses = normalizeProductLicenses(product?.licenses, price)
@@ -98,27 +99,39 @@ export async function sGetSellerProduct(productId, sellerId) {
 }
 
 export async function sCreateSellerProduct(sellerId, product) {
+  validateProductSubmission(product)
   const normalized = normalizeProduct(product)
   const createdProduct = await runSellerProductSaveStage('Unable to create the product', () => (
     rCreateSellerProduct({
       ...normalized.product,
       seller_id: sellerId,
-      status: 'pending_review',
+      // Keep an incomplete upload out of the moderation queue. The product is
+      // submitted only after its images, licenses, and ZIP are saved.
+      status: 'draft',
     })
   ))
   await saveProductContent(createdProduct.id, normalized, { isNew: true })
-  return createdProduct
+  return runSellerProductSaveStage('Unable to submit the product for review', () => (
+    rUpdateSellerProduct(createdProduct.id, sellerId, { status: 'pending_review' })
+  ))
 }
 
 export async function sUpdateSellerProduct(productId, sellerId, product) {
+  const existingProduct = await rGetSellerProduct(productId, sellerId)
+  if (!existingProduct) throw new Error('Product not found or you do not have access to it.')
+  validateProductSubmission(product, { hasExistingZip: Boolean(existingProduct.product_files?.length) })
   const normalized = normalizeProduct(product)
   await runSellerProductSaveStage('Unable to update the product', () => (
     rUpdateSellerProduct(productId, sellerId, {
       ...normalized.product,
-      // Every seller edit goes back through moderation before it can be public.
-      status: 'pending_review',
+      // Save content while the product is a private draft. A failed ZIP/image
+      // upload therefore cannot leave a partial product in moderation.
+      status: 'draft',
     })
   ))
   await saveProductContent(productId, normalized)
+  await runSellerProductSaveStage('Unable to submit the product for review', () => (
+    rUpdateSellerProduct(productId, sellerId, { status: 'pending_review' })
+  ))
   return { id: productId }
 }

@@ -3,6 +3,7 @@ import { useProductsStore } from '../stores/productsStore'
 import { useCartStore } from '../stores/cartStore'
 import { useCategoriesStore } from '../stores/categoriesStore'
 import { getUser } from '../services/authService'
+import { getCurrentSeller } from '../services/sellerService'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
 
@@ -19,6 +20,7 @@ export function useCatalogUI() {
   const error = computed(() => productsStore.error || categoriesStore.error)
 
   const addingToCart = ref(null)
+  const ownSellerId = ref(null)
   const searchInput = ref('')
   let timeout = null
 
@@ -38,6 +40,7 @@ export function useCatalogUI() {
 
     if (user) {
       promises.push(cartStore.stGetCart(user.id))
+      promises.push(getCurrentSeller().then((seller) => { ownSellerId.value = seller?.id || null }))
     }
 
     await Promise.all(promises)
@@ -71,6 +74,7 @@ export function useCatalogUI() {
 
   const addToCart = async (productId) => {
     const product = products.value.find((item) => item.id === productId)
+    if (isOwnProduct(product)) return
     const licenses = [...(product?.product_licenses || [])]
       .filter((license) => license.is_active !== false)
       .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -103,6 +107,12 @@ export function useCatalogUI() {
     return null
   }
 
+  const isOwnProduct = (product) => Boolean(
+    product?.seller_id
+    && ownSellerId.value
+    && String(product.seller_id) === String(ownSellerId.value)
+  )
+
   return {
     products,
     categories,
@@ -116,6 +126,7 @@ export function useCatalogUI() {
     goToPage,
     addToCart,
     getMainImage,
+    isOwnProduct,
     productsStore,
     cartStore,
     formatIDR

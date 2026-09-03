@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { useThemeStore } from '../stores/themeStore'
 import { useAuth } from '../composables/useAuth'
@@ -7,12 +8,25 @@ import { getCurrentSeller } from '../services/sellerService'
 import Swal from 'sweetalert2'
 
 const theme = useThemeStore()
-const { profile, fetchProfile, updateProfile, uploadProfileImage, loading } = useAuth()
+const router = useRouter()
+const { profile, fetchProfile, updateProfile, uploadProfileImage, loading, signOut } = useAuth()
 
 const isEditing = ref(false)
 const selectedFile = ref(null)
 const previewUrl = ref(null)
 const sellerApplication = ref(null)
+const loggingOut = ref(false)
+
+const handleLogout = async () => {
+    if (loggingOut.value) return
+    loggingOut.value = true
+    try {
+        await signOut()
+        await router.push('/')
+    } finally {
+        loggingOut.value = false
+    }
+}
 
 const sellerCallToAction = computed(() => {
     const status = sellerApplication.value?.status
@@ -205,6 +219,16 @@ onMounted(async () => {
                                 Verified account
                             </span>
                         </div>
+                        <button
+                            type="button"
+                            :disabled="loggingOut"
+                            class="mx-auto mt-2 inline-flex items-center gap-2 rounded-ui-sm border border-danger/25 px-3 py-2 text-xs font-medium text-danger transition hover:bg-danger/10 disabled:cursor-wait disabled:opacity-60 md:hidden"
+                            @click="handleLogout"
+                        >
+                            <span v-if="loggingOut" class="h-3.5 w-3.5 animate-spin rounded-ui-full border-2 border-danger/30 border-t-danger"></span>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m17 16 4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1" /></svg>
+                            {{ loggingOut ? 'Signing out...' : 'Sign out' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -390,12 +414,12 @@ onMounted(async () => {
 
                     <!-- Theme Switch UI -->
                     <div
-                        class="flex items-center gap-1 rounded-ui-full border border-border bg-bg-alt p-1">
+                        class="flex w-fit items-center rounded-ui-full border border-border bg-bg-alt p-1">
                         <button v-for="mode in ['light', 'dark', 'system']" :key="mode" @click="theme.setTheme(mode)"
                             :class="theme.mode === mode
                                 ? 'bg-surface text-primary shadow-elevation-1'
                                 : 'text-text-muted hover:text-text-main'"
-                            class="flex items-center gap-2 rounded-ui-full px-4 py-2 text-sm font-medium capitalize transition [&>span]:hidden">
+                            class="flex items-center rounded-ui-full px-3 py-1.5 text-xs font-medium capitalize transition sm:px-4 sm:py-2 sm:text-sm [&>span]:hidden">
                             <component :is="mode === 'light' ? 'span' : 'span'">
                                 {{ mode === 'light' ? '☀️' : mode === 'dark' ? '🌙' : '💻' }}
                             </component>

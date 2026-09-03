@@ -11,7 +11,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test:product-validation": "node --test tests/productSubmission.test.mjs",
+    "test:self-purchase": "node --test tests/selfPurchase.test.mjs"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",

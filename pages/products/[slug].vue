@@ -18,7 +18,7 @@
             <div class="group relative aspect-video overflow-hidden rounded-xl border border-bg-alt bg-surface shadow-sm">
               <img v-if="selectedImage" :src="selectedImage" :alt="product.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
               <defaultProduct v-else class="h-full w-full p-20 text-text-muted/50" />
-              <button class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-text-muted shadow-sm backdrop-blur transition hover:scale-110 hover:text-red-500" :class="wishlistStore.isWishlisted(product.id) ? 'bg-red-500 text-white hover:text-white' : ''" @click="toggleWishlist(product.id)">
+              <button v-if="!isOwnProduct" class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-text-muted shadow-sm backdrop-blur transition hover:scale-110 hover:text-red-500" :class="wishlistStore.isWishlisted(product.id) ? 'bg-red-500 text-white hover:text-white' : ''" @click="toggleWishlist(product.id)">
                 <svg xmlns="http://www.w3.org/2000/svg" :fill="wishlistStore.isWishlisted(product.id) ? 'currentColor' : 'none'" class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 0 0 0 6.364L12 20.364l7.682-7.682a4.5 4.5 0 0 0-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 0 0-6.364 0Z" /></svg>
               </button>
             </div>
@@ -80,7 +80,15 @@
           </div>
           <p v-else class="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs font-semibold text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">This product currently has no license available for purchase.</p>
 
-          <div class="grid gap-2.5">
+          <div v-if="isOwnProduct" class="rounded-xl border border-primary/25 bg-primary/5 p-4">
+            <div class="flex items-start gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.118a7.5 7.5 0 0 1 15 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.5-1.632Z" /></svg></span>
+              <div><p class="text-sm font-bold text-text-main">This product belongs to your store</p><p class="mt-1 text-xs leading-5 text-text-muted">Store owners cannot purchase or wishlist their own products.</p></div>
+            </div>
+            <NuxtLink :to="`/seller/products/${product.id}/edit`" class="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-primary/30 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10">Manage this product</NuxtLink>
+          </div>
+
+          <div v-else class="grid gap-2.5">
             <button :disabled="addingToCart === product.id || !selectedLicenseId" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0" @click="buyNow"><span v-if="addingToCart === product.id" class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span><svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6Zm-3 4h18M16 10a4 4 0 0 1-8 0" /></svg><span>Buy now</span></button>
             <button :disabled="addingToCart === product.id || !selectedLicenseId" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-bg-alt bg-bg/40 px-5 py-3.5 text-sm font-bold text-text-main transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-70" @click="isInCart(product.id, selectedLicenseId) ? router.push('/cart') : addToCart()"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.3 2.3A1 1 0 0 0 5.8 17H17" /></svg><span v-if="isInCart(product.id, selectedLicenseId)">View cart</span><span v-else>Add to cart</span></button>
           </div>
@@ -98,7 +106,7 @@
             <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-text-main">{{ sellerName }}</p><p class="mt-1 text-xs text-text-muted">{{ sellerMeta }}</p></div>
             <NuxtLink v-if="sellerStore" :to="`/stores/${sellerStore.store_slug}`" class="shrink-0 rounded-lg border border-primary/30 px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/10">View store</NuxtLink>
           </div>
-          <button v-if="sellerStore" type="button" :disabled="startingConversation" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 px-4 py-3 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:opacity-60" @click="startConversation">
+          <button v-if="sellerStore && !isOwnProduct" type="button" :disabled="startingConversation" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 px-4 py-3 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:opacity-60" @click="startConversation">
             <span v-if="startingConversation" class="h-4 w-4 animate-spin rounded-full border-2 border-primary/20 border-t-primary"></span>
             <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025C3.36 16.94 2.25 14.97 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
             Message seller
@@ -136,6 +144,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import defaultProduct from '../../components/defaultProduct.vue'
 import { getUser } from '../../services/authService'
+import { getCurrentSeller } from '../../services/sellerService'
 import { useReviewsStore } from '../../stores/reviewsStore'
 import { supabase } from '../../utils/supabase'
 
@@ -146,6 +155,7 @@ const wishlistStore = useWishlistStore()
 const reviewsStore = useReviewsStore()
 const profileId = ref(null)
 const sellerStore = ref(null)
+const currentSeller = ref(null)
 const startingConversation = ref(false)
 const { product, loading, error, addingToCart, formattedPrice, addToCart, productImages, selectedImage, productLicenses, selectedLicenseId, cartStore, formatIDR } = useProductDetailUI()
 
@@ -171,19 +181,25 @@ const sellerName = computed(() => sellerStore.value?.store_name || 'Weixies Mark
 const sellerMeta = computed(() => sellerStore.value?.created_at
   ? `Member since ${new Date(sellerStore.value.created_at).getFullYear()}`
   : 'Digital product seller')
+const isOwnProduct = computed(() => Boolean(
+  product.value?.seller_id
+  && currentSeller.value?.id
+  && String(product.value.seller_id) === String(currentSeller.value.id)
+))
 const isInCart = (productId, licenseId) => (cartStore?.items || []).some((item) => item.product_id === productId && item.product_license_id === licenseId) || cartStore?.addingProducts?.[`${productId}:${licenseId}`]
 const goBack = () => {
   if (window.history.length > 1) return router.back()
   return router.push('/products')
 }
 const buyNow = async () => {
+  if (isOwnProduct.value) return
   if (isInCart(product.value.id, selectedLicenseId.value)) return router.push('/cart')
   const user = await getUser()
   if (!user) return router.push('/login')
   await addToCart()
   return router.push('/cart')
 }
-const toggleWishlist = async (productId) => { if (!profileId.value) { const user = await getUser(); if (!user) return router.push('/login'); profileId.value = user.id }; await wishlistStore.stToggleWishlist(profileId.value, productId) }
+const toggleWishlist = async (productId) => { if (isOwnProduct.value) return; if (!profileId.value) { const user = await getUser(); if (!user) return router.push('/login'); profileId.value = user.id }; await wishlistStore.stToggleWishlist(profileId.value, productId) }
 const startConversation = async () => {
   const user = await getUser()
   if (!user) return router.push('/login')
@@ -203,7 +219,16 @@ const startConversation = async () => {
   }
 }
 
-onMounted(async () => { const user = await getUser(); if (user) { profileId.value = user.id; await wishlistStore.stGetWishlists(user.id) } })
+onMounted(async () => {
+  const user = await getUser()
+  if (!user) return
+  profileId.value = user.id
+  const [seller] = await Promise.all([
+    getCurrentSeller(),
+    wishlistStore.stGetWishlists(user.id),
+  ])
+  currentSeller.value = seller
+})
 watch(product, (nextProduct) => { if (nextProduct?.id) reviewsStore.fetchReviews(nextProduct.id) }, { immediate: true })
 watch(product, async (nextProduct) => {
   sellerStore.value = null

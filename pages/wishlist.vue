@@ -59,14 +59,16 @@
             <!-- Wishlist Items -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <div v-for="item in items" :key="item.id"
-                    class="bg-surface rounded-2xl shadow-sm border border-bg-alt/50 overflow-hidden group hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col cursor-pointer"
+                    class="bg-surface rounded-2xl shadow-sm border overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
+                    :class="isOwnProduct(item.product) ? 'border-red-300 dark:border-red-900/70' : 'border-bg-alt/50 hover:shadow-primary/5'"
                     @click="router.push(`/products/${item.product?.slug}`)">
                     
                     <!-- Product Image Container -->
                     <div class="relative pt-[100%] overflow-hidden bg-bg-alt">
-                        <img :src="item.product?.image_url || 'https://via.placeholder.com/400'"
+                        <img v-if="item.product?.image_url" :src="item.product.image_url"
                              :alt="item.product?.name"
                              class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out z-0">
+                        <defaultProduct v-else class="absolute inset-0 h-full w-full p-12 text-text-muted/40" />
                         
                         <!-- Overlay gradient for text readability if needed -->
                         <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -89,6 +91,9 @@
                             <p class="text-sm text-text-muted font-montserrat mt-1 line-clamp-2">
                                 {{ item.product?.description }}
                             </p>
+                            <p v-if="isOwnProduct(item.product)" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-700 dark:bg-red-950/30 dark:text-red-300">
+                                This product belongs to your store and cannot be purchased.
+                            </p>
                         </div>
                         
                         <div class="mt-auto pt-4 flex items-center justify-between">
@@ -97,7 +102,7 @@
                             </span>
                             
                             <!-- Add to Cart (Optional) -->
-                            <button @click.stop="addToCart(item.product)"
+                            <button v-if="!isOwnProduct(item.product)" @click.stop="addToCart(item.product)"
                                     class="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors duration-300 shadow-sm"
                                     title="Add to Cart">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,14 +118,16 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 
 import { useWishlistStore } from '../stores/wishlistStore'
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
+import { getCurrentSeller } from '../services/sellerService'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
 import Swal from 'sweetalert2'
+import defaultProduct from '../components/defaultProduct.vue'
 
 const router = useRouter()
 const wishlistStore = useWishlistStore()
@@ -130,11 +137,13 @@ const items = computed(() => wishlistStore.items)
 const loading = computed(() => wishlistStore.loading)
 const error = computed(() => wishlistStore.error)
 
-const currentUser = computed(() => {
-    return { id: null } // We'll get it onMounted
-})
-
-let profileId = null;
+const profileId = ref(null)
+const currentSeller = ref(null)
+const isOwnProduct = (product) => Boolean(
+    product?.seller_id
+    && currentSeller.value?.id
+    && String(product.seller_id) === String(currentSeller.value.id)
+)
 
 onMounted(async () => {
     const user = await getUser()
@@ -142,8 +151,12 @@ onMounted(async () => {
         router.push('/login')
         return
     }
-    profileId = user.id
-    await wishlistStore.stGetWishlists(profileId)
+    profileId.value = user.id
+    const [seller] = await Promise.all([
+        getCurrentSeller(),
+        wishlistStore.stGetWishlists(user.id),
+    ])
+    currentSeller.value = seller
 })
 
 const removeFromWishlist = async (productId) => {
@@ -163,11 +176,12 @@ const removeFromWishlist = async (productId) => {
     })
     
     if (result.isConfirmed) {
-        await wishlistStore.stToggleWishlist(profileId, productId)
+        await wishlistStore.stToggleWishlist(profileId.value, productId)
     }
 }
 
 const addToCart = async (product) => {
+    if (isOwnProduct(product)) return
     const licenses = [...(product?.product_licenses || [])]
         .filter((license) => license.is_active !== false)
         .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -176,7 +190,7 @@ const addToCart = async (product) => {
         return
     }
     try {
-        await cartStore.stAddToCart(profileId, product.id, licenses[0].id)
+        await cartStore.stAddToCart(profileId.value, product.id, licenses[0].id)
         
         Swal.fire({
             toast: true,
@@ -193,7 +207,7 @@ const addToCart = async (product) => {
             toast: true,
             position: 'top-end',
             icon: 'error',
-            title: 'Failed to add to cart',
+            title: err?.message || 'Failed to add to cart',
             showConfirmButton: false,
             timer: 3000,
             background: 'rgb(var(--color-surface))',

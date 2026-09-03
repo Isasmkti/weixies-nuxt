@@ -60,10 +60,18 @@ export async function rAddToCart(cartId, productId, productLicenseId) {
     // product/license combination twice is intentionally idempotent.
     if (existingRows?.length) return
 
-    const { error } = await supabase
-        .from('cart_items')
-        .insert({ cart_id: cartId, product_id: productId, product_license_id: productLicenseId })
-    if (error) throw error
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) throw new Error('You must be signed in to add products to the cart.')
+
+    try {
+        await $fetch('/api/cart/items', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { product_id: productId, product_license_id: productLicenseId },
+        })
+    } catch (error) {
+        throw new Error(error?.data?.message || error?.data?.statusMessage || error?.message || 'Unable to add this product to the cart.')
+    }
 }
 
 export async function rRemoveFromCart(itemId) {

@@ -6,6 +6,7 @@ import ProductImageUploader from '../products/ProductImageUploader.vue'
 import ProductSpecificationsEditor from '../products/ProductSpecificationsEditor.vue'
 import ProductLicensesEditor from '../products/ProductLicensesEditor.vue'
 import { createDefaultProductLicense } from '../../utils/productLicenses'
+import { validateProductSubmission, validateProductZip } from '../../utils/productSubmission'
 
 const props = defineProps({
   initialProduct: { type: Object, default: null },
@@ -17,6 +18,7 @@ const emit = defineEmits(['submit'])
 const categoriesStore = useCategoriesStore()
 const zipFile = ref(null)
 const imagesDirty = ref(false)
+const validationError = ref('')
 const form = ref({ name: '', slug: '', description: '', price: 0, images: [], categoryIds: [], specs: [], licenses: [createDefaultProductLicense(0)] })
 const categories = computed(() => categoriesStore.categories)
 const existingZipFile = computed(() => props.initialProduct?.product_files?.[0] || null)
@@ -49,28 +51,42 @@ categoriesStore.fetchCategories()
 
 const handleZipChange = (event) => {
   const file = event.target.files?.[0] || null
-  if (file && !file.name.toLowerCase().endsWith('.zip')) {
+  validationError.value = ''
+  try {
+    validateProductZip(file)
+  } catch (error) {
     event.target.value = ''
     zipFile.value = null
+    validationError.value = error.message
     return
   }
   zipFile.value = file
 }
 const suggestedSlug = computed(() => createProductSlug(form.value.name))
-const submit = () => emit('submit', {
-  ...form.value,
-  slug: form.value.slug || suggestedSlug.value,
-  images: form.value.images,
-  syncImages: !props.initialProduct || imagesDirty.value,
+const submit = () => {
+  validationError.value = ''
+  const payload = {
+    ...form.value,
+    slug: form.value.slug || suggestedSlug.value,
+    images: form.value.images,
+    syncImages: !props.initialProduct || imagesDirty.value,
     specs: form.value.specs
-    .map((spec) => ({
-      spec_name: String(spec.spec_name || '').trim(),
-      spec_value: String(spec.spec_value || '').trim(),
-    }))
-    .filter((spec) => spec.spec_name || spec.spec_value),
-  licenses: form.value.licenses,
-  zipFile: zipFile.value,
-})
+      .map((spec) => ({
+        spec_name: String(spec.spec_name || '').trim(),
+        spec_value: String(spec.spec_value || '').trim(),
+      }))
+      .filter((spec) => spec.spec_name || spec.spec_value),
+    licenses: form.value.licenses,
+    zipFile: zipFile.value,
+  }
+
+  try {
+    validateProductSubmission(payload, { hasExistingZip: Boolean(existingZipFile.value) })
+    emit('submit', payload)
+  } catch (error) {
+    validationError.value = error.message
+  }
+}
 </script>
 
 <template>
@@ -90,7 +106,7 @@ const submit = () => emit('submit', {
     </div>
     <div>
       <label class="mb-2 block text-sm font-bold text-text-main">Price (Rp)</label>
-      <input v-model.number="form.price" required type="number" min="0" step="1" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30">
+      <input v-model.number="form.price" required type="number" min="1" step="1" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30">
     </div>
 
     <div>
@@ -114,12 +130,14 @@ const submit = () => emit('submit', {
 
       <div>
         <label class="mb-2 block text-sm font-bold text-text-main">Product ZIP file</label>
-        <input type="file" accept=".zip" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" @change="handleZipChange">
-        <p class="mt-1 text-xs text-text-muted">The ZIP stays private and is delivered to buyers after payment.</p>
+        <input type="file" accept=".zip,application/zip,application/x-zip-compressed" :required="!existingZipFile" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" @change="handleZipChange">
+        <p class="mt-1 text-xs text-text-muted">Required. The ZIP stays private and is delivered to buyers after payment (maximum 200 MB).</p>
         <p v-if="zipFile" class="mt-2 text-sm font-semibold text-text-main">Selected: {{ zipFile.name }}</p>
         <p v-else-if="existingZipFile" class="mt-2 text-sm text-text-muted">Current file: {{ existingZipFile.file_name }}</p>
       </div>
     </div>
+
+    <p v-if="validationError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">{{ validationError }}</p>
 
     <button :disabled="submitting" class="w-full rounded-xl bg-primary px-5 py-3 font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70">{{ submitting ? 'Saving...' : submitLabel }}</button>
   </form>

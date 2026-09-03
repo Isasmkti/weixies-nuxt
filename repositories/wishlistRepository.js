@@ -19,10 +19,18 @@ export async function rGetWishlists(profileId) {
 }
 
 export async function rAddWishlist(profileId, productId) {
-    const { error } = await supabase
-        .from('wishlists')
-        .insert({ profile_id: profileId, product_id: productId })
-    if (error) throw error
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) throw new Error('You must be signed in to add products to the wishlist.')
+
+    try {
+        await $fetch('/api/wishlists', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { product_id: productId },
+        })
+    } catch (error) {
+        throw new Error(error?.data?.message || error?.data?.statusMessage || error?.message || 'Unable to add this product to the wishlist.')
+    }
 }
 
 export async function rRemoveWishlist(profileId, productId) {

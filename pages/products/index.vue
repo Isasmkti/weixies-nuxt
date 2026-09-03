@@ -86,6 +86,7 @@
               <defaultProduct v-else class="h-full w-full p-8 text-text-muted/50" />
               <span v-if="isNewProduct(product.created_at)" class="absolute left-2 top-2 rounded-md bg-primary px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white">New</span>
               <button
+                v-if="!isOwnProduct(product)"
                 type="button"
                 :aria-label="wishlistStore.isWishlisted(product.id) ? 'Hapus dari wishlist' : 'Tambahkan ke wishlist'"
                 :aria-pressed="wishlistStore.isWishlisted(product.id)"
@@ -110,6 +111,7 @@
               <div class="mt-3 flex items-center justify-between gap-2">
                 <span class="truncate text-base font-black text-primary">{{ formatIDR(product.price) }}</span>
                 <button
+                  v-if="!isOwnProduct(product)"
                   type="button"
                   :aria-label="isInCart(product.id) ? 'View cart' : 'Add to cart'"
                   :title="isInCart(product.id) ? 'Already in cart' : 'Add to cart'"
@@ -123,6 +125,9 @@
                   <svg v-else-if="isInCart(product.id)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="m5 12 4 4L19 6" /></svg>
                   <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.3 2.3A1 1 0 0 0 5.8 17H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" /></svg>
                 </button>
+                <NuxtLink v-else :to="`/seller/products/${product.id}/edit`" title="Manage your product" aria-label="Manage your product" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition hover:bg-primary hover:text-white" @click.stop>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>
+                </NuxtLink>
               </div>
             </div>
           </article>
@@ -190,7 +195,7 @@ const minPrice = ref('')
 const maxPrice = ref('')
 const priceError = ref('')
 const { recentSearches, addSearch, clearAll: clearAllSearches } = useRecentSearches()
-const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, productsStore, cartStore, formatIDR } = useCatalogUI()
+const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, isOwnProduct, productsStore, cartStore, formatIDR } = useCatalogUI()
 
 watch(() => productsStore.minPrice, (value) => { minPrice.value = value ?? '' }, { immediate: true })
 watch(() => productsStore.maxPrice, (value) => { maxPrice.value = value ?? '' }, { immediate: true })
@@ -243,7 +248,7 @@ const hideRecentDelayed = () => setTimeout(() => { showRecentSearches.value = fa
 const applyPriceFilter = async () => { priceError.value = ''; try { await productsStore.setPriceRange(minPrice.value, maxPrice.value) } catch (error) { priceError.value = error.message } }
 const clearPriceFilter = async () => { minPrice.value = ''; maxPrice.value = ''; await productsStore.setPriceRange(null, null) }
 const resetFilters = async () => { searchInput.value = ''; minPrice.value = ''; maxPrice.value = ''; priceError.value = ''; productsStore.categorySlug = []; productsStore.search = ''; await productsStore.setPriceRange(null, null) }
-const toggleWishlist = async (productId) => { if (!profileId.value) return router.push('/login'); await wishlistStore.stToggleWishlist(profileId.value, productId) }
+const toggleWishlist = async (productId) => { const product = products.value.find((item) => item.id === productId); if (isOwnProduct(product)) return; if (!profileId.value) return router.push('/login'); await wishlistStore.stToggleWishlist(profileId.value, productId) }
 const closeFilters = () => { showFilters.value = false }
 const toggleFilters = () => {
   if (showFilters.value) return closeFilters()

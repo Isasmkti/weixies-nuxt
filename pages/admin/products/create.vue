@@ -45,7 +45,7 @@
                         <!-- Price -->
                         <div>
                             <label class="block text-sm font-semibold text-text-main mb-2">Price (Rp)</label>
-                            <input v-model.number="form.price" type="number" step="1" min="0" required
+                            <input v-model.number="form.price" type="number" step="1" min="1" required
                                 class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 focus:ring-2 focus:ring-primary/30 outline-none transition-all"
                                 placeholder="0">
                         </div>
@@ -77,9 +77,9 @@
                         <ProductImageUploader v-model="form.images" input-name="admin-main-image" :disabled="loading" @changed="imagesDirty = true" />
                         <div>
                             <label class="block text-sm font-semibold text-text-main mb-2">Product ZIP File</label>
-                            <input type="file" accept=".zip" @change="handleZipChange"
+                            <input type="file" accept=".zip,application/zip,application/x-zip-compressed" :required="!existingZipFile" @change="handleZipChange"
                                 class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 focus:ring-2 focus:ring-primary/30 outline-none transition-all text-sm" />
-                            <p class="text-xs text-text-muted mt-1">Upload a ZIP file for downloadable product content. Leave blank to keep existing file.</p>
+                            <p class="text-xs text-text-muted mt-1">A ZIP file is required for new products. Maximum size: 200 MB.</p>
                             <p v-if="zipFile" class="text-sm font-medium text-text-main mt-2">Selected file: {{ zipFile.name }}</p>
                             <p v-else-if="existingZipFile" class="text-sm text-text-muted mt-2">Current ZIP: {{ existingZipFile.file_name }}</p>
                         </div>
@@ -122,6 +122,7 @@ import ProductImageUploader from '../../../components/products/ProductImageUploa
 import ProductSpecificationsEditor from '../../../components/products/ProductSpecificationsEditor.vue'
 import ProductLicensesEditor from '../../../components/products/ProductLicensesEditor.vue'
 import { createDefaultProductLicense } from '../../../utils/productLicenses'
+import { validateProductSubmission, validateProductZip } from '../../../utils/productSubmission'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,8 +151,11 @@ const imagesDirty = ref(false)
 
 const handleZipChange = (event) => {
     const file = event.target.files?.[0] ?? null
-    if (file && !file.name.toLowerCase().endsWith('.zip')) {
-        error.value = 'Please choose a .zip file.'
+    try {
+        validateProductZip(file)
+    } catch (err) {
+        event.target.value = ''
+        error.value = err.message
         zipFile.value = null
         return
     }
@@ -199,6 +203,10 @@ const handleSubmit = async () => {
     error.value = null
 
     try {
+        validateProductSubmission(
+            { ...form.value, zipFile: zipFile.value },
+            { hasExistingZip: Boolean(existingZipFile.value) },
+        )
         const payload = {
             ...form.value,
             syncImages: !isEditMode.value || imagesDirty.value,

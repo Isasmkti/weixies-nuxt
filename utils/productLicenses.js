@@ -29,7 +29,7 @@ export function normalizeProductLicenses(licenses, fallbackPrice = 0) {
 
     if (!name) throw new Error(`License ${index + 1} requires a name.`)
     if (!usageTerms) throw new Error(`License ${index + 1} requires usage terms.`)
-    if (!Number.isInteger(price) || price < 0) throw new Error(`License ${index + 1} price must be a non-negative whole number.`)
+    if (!Number.isInteger(price) || price <= 0) throw new Error(`License ${index + 1} price must be a positive whole number.`)
     if (maxEndProducts !== null && (!Number.isInteger(maxEndProducts) || maxEndProducts <= 0)) {
       throw new Error(`License ${index + 1} project limit must be a positive whole number.`)
     }
@@ -54,4 +54,3 @@ export function normalizeProductLicenses(licenses, fallbackPrice = 0) {
 
   return normalized
 }
-
