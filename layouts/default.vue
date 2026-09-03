@@ -7,7 +7,7 @@ const { profile } = useAuth()
 </script>
 
 <template>
-    <div class="flex h-screen bg-bg font-poppins text-text-main overflow-hidden">
+    <div class="flex h-screen overflow-hidden bg-bg font-sans text-text-main">
         <!-- Sidebar (Hidden on Mobile) -->
         <component :is="profile?.role === 'admin' ? AdminSidebar : Sidebar" />
 

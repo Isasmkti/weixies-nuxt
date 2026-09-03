@@ -5,9 +5,10 @@ import {
   rGetSellerProducts,
   rUpdateSellerProduct,
 } from '../repositories/sellerProductsRepository'
-import { rCreateProductFile, rReplaceProductSpecs, rUpsertProductCategories } from '../repositories/productsRepository'
+import { rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses, rUpsertProductCategories } from '../repositories/productsRepository'
 import { saveProductImages } from './productImagesService'
 import { normalizeProductSpecs } from '../utils/productSpecs'
+import { normalizeProductLicenses } from '../utils/productLicenses'
 
 export { normalizeProductSpecs } from '../utils/productSpecs'
 
@@ -44,23 +45,27 @@ function normalizeProduct(product) {
   if (!Number.isInteger(price) || price < 0) throw new Error('Price must be a non-negative whole number.')
 
   const specs = normalizeProductSpecs(product?.specs)
+  const licenses = normalizeProductLicenses(product?.licenses, price)
+  const catalogPrice = Math.min(...licenses.filter((license) => license.is_active).map((license) => license.price))
 
   return {
     product: {
       name,
       description,
-      price,
+      price: catalogPrice,
       slug: createProductSlug(product?.slug || name),
     },
     images: Array.isArray(product?.images) ? product.images : [],
     categoryIds: Array.isArray(product?.categoryIds) ? product.categoryIds : [],
     specs,
+    licenses,
     syncImages: product?.syncImages !== false,
     zipFile: product?.zipFile || null,
   }
 }
 
-async function saveProductContent(productId, { images, categoryIds, specs, syncImages, zipFile }, { isNew = false } = {}) {
+async function saveProductContent(productId, { images, categoryIds, specs, licenses, syncImages, zipFile }, { isNew = false } = {}) {
+  await runSellerProductSaveStage('Unable to save product licenses', () => rSyncProductLicenses(productId, licenses))
   if (syncImages && (!isNew || images.length > 0)) {
     await runSellerProductSaveStage('Unable to save product images', () => saveProductImages(productId, images))
   }

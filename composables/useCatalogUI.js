@@ -52,7 +52,32 @@ export function useCatalogUI() {
     productsStore.setCategory(slug)
   }
 
+  const goToPage = async (page) => {
+    const lastPage = Math.max(productsStore.totalPages, 1)
+    const requestedPage = Number(page)
+    const nextPage = Math.min(
+      Math.max(Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1, 1),
+      lastPage
+    )
+
+    if (productsStore.loading || nextPage === productsStore.page) return
+
+    await productsStore.stAll(nextPage, { force: true })
+
+    if (import.meta.client) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   const addToCart = async (productId) => {
+    const product = products.value.find((item) => item.id === productId)
+    const licenses = [...(product?.product_licenses || [])]
+      .filter((license) => license.is_active !== false)
+      .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
+    if (licenses.length !== 1) {
+      if (product?.slug) router.push(`/products/${product.slug}`)
+      return
+    }
     const user = await getUser()
     if (!user) {
       router.push('/login')
@@ -60,7 +85,7 @@ export function useCatalogUI() {
     }
     try {
       addingToCart.value = productId
-      await cartStore.stAddToCart(user.id, productId)
+      await cartStore.stAddToCart(user.id, productId, licenses[0].id)
     } catch (err) {
       console.error('Failed to add to cart:', err)
     } finally {
@@ -88,6 +113,7 @@ export function useCatalogUI() {
     addingToCart,
     onSortChange,
     setCategory,
+    goToPage,
     addToCart,
     getMainImage,
     productsStore,

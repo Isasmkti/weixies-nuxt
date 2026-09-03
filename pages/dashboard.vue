@@ -127,7 +127,7 @@ const handleUpdate = async () => {
             color: 'rgb(var(--color-text))',
             confirmButtonColor: 'rgb(var(--color-primary))',
             customClass: {
-                popup: 'rounded-2xl shadow-xl'
+                popup: 'rounded-ui-xl shadow-elevation-3'
             }
         })
     } catch (error) {
@@ -140,7 +140,7 @@ const handleUpdate = async () => {
             color: 'rgb(var(--color-text))',
             confirmButtonColor: 'rgb(var(--color-primary))',
             customClass: {
-                popup: 'rounded-2xl shadow-xl'
+                popup: 'rounded-ui-xl shadow-elevation-3'
             }
         })
     }
@@ -162,71 +162,86 @@ onMounted(async () => {
 
 <template>
     
-        <div class="max-w-[1600px] mx-auto font-poppins space-y-10 py-6">
+        <div class="mx-auto max-w-[1440px] space-y-6 py-4 md:py-6">
             <!-- Hero Profile Section -->
             <div
-                class="relative overflow-hidden bg-surface rounded-[2.5rem] p-12 shadow-2xl shadow-black/[0.03] border border-bg-alt/50 group">
+                class="rounded-ui-xl border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
                 <!-- Luxury Glow Decor -->
-                <div
-                    class="absolute -top-24 -left-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/20 transition-all duration-700">
-                </div>
-                <div
-                    class="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/20 transition-all duration-700">
-                </div>
-
-                <div class="relative flex flex-col items-center text-center">
+                <div class="flex flex-col items-center text-center">
                     <!-- Profile Avatar -->
-                    <div class="relative mb-8 pt-4">
+                    <div class="relative mb-5">
                         <div
-                            class="w-32 h-32 rounded-3xl bg-surface border-4 border-bg-alt shadow-2xl flex items-center justify-center overflow-hidden rotate-3 hover:rotate-0 transition-transform duration-500">
+                            class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-ui-lg border border-border bg-bg-alt">
                             <img v-if="profile?.profile_img" :src="profile.profile_img" alt="Profile"
                                 class="w-full h-full object-cover">
                             <div v-else
-                                class="w-full h-full bg-gradient-to-br from-bg-alt to-surface flex items-center justify-center">
-                                <span class="text-text-muted font-black text-4xl uppercase">{{
+                                class="flex h-full w-full items-center justify-center bg-bg-alt">
+                                <span class="text-2xl font-semibold text-text-muted">{{
                                     profile?.full_name?.charAt(0) || 'U' }}</span>
                             </div>
                         </div>
                         <div
-                            class="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-2xl border-4 border-surface shadow-xl flex items-center justify-center">
-                            <div class="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                            class="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-ui-full border-2 border-surface bg-success">
                         </div>
                     </div>
 
 
                     <!-- Identity Info -->
-                    <div class="space-y-4 max-w-2xl">
+                    <div class="max-w-2xl space-y-3">
                         <div class="space-y-1">
-                            <h3 class="text-primary font-bold tracking-[0.2em] uppercase text-sm">Welcome back</h3>
-                            <h1 class="text-5xl font-black text-text-main tracking-tight leading-tight">
+                            <h3 class="text-sm font-medium text-primary">Welcome back</h3>
+                            <h1 class="text-3xl font-semibold leading-tight tracking-tight text-text-main">
                                 {{ profile?.full_name || 'Explorer' }}
                             </h1>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+                        <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
                             <span
-                                class="px-5 py-2 rounded-2xl bg-primary/5 text-primary text-sm font-bold border border-primary/10 backdrop-blur-sm">
+                                class="rounded-ui-xs bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-primary">
                                 {{ profile?.role || 'Member' }}
                             </span>
                             <span
-                                class="px-5 py-2 rounded-2xl bg-bg-alt/50 text-text-muted text-sm font-medium border border-bg-alt/30">
-                                Verified Account
+                                class="rounded-ui-xs bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-muted">
+                                Verified account
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <section class="grid gap-4 sm:grid-cols-2" aria-label="Account activity">
+                <NuxtLink to="/orders" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-base font-semibold text-text-main">My orders</span>
+                        <span class="mt-1 block text-sm text-text-muted">Payments, downloads, and purchase details</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
+
+                <NuxtLink to="/messages" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.6 12h.01m3.74 0h.01m3.74 0h.01M21 12c0 4.6-4 8.3-9 8.3a9.8 9.8 0 0 1-2.6-.4A6 6 0 0 1 5.4 21a6 6 0 0 1-.5-.1 4.5 4.5 0 0 0 1-2C3.4 16.9 2.3 15 2.3 12c0-4.6 4-8.3 9-8.3s9.7 3.7 9.7 8.3Z" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-base font-semibold text-text-main">Messages</span>
+                        <span class="mt-1 block text-sm text-text-muted">Continue conversations with sellers</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
+            </section>
+
             <!-- Seller onboarding / workspace CTA -->
-            <section class="relative overflow-hidden rounded-[2.5rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-surface to-surface p-8 shadow-xl shadow-black/[0.02] md:p-10">
-                <div class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl"></div>
-                <div class="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+            <section class="rounded-ui-xl border border-primary/20 bg-surface p-6 shadow-elevation-1 md:p-8">
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
-                        <p class="text-xs font-black uppercase tracking-[0.2em]" :class="sellerCallToAction.tone === 'rejected' || sellerCallToAction.tone === 'suspended' ? 'text-red-600' : 'text-primary'">{{ sellerCallToAction.eyebrow }}</p>
-                        <h2 class="mt-3 text-3xl font-black tracking-tight text-text-main">{{ sellerCallToAction.title }}</h2>
-                        <p class="mt-3 leading-relaxed text-text-muted">{{ sellerCallToAction.description }}</p>
+                        <p class="text-sm font-medium" :class="sellerCallToAction.tone === 'rejected' || sellerCallToAction.tone === 'suspended' ? 'text-danger' : 'text-primary'">{{ sellerCallToAction.eyebrow }}</p>
+                        <h2 class="mt-2 text-xl font-semibold tracking-tight text-text-main md:text-2xl">{{ sellerCallToAction.title }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-text-muted">{{ sellerCallToAction.description }}</p>
                     </div>
-                    <NuxtLink :to="sellerCallToAction.to" class="inline-flex shrink-0 items-center justify-center gap-3 rounded-2xl bg-primary px-7 py-4 font-black text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary-dark">
+                    <NuxtLink :to="sellerCallToAction.to" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-ui-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
                         {{ sellerCallToAction.label }}
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m9 5 7 7-7 7" /></svg>
                     </NuxtLink>
@@ -234,48 +249,48 @@ onMounted(async () => {
             </section>
 
             <!-- Standalone Edit Profile Section -->
-            <div class="bg-surface rounded-[2.5rem] p-10 shadow-xl shadow-black/[0.02] border border-bg-alt/50">
-                <div class="flex flex-col lg:flex-row gap-12">
-                    <div class="lg:w-1/3">
+            <div class="rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
+                <div class="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+                    <div>
                         <div class="space-y-2">
-                            <h2 class="text-3xl font-black text-text-main tracking-tight">Edit Profile</h2>
-                            <p class="text-text-muted font-medium">Update your personal information and profile
+                            <h2 class="text-xl font-semibold text-text-main">Edit profile</h2>
+                            <p class="text-sm leading-6 text-text-muted">Update your personal information and profile
                                 appearance.</p>
                         </div>
 
-                        <div class="mt-8 p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
-                            <div class="flex items-center gap-4 text-primary">
+                        <div class="mt-5 rounded-ui-md border border-primary/15 bg-primary/5 p-4">
+                            <div class="flex gap-3 text-text-muted [&>span]:hidden">
                                 <span class="text-2xl">✨</span>
-                                <p class="text-sm font-bold">Your changes will be reflected globally across the
+                                <p class="text-sm leading-5">Your changes will be reflected globally across the
                                     platform.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="lg:w-2/3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="space-y-4">
+                    <div>
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div>
                                 <label
-                                    class="text-xs font-black uppercase tracking-[0.2em] text-primary/60 ml-2 text-left block">Full
-                                    Name</label>
+                                    class="block text-left text-sm font-medium text-text-main">Full
+                                    name</label>
                                 <div class="relative group text-left">
                                     <input v-model="editForm.full_name" type="text" placeholder="Enter your full name"
-                                        class="w-full px-8 py-5 rounded-2xl bg-bg-alt/20 border-2 border-bg-alt/50 text-text-main focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:bg-surface outline-none transition-all duration-300 font-bold placeholder:text-text-muted/50">
+                                        class="mt-2 w-full rounded-ui-sm border border-border bg-bg px-4 py-3 text-sm text-text-main outline-none transition placeholder:text-text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15">
                                 </div>
                             </div>
-                            <div class="space-y-4 text-left">
+                            <div class="text-left">
                                 <label
-                                    class="text-xs font-black uppercase tracking-[0.2em] text-primary/60 ml-2 block">Profile
-                                    Photo</label>
-                                <div class="flex items-center gap-6">
+                                    class="block text-sm font-medium text-text-main">Profile
+                                    photo</label>
+                                <div class="mt-2 flex items-center gap-4">
                                     <!-- Image Preview Thumbnail -->
-                                    <div class="relative group/preview w-24 h-24 shrink-0 transition-all duration-500">
+                                    <div class="group/preview relative h-20 w-20 shrink-0">
                                         <div
-                                            class="w-full h-full rounded-2xl bg-bg-alt/20 border-2 border-bg-alt/50 overflow-hidden flex items-center justify-center shadow-inner relative">
+                                            class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-ui-lg border border-border bg-bg-alt">
                                             <!-- Priority: 1. New Local Preview, 2. Existing DB Image, 3. Placeholder -->
                                             <img v-if="previewUrl || editForm.profile_img"
                                                 :src="previewUrl || editForm.profile_img" alt="Preview"
-                                                class="w-full h-full object-cover transition-transform duration-700 group-hover/preview:scale-110">
+                                                class="h-full w-full object-cover">
                                             <div v-else class="text-text-muted/20">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +311,7 @@ onMounted(async () => {
                                             <!-- Reset/Clear selected file -->
                                             <button v-if="selectedFile && !loading"
                                                 @click="selectedFile = null; previewUrl = null"
-                                                class="absolute inset-0 bg-red-500/80 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white backdrop-blur-sm cursor-pointer z-20"
+                                                class="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-danger/80 text-white opacity-0 transition-opacity group-hover/preview:opacity-100"
                                                 title="Remove pending upload">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -313,16 +328,16 @@ onMounted(async () => {
                                         <input type="file" @change="handleImageUpload" class="hidden"
                                             id="profile-upload" accept="image/*">
                                         <label for="profile-upload"
-                                            class="cursor-pointer w-full px-8 py-5 bg-primary/5 border-2 border-dashed border-primary/20 text-primary rounded-2xl font-bold hover:bg-primary/10 hover:border-primary/40 transition-all flex items-center justify-center gap-4 group">
+                                            class="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-ui-sm border border-border bg-surface px-4 py-2.5 text-primary transition hover:border-primary/40">
                                             <template v-if="loading">
                                                 <div
                                                     class="w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin">
                                                 </div>
-                                                <span class="text-sm uppercase tracking-widest">Processing...</span>
+                                                <span class="text-sm font-medium">Processing...</span>
                                             </template>
                                             <template v-else>
                                                 <div
-                                                    class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                                    class="flex h-8 w-8 items-center justify-center rounded-ui-sm bg-primary/10">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
                                                         viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -332,10 +347,10 @@ onMounted(async () => {
                                                 </div>
                                                 <div class="flex flex-col text-left">
                                                     <span
-                                                        class="text-sm font-black uppercase tracking-widest leading-none">{{
-                                                            selectedFile ? 'Change Selection' : 'Choose Photo' }}</span>
+                                                        class="text-sm font-medium leading-none">{{
+                                                            selectedFile ? 'Change photo' : 'Choose photo' }}</span>
                                                     <span
-                                                        class="text-[9px] text-text-muted/60 font-bold uppercase tracking-tight mt-1">{{
+                                                        class="mt-1 max-w-40 truncate text-xs text-text-muted">{{
                                                             selectedFile ? selectedFile.name : 'PNG, JPG or GIF' }}</span>
                                                 </div>
                                             </template>
@@ -345,10 +360,10 @@ onMounted(async () => {
                             </div>
                         </div>
 
-                        <div class="mt-12 flex flex-wrap items-center gap-6">
+                        <div class="mt-7 flex flex-wrap items-center gap-3">
                             <button @click="handleUpdate"
-                                class="px-12 py-5 bg-primary text-white rounded-[1.5rem] font-black shadow-[0_20px_40px_-10px_rgb(var(--color-primary)/0.4)] hover:bg-primary-dark hover:-translate-y-1 active:translate-y-0.5 transition-all duration-300 text-sm uppercase tracking-[0.15em] flex items-center gap-4">
-                                <span>Save Changes</span>
+                                class="flex items-center gap-2 rounded-ui-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
+                                <span>Save changes</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
@@ -356,8 +371,8 @@ onMounted(async () => {
                                 </svg>
                             </button>
                             <button @click="startEditing"
-                                class="px-10 py-5 bg-surface border-2 border-bg-alt/50 text-text-muted rounded-[1.5rem] font-black hover:bg-bg-alt/50 hover:text-text-main transition-all duration-300 text-sm uppercase tracking-[0.15em]">
-                                Reset Details
+                                class="rounded-ui-sm border border-border bg-surface px-5 py-3 text-sm font-medium text-text-muted transition hover:bg-bg-alt hover:text-text-main">
+                                Reset details
                             </button>
                         </div>
                     </div>
@@ -365,22 +380,22 @@ onMounted(async () => {
             </div>
 
             <!-- Settings / Preferences Section -->
-            <div class="bg-surface rounded-3xl p-8 shadow-xl shadow-black/[0.02] border border-bg-alt/50">
+            <div class="rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h2 class="text-2xl font-black text-text-main tracking-tight">System Preferences</h2>
-                        <p class="text-text-muted font-medium">Personalize your interface and workspace settings.
+                        <h2 class="text-xl font-semibold text-text-main">System preferences</h2>
+                        <p class="mt-1 text-sm text-text-muted">Personalize your interface and workspace settings.
                         </p>
                     </div>
 
                     <!-- Theme Switch UI -->
                     <div
-                        class="flex items-center gap-1.5 bg-bg-alt/50 backdrop-blur-md rounded-2xl p-1.5 border border-bg-alt/50">
+                        class="flex items-center gap-1 rounded-ui-full border border-border bg-bg-alt p-1">
                         <button v-for="mode in ['light', 'dark', 'system']" :key="mode" @click="theme.setTheme(mode)"
                             :class="theme.mode === mode
-                                ? 'bg-surface text-primary shadow-sm scale-100'
-                                : 'text-text-muted hover:text-text-main hover:bg-bg-alt scale-95'"
-                            class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm capitalize transition-all duration-300">
+                                ? 'bg-surface text-primary shadow-elevation-1'
+                                : 'text-text-muted hover:text-text-main'"
+                            class="flex items-center gap-2 rounded-ui-full px-4 py-2 text-sm font-medium capitalize transition [&>span]:hidden">
                             <component :is="mode === 'light' ? 'span' : 'span'">
                                 {{ mode === 'light' ? '☀️' : mode === 'dark' ? '🌙' : '💻' }}
                             </component>

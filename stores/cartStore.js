@@ -26,18 +26,20 @@ export const useCartStore = defineStore('cart', {
             }
         },
 
-        async stAddToCart(profileId, productId) {
+        async stAddToCart(profileId, productId, productLicenseId) {
             if (!profileId) return
+            if (!productLicenseId) throw new Error('Choose a product license before adding this item to the cart.')
+            const addingKey = `${productId}:${productLicenseId}`
             
             // 1. Trace the specific product being added
-            if (this.addingProducts[productId]) return; 
+            if (this.addingProducts[addingKey]) return;
             
             // 2. OPTIMISTIC UPDATE
-            this.addingProducts[productId] = true;
+            this.addingProducts[addingKey] = true;
 
             try {
                 this.loading = true
-                const newItems = await cartService.sAddToCart(profileId, productId)
+                const newItems = await cartService.sAddToCart(profileId, productId, productLicenseId)
                 
                 // 3. SECURE UPDATE
                 this.items = newItems;
@@ -46,7 +48,7 @@ export const useCartStore = defineStore('cart', {
                 console.error('Add to Cart failed:', err)
                 throw err
             } finally {
-                delete this.addingProducts[productId];
+                delete this.addingProducts[addingKey];
                 this.loading = false
             }
         },

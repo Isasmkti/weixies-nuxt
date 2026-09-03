@@ -96,6 +96,11 @@
               <div class="flex-grow min-w-0">
                 <h3 class="font-bold text-text-main text-lg group-hover:text-primary transition-colors">{{ item.product?.name }}</h3>
                 <p class="text-sm text-text-muted font-montserrat line-clamp-2 mt-1">{{ item.product?.description }}</p>
+                <div v-if="item.order_item_licenses?.[0]" class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span class="rounded-full bg-primary/10 px-2.5 py-1 font-bold text-primary">{{ item.order_item_licenses[0].license_name_snapshot }}</span>
+                  <span v-if="item.order_item_licenses[0].allow_commercial_use_snapshot" class="font-semibold text-emerald-600">Commercial use</span>
+                  <span v-if="item.order_item_licenses[0].allow_resale_snapshot" class="font-semibold text-blue-600">Resale allowed</span>
+                </div>
                 <p class="font-extrabold text-primary mt-2">{{ formatIDR(item.price) }}</p>
               </div>
 
@@ -141,6 +146,15 @@
               >
                 View Product →
               </NuxtLink>
+              <button
+                v-if="item.seller_id"
+                type="button"
+                :disabled="startingConversationItem === item.id"
+                class="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                @click="startOrderConversation(item)"
+              >
+                {{ startingConversationItem === item.id ? 'Opening conversation...' : 'Contact seller' }}
+              </button>
               </div>
             </div>
             <OrderProductReview
@@ -203,6 +217,24 @@ const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
+const startingConversationItem = ref(null)
+
+const startOrderConversation = async (item) => {
+  startingConversationItem.value = item.id
+  try {
+    const { data } = await supabase.auth.getSession()
+    const response = await $fetch('/api/direct-messages/threads', {
+      method: 'POST',
+      headers: { Authorization: data.session?.access_token ? `Bearer ${data.session.access_token}` : '' },
+      body: { seller_id: item.seller_id, product_id: item.product?.id, order_id: order.value.id },
+    })
+    if (response?.thread?.id) await router.push(`/messages/${response.thread.id}`)
+  } catch (err) {
+    alert(err?.data?.statusMessage || err?.message || 'Unable to open a seller conversation.')
+  } finally {
+    startingConversationItem.value = null
+  }
+}
 
 const getPaymentUrl = (incomingOrder) => {
   const payments = Array.isArray(incomingOrder?.payments) ? incomingOrder.payments : []

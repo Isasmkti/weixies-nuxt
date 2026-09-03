@@ -22,6 +22,15 @@ export default defineEventHandler(async (event) => {
       order_items (
         id,
         price,
+        seller_id,
+        order_item_licenses (
+          id,
+          license_name_snapshot,
+          usage_terms_snapshot,
+          allow_commercial_use_snapshot,
+          allow_resale_snapshot,
+          price_snapshot
+        ),
         product:products (
           id,
           name,

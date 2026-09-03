@@ -4,6 +4,8 @@ import { useCategoriesStore } from '../../stores/categoriesStore'
 import { createProductSlug } from '../../services/sellerProductsService'
 import ProductImageUploader from '../products/ProductImageUploader.vue'
 import ProductSpecificationsEditor from '../products/ProductSpecificationsEditor.vue'
+import ProductLicensesEditor from '../products/ProductLicensesEditor.vue'
+import { createDefaultProductLicense } from '../../utils/productLicenses'
 
 const props = defineProps({
   initialProduct: { type: Object, default: null },
@@ -15,7 +17,7 @@ const emit = defineEmits(['submit'])
 const categoriesStore = useCategoriesStore()
 const zipFile = ref(null)
 const imagesDirty = ref(false)
-const form = ref({ name: '', slug: '', description: '', price: 0, images: [], categoryIds: [], specs: [] })
+const form = ref({ name: '', slug: '', description: '', price: 0, images: [], categoryIds: [], specs: [], licenses: [createDefaultProductLicense(0)] })
 const categories = computed(() => categoriesStore.categories)
 const existingZipFile = computed(() => props.initialProduct?.product_files?.[0] || null)
 watch(() => props.initialProduct, (product) => {
@@ -33,6 +35,11 @@ watch(() => props.initialProduct, (product) => {
         .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
         .map((spec) => ({ ...spec, _key: `saved-spec-${spec.id}` }))
       : [],
+    licenses: product?.product_licenses?.length
+      ? [...product.product_licenses]
+        .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
+        .map((license) => ({ ...license }))
+      : [createDefaultProductLicense(product?.price ?? 0)],
   }
   zipFile.value = null
   imagesDirty.value = false
@@ -55,12 +62,13 @@ const submit = () => emit('submit', {
   slug: form.value.slug || suggestedSlug.value,
   images: form.value.images,
   syncImages: !props.initialProduct || imagesDirty.value,
-  specs: form.value.specs
+    specs: form.value.specs
     .map((spec) => ({
       spec_name: String(spec.spec_name || '').trim(),
       spec_value: String(spec.spec_value || '').trim(),
     }))
     .filter((spec) => spec.spec_name || spec.spec_value),
+  licenses: form.value.licenses,
   zipFile: zipFile.value,
 })
 </script>
@@ -98,6 +106,8 @@ const submit = () => emit('submit', {
     </div>
 
     <ProductSpecificationsEditor v-model="form.specs" :disabled="submitting" />
+
+    <ProductLicensesEditor v-model="form.licenses" :base-price="form.price" :disabled="submitting" />
 
     <div class="space-y-4">
       <ProductImageUploader v-model="form.images" input-name="seller-main-image" :disabled="submitting" @changed="imagesDirty = true" />

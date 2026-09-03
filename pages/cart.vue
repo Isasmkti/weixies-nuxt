@@ -70,7 +70,8 @@
                                 </button>
                                 <p class="mt-1 hidden line-clamp-2 text-sm leading-relaxed text-text-muted sm:block">{{ item.product?.description || 'No product description available.' }}</p>
                                 <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <span class="text-base font-black text-primary sm:text-lg">{{ formatIDR(item.product?.price) }}</span>
+                                    <span class="text-base font-black text-primary sm:text-lg">{{ formatIDR(item.product_license?.price) }}</span>
+                                    <span class="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{{ item.product_license?.name || 'License unavailable' }}</span>
                                     <span class="inline-flex items-center gap-1 text-xs font-semibold text-text-muted">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                                         Instant digital delivery
@@ -148,7 +149,7 @@ const allItemsSelected = computed(() => {
 const total = computed(() => {
     return items.value.reduce((sum, item) => {
         if (selectedItems.value.includes(item.id)) {
-            return sum + (Number(item.product?.price) || 0)
+            return sum + (Number(item.product_license?.price) || 0)
         }
         return sum
     }, 0)
@@ -231,6 +232,7 @@ const handleCheckout = async () => {
 
         const payload = {
             product_id: item.product.id,
+            product_license_id: item.product_license_id,
             customerName: currentUser.value?.user_metadata?.full_name || currentUser.value?.email?.split('@')[0] || 'Customer',
         }
 

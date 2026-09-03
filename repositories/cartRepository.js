@@ -2,6 +2,16 @@ import { supabase } from '../utils/supabase'
 
 const CART_ITEM_SELECT = `
   *,
+  product_license:product_licenses!cart_items_product_license_id_fkey(
+    id,
+    name,
+    price,
+    usage_terms,
+    max_end_products,
+    allow_resale,
+    allow_commercial_use,
+    is_active
+  ),
   product:products(
     *,
     product_images(*)
@@ -35,26 +45,25 @@ export async function rGetCartItems(cartId) {
     return data || []
 }
 
-export async function rAddToCart(cartId, productId) {
-    const { data: existing } = await supabase
+export async function rAddToCart(cartId, productId, productLicenseId) {
+    const { data: existingRows, error: lookupError } = await supabase
         .from('cart_items')
-        .select('*')
+        .select('id')
         .eq('cart_id', cartId)
         .eq('product_id', productId)
-        .maybeSingle()
+        .eq('product_license_id', productLicenseId)
+        .limit(1)
 
-    if (existing) {
-        const { error } = await supabase
-            .from('cart_items')
-            .update({ quantity: existing.quantity + 1 })
-            .eq('id', existing.id)
-        if (error) throw error
-    } else {
-        const { error } = await supabase
-            .from('cart_items')
-            .insert({ cart_id: cartId, product_id: productId })
-        if (error) throw error
-    }
+    if (lookupError) throw lookupError
+
+    // Digital licenses are single-entitlement items. Adding the exact same
+    // product/license combination twice is intentionally idempotent.
+    if (existingRows?.length) return
+
+    const { error } = await supabase
+        .from('cart_items')
+        .insert({ cart_id: cartId, product_id: productId, product_license_id: productLicenseId })
+    if (error) throw error
 }
 
 export async function rRemoveFromCart(itemId) {

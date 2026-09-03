@@ -7,7 +7,23 @@ const PRODUCT_SELECT = `
     categories(*)
   ),
   reviews(*),
-  product_files(*)
+  product_files(*),
+  product_licenses(
+    id,
+    product_id,
+    license_type_id,
+    name,
+    price,
+    usage_terms,
+    max_end_products,
+    allow_resale,
+    allow_commercial_use,
+    is_active,
+    sort_order,
+    created_at,
+    updated_at,
+    license_types(id, name, slug)
+  )
 `
 const PRODUCT_DETAIL_SELECT = `
   ${PRODUCT_SELECT},
@@ -304,6 +320,89 @@ export async function rReplaceProductSpecs(productId, specs = []) {
         .from('product_specs')
         .insert(records)
         .select('id, product_id, spec_name, spec_value, sort_order, created_at')
+        .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data || []
+}
+
+export async function rSyncProductLicenses(productId, licenses = []) {
+    const normalizedProductId = Number(productId)
+    if (!Number.isSafeInteger(normalizedProductId) || normalizedProductId <= 0) {
+        throw new Error('A valid product is required.')
+    }
+    if (!Array.isArray(licenses) || licenses.length === 0 || !licenses.some((license) => license.is_active !== false)) {
+        throw new Error('At least one active product license is required.')
+    }
+
+    const { data: currentRows, error: currentError } = await supabase
+        .from('product_licenses')
+        .select('id, product_id, is_active')
+        .eq('product_id', normalizedProductId)
+
+    if (currentError) throw currentError
+
+    const currentIds = new Set((currentRows || []).map((license) => String(license.id)))
+    const submittedIds = new Set()
+
+    // Activate/create submitted active tiers first. This keeps published
+    // products valid while obsolete tiers are deactivated in later requests.
+    const operations = licenses
+        .map((license, index) => ({ license, index }))
+        .sort((a, b) => Number(b.license.is_active) - Number(a.license.is_active))
+
+    for (const { license, index } of operations) {
+        const record = {
+            product_id: normalizedProductId,
+            license_type_id: license.license_type_id || null,
+            name: license.name,
+            price: license.price,
+            usage_terms: license.usage_terms,
+            max_end_products: license.max_end_products,
+            allow_resale: license.allow_resale,
+            allow_commercial_use: license.allow_commercial_use,
+            is_active: license.is_active,
+            sort_order: index,
+        }
+
+        if (license.id) {
+            const licenseId = String(license.id)
+            if (!currentIds.has(licenseId) || submittedIds.has(licenseId)) {
+                throw new Error('One of the submitted licenses does not belong to this product.')
+            }
+            const { error } = await supabase
+                .from('product_licenses')
+                .update(record)
+                .eq('id', licenseId)
+                .eq('product_id', normalizedProductId)
+            if (error) throw error
+            submittedIds.add(licenseId)
+            continue
+        }
+
+        const { data, error } = await supabase
+            .from('product_licenses')
+            .insert(record)
+            .select('id')
+            .single()
+        if (error) throw error
+        submittedIds.add(String(data.id))
+    }
+
+    const omittedIds = [...currentIds].filter((id) => !submittedIds.has(id))
+    if (omittedIds.length) {
+        const { error } = await supabase
+            .from('product_licenses')
+            .update({ is_active: false })
+            .eq('product_id', normalizedProductId)
+            .in('id', omittedIds)
+        if (error) throw error
+    }
+
+    const { data, error } = await supabase
+        .from('product_licenses')
+        .select('id, product_id, license_type_id, name, price, usage_terms, max_end_products, allow_resale, allow_commercial_use, is_active, sort_order, created_at, updated_at')
+        .eq('product_id', normalizedProductId)
         .order('sort_order', { ascending: true })
 
     if (error) throw error

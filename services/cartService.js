@@ -30,11 +30,11 @@ export async function sGetCart(profileId) {
     }
 }
 
-export async function sAddToCart(profileId, productId) {
+export async function sAddToCart(profileId, productId, productLicenseId) {
     try {
         // Ensure cart exists
         const cart = await rGetCartWithCreation(profileId)
-        await rAddToCart(cart.id, productId)
+        await rAddToCart(cart.id, productId, productLicenseId)
         // Return updated cart items
         const items = await rGetCartItems(cart.id)
         return mapCartItemsImages(items)

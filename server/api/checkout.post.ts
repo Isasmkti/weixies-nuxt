@@ -48,12 +48,17 @@ export default defineEventHandler(async (event) => {
   if (!Number.isSafeInteger(productId) || productId <= 0) {
     throw createError({ statusCode: 400, statusMessage: 'A valid product_id is required.' });
   }
+  const productLicenseId = String(body?.product_license_id || '').trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productLicenseId)) {
+    throw createError({ statusCode: 400, statusMessage: 'A valid product_license_id is required.' });
+  }
 
   await enforceRateLimit(`checkout:${user.id}`, 10, 60);
 
   const { data: checkoutRows, error: checkoutError } = await supabase.rpc('create_checkout_order', {
     p_profile_id: user.id,
     p_product_id: productId,
+    p_product_license_id: productLicenseId,
   });
   const checkout = Array.isArray(checkoutRows) ? checkoutRows[0] : checkoutRows;
 
@@ -109,7 +114,7 @@ export default defineEventHandler(async (event) => {
   const invoice = await createXenditInvoice({
     externalId: `ORDER-${checkout.order_id}`,
     amount: Number(checkout.total_amount),
-    description: `${String(checkout.product_name).slice(0, 120)} - ${customerEmail}`,
+    description: `${String(checkout.product_name).slice(0, 90)} (${String(checkout.license_name).slice(0, 30)}) - ${customerEmail}`,
     customerEmail,
     customerName,
     successRedirectUrl: `${origin}/orders/${checkout.order_id}`,

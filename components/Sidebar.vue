@@ -39,16 +39,6 @@ const baseMenuItems = [
         icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z'
     },
     {
-        name: 'My Orders',
-        to: '/orders',
-        icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-    },
-    {
-        name: 'Wishlist',
-        to: '/wishlist',
-        icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
-    },
-    {
         name: 'Home',
         to: '/',
         icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
@@ -62,12 +52,12 @@ const menuItems = computed(() => baseMenuItems.filter((item) => (
 
 <template>
     <aside
-        :class="['bg-surface shadow-[4px_0_24px_rgba(0,0,0,0.02)] h-screen hidden md:flex md:flex-col transition-all duration-300 relative z-20 border-r border-bg-alt/50 ', isCollapsed ? 'w-20' : 'w-72']">
+        :class="['relative z-20 hidden h-screen border-r border-border bg-surface transition-all duration-300 md:flex md:flex-col', isCollapsed ? 'w-20' : 'w-72']">
 
         <!-- Header / Branding -->
         <div class="p-6 flex items-center gap-4">
             <div class="w-10 h-10 shrink-0 flex items-center justify-center">
-                <img src="../assets/weixies-logo.svg" alt="Weixies Logo" class="w-full h-full object-contain drop-shadow-md" />
+                <img src="../assets/weixies-logo.svg" alt="Weixies Logo" class="h-full w-full object-contain" />
             </div>
             <transition name="fade">
                 <span v-if="!isCollapsed"
@@ -80,8 +70,8 @@ const menuItems = computed(() => baseMenuItems.filter((item) => (
         <!-- Navigation -->
         <nav class="flex-1 px-4 space-y-2 overflow-y-auto container no-scrollbar">
             <NuxtLink v-for="(item, index) in menuItems" :key="index" :to="item.to"
-                :class="['flex items-center gap-3 px-4 py-3 rounded-xl text-text-muted hover:bg-bg hover:text-primary transition-all duration-200 group', isCollapsed ? 'justify-center' : '']"
-                active-class="bg-primary/10 text-primary font-medium shadow-sm">
+                :class="['group flex items-center gap-3 rounded-ui-md px-4 py-3 text-text-muted transition-colors duration-200 hover:bg-bg hover:text-primary', isCollapsed ? 'justify-center' : '']"
+                active-class="bg-primary/10 text-primary font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
@@ -96,7 +86,7 @@ const menuItems = computed(() => baseMenuItems.filter((item) => (
         <div class="p-4 border-t border-bg-alt/50 flex flex-col gap-2 relative">
             <!-- User Profile Section -->
             <div v-if="profile"
-                :class="[' p-3 rounded-xl flex items-center gap-3  transition-all duration-300', isCollapsed ? 'justify-center p-2' : 'bg-bg border border-bg-alt/50']">
+                :class="['flex items-center gap-3 rounded-ui-md p-3 transition-all duration-300', isCollapsed ? 'justify-center p-2' : 'border border-border bg-bg']">
                 <!-- Profile Image -->
                 <div class="relative shrink-0">
                     <div
@@ -121,7 +111,7 @@ const menuItems = computed(() => baseMenuItems.filter((item) => (
 
             <!-- Sign Out -->
             <button @click="handleLogout"
-                :class="['flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all duration-200 group', isCollapsed ? 'justify-center' : 'w-full']">
+                :class="['group flex items-center gap-3 rounded-ui-sm px-3 py-2 text-danger transition-colors duration-200 hover:bg-danger/10', isCollapsed ? 'justify-center' : 'w-full']">
                 <svg xmlns="http://www.w3.org/2000/svg"
                     class="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform duration-200" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">

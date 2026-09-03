@@ -4,7 +4,8 @@ const WISHLIST_SELECT = `
   *,
   product:products(
     *,
-    product_images(*)
+    product_images(*),
+    product_licenses(id, name, price, is_active, sort_order)
   )
 `
 

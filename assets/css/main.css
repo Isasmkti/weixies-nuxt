@@ -18,16 +18,8 @@ html {
 }
 
 
-h1{
-    font-family: 'Poppins', sans-serif;
-}
-
-h2,p{
-    font-family: 'Montserrat', sans-serif;
-}
-
 :root {
-    /* Primary (Elegant Blue) */
+    /* Brand accent */
     --color-primary: 79 70 229;        /* indigo-600 */
     --color-primary-dark: 67 56 202;   /* indigo-700 */
   
@@ -39,6 +31,27 @@ h2,p{
 
     --color-text: 24 24 27;            /* zinc-900 */
     --color-text-muted: 113 113 122;   /* zinc-500 */
+    --color-border: 227 229 232;        /* neutral border */
+
+    /* Semantic colors */
+    --color-success: 30 142 62;
+    --color-warning: 217 119 6;
+    --color-danger: 217 48 37;
+
+    /* Shape scale */
+    --radius-none: 0px;
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 999px;
+
+    /* Neutral elevation scale */
+    --elevation-0: none;
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --elevation-2: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --elevation-3: 0 4px 12px rgba(0, 0, 0, 0.10), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* Dark Mode (Elegant Slate) */
@@ -53,6 +66,14 @@ html.dark {
 
     --color-text: 244 244 245;         /* zinc-100 */
     --color-text-muted: 161 161 170;   /* zinc-400 */
+    --color-border: 63 63 70;           /* zinc-700 */
+    --color-success: 74 222 128;
+    --color-warning: 251 191 36;
+    --color-danger: 248 113 113;
+
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.20);
+    --elevation-2: 0 2px 6px rgba(0, 0, 0, 0.30), 0 1px 2px rgba(0, 0, 0, 0.22);
+    --elevation-3: 0 4px 12px rgba(0, 0, 0, 0.34), 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
 /* Global Transition & Base Styles */
@@ -65,5 +86,13 @@ html, body {
 body {
     @apply bg-bg
            text-text-main
+           font-sans
            transition-colors duration-300 ease-in-out;
+}
+
+h1,
+h2,
+h3,
+p {
+    font-family: inherit;
 }

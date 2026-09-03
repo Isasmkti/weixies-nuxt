@@ -5,7 +5,8 @@ const SELLER_PRODUCT_CONTENT_SELECT = `
   ${SELLER_PRODUCT_SELECT},
   product_images(id, image_url, storage_path, is_primary),
   product_categories(category_id, categories(id, name, slug)),
-  product_files(id, file_name, file_url, file_size, version, created_at)
+  product_files(id, file_name, file_url, file_size, version, created_at),
+  product_licenses(id, product_id, license_type_id, name, price, usage_terms, max_end_products, allow_resale, allow_commercial_use, is_active, sort_order, created_at, updated_at)
 `
 const SELLER_PRODUCT_DETAIL_SELECT = `
   ${SELLER_PRODUCT_CONTENT_SELECT},

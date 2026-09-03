@@ -28,6 +28,12 @@ export function useProductDetailUI(initialSlug) {
   })
 
   const selectedImage = ref('')
+  const selectedLicenseId = ref('')
+
+  const productLicenses = computed(() => [...(product.value?.product_licenses || [])]
+    .filter((license) => license.is_active !== false)
+    .sort((a, b) => Number(a.sort_order) - Number(b.sort_order)))
+  const selectedLicense = computed(() => productLicenses.value.find((license) => license.id === selectedLicenseId.value) || null)
 
   watch(productImages, (images) => {
     if (images.length > 0) {
@@ -38,8 +44,14 @@ export function useProductDetailUI(initialSlug) {
     }
   }, { immediate: true })
 
+  watch(productLicenses, (licenses) => {
+    if (!licenses.some((license) => license.id === selectedLicenseId.value)) {
+      selectedLicenseId.value = licenses[0]?.id || ''
+    }
+  }, { immediate: true })
+
   const formattedPrice = computed(() => {
-    return formatIDR(product.value?.price)
+    return formatIDR(selectedLicense.value?.price ?? product.value?.price)
   })
 
   const randomProducts = ref([])
@@ -92,6 +104,7 @@ export function useProductDetailUI(initialSlug) {
   const addToCart = async (productId) => {
     const id = productId || product.value?.id
     if (!id) return
+    if (!selectedLicenseId.value) throw new Error('This product does not have an active license.')
     const user = await getUser()
     if (!user) {
       router.push('/login')
@@ -99,7 +112,7 @@ export function useProductDetailUI(initialSlug) {
     }
     try {
       addingToCart.value = id
-      await cartStore.stAddToCart(user.id, id)
+      await cartStore.stAddToCart(user.id, id, selectedLicenseId.value)
     } catch (err) {
       console.error('Failed to add to cart:', err)
     } finally {
@@ -119,6 +132,9 @@ export function useProductDetailUI(initialSlug) {
     addToCart,
     productImages,
     selectedImage,
+    productLicenses,
+    selectedLicense,
+    selectedLicenseId,
     randomProducts,
     cartStore,
     formatIDR

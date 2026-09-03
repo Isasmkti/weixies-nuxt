@@ -74,7 +74,7 @@ const chartOptions = computed(() => ({
   chart: {
     id: 'admin-revenue-datetime',
     type: 'area',
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Inter, sans-serif',
     background: 'transparent',
     toolbar: {
       show: true,
@@ -189,19 +189,19 @@ onMounted(loadDashboard)
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-[1600px] font-poppins">
+  <div class="mx-auto w-full max-w-[1440px]">
     <header class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">Platform overview</p>
-        <h1 class="text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Admin Dashboard</h1>
-        <p class="mt-2 font-montserrat text-sm text-text-muted sm:text-base">Monitor marketplace performance and recent activity in one place.</p>
+        <p class="mb-1 text-sm font-medium text-primary">Platform overview</p>
+        <h1 class="text-3xl font-semibold tracking-tight text-text-main">Admin dashboard</h1>
+        <p class="mt-2 text-sm text-text-muted">Monitor marketplace performance and recent activity in one place.</p>
       </div>
       <div class="flex items-center gap-3">
         <p v-if="lastUpdated" class="hidden text-xs text-text-muted sm:block">Updated at {{ formatTime(lastUpdated) }}</p>
         <button
           type="button"
           :disabled="loading"
-          class="inline-flex items-center justify-center gap-2 rounded-xl border border-bg-alt bg-surface px-4 py-2.5 text-sm font-bold text-text-main shadow-sm transition hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex items-center justify-center gap-2 rounded-ui-sm border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-main transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
           @click="loadDashboard"
         >
           <svg class="h-4 w-4" :class="{ 'animate-spin': loading }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -210,20 +210,20 @@ onMounted(loadDashboard)
       </div>
     </header>
 
-    <div v-if="errorMessage" class="mb-6 flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300 sm:flex-row sm:items-center sm:justify-between">
+    <div v-if="errorMessage" class="mb-6 flex flex-col gap-3 rounded-ui-md border border-danger/20 bg-danger/10 p-4 text-sm text-danger sm:flex-row sm:items-center sm:justify-between">
       <span>{{ errorMessage }}</span>
       <button class="shrink-0 font-bold underline underline-offset-4" @click="loadDashboard">Try again</button>
     </div>
 
     <section class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <article v-for="card in metricCards" :key="card.label" class="group rounded-2xl border border-bg-alt bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
+      <article v-for="card in metricCards" :key="card.label" class="rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1">
         <div class="mb-5 flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <p class="text-xs font-bold uppercase tracking-[0.12em] text-text-muted">{{ card.label }}</p>
+            <p class="text-sm font-medium text-text-muted">{{ card.label }}</p>
             <div v-if="loading" class="mt-3 h-8 w-32 animate-pulse rounded-lg bg-bg-alt" />
-            <p v-else class="mt-2 truncate text-2xl font-extrabold tracking-tight text-text-main">{{ card.value }}</p>
+            <p v-else class="mt-2 truncate text-2xl font-semibold tracking-tight text-text-main">{{ card.value }}</p>
           </div>
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
             <svg v-if="card.icon === 'wallet'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2m0-6h2a2 2 0 012 2v2a2 2 0 01-2 2h-5a2 2 0 01-2-2v-2a2 2 0 012-2h3z" /></svg>
             <svg v-else-if="card.icon === 'receipt'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6m-6-4h6M5 4h14v16l-3-2-4 2-4-2-3 2V4z" /></svg>
             <svg v-else-if="card.icon === 'users'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H2v-2a4 4 0 014-4h3m8-5a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -241,18 +241,18 @@ onMounted(loadDashboard)
     </section>
 
     <section class="mb-6 grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-3">
-      <article class="min-w-0 rounded-2xl border border-bg-alt bg-surface p-4 shadow-sm sm:p-6 xl:col-span-2">
+      <article class="min-w-0 rounded-ui-lg border border-border bg-surface p-4 shadow-elevation-1 sm:p-6 xl:col-span-2">
         <div class="mb-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-text-main sm:text-xl">Revenue Growth</h2>
             <p class="mt-1 text-sm text-text-muted">Marketplace revenue from successful transactions</p>
           </div>
-          <div class="flex w-fit items-center rounded-xl bg-bg-alt p-1">
+          <div class="flex w-fit items-center rounded-ui-full bg-bg-alt p-1">
             <button
               v-for="range in chartRanges"
               :key="range.days"
               type="button"
-              class="rounded-lg px-3 py-1.5 text-xs font-bold transition"
+              class="rounded-ui-full px-3 py-1.5 text-xs font-medium transition"
               :class="activeChartRange === range.days ? 'bg-surface text-primary shadow-sm' : 'text-text-muted hover:text-text-main'"
               @click="activeChartRange = range.days"
             >
@@ -268,14 +268,14 @@ onMounted(loadDashboard)
       </article>
 
       <div class="flex flex-col gap-6">
-        <article class="relative overflow-hidden rounded-2xl border border-bg-alt bg-surface p-6 shadow-sm">
+        <article class="relative overflow-hidden rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1">
           <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10" />
           <div class="relative flex items-start justify-between gap-4">
             <div>
               <p class="text-sm font-bold text-text-main">Seller Verification</p>
               <div class="mt-4 flex items-baseline gap-2">
                 <span v-if="loading" class="h-10 w-16 animate-pulse rounded-lg bg-bg-alt" />
-                <span v-else class="text-4xl font-black tracking-tight text-text-main">{{ dashboard.pendingSellers }}</span>
+                <span v-else class="text-4xl font-semibold tracking-tight text-text-main">{{ dashboard.pendingSellers }}</span>
                 <span class="text-sm text-text-muted">pending</span>
               </div>
             </div>
@@ -283,13 +283,13 @@ onMounted(loadDashboard)
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M12 3l7 3v5c0 4.4-2.99 8.47-7 9.75C7.99 19.47 5 15.4 5 11V6l7-3z" /></svg>
             </div>
           </div>
-          <NuxtLink to="/admin/sellers" class="relative mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-dark">
+          <NuxtLink to="/admin/sellers" class="relative mt-5 flex w-full items-center justify-center gap-2 rounded-ui-md bg-primary px-4 py-3 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
             Review now
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </NuxtLink>
         </article>
 
-        <article class="flex-1 rounded-2xl border border-bg-alt bg-surface p-6 shadow-sm">
+        <article class="flex-1 rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1">
           <h2 class="text-sm font-bold text-text-main">Data Status</h2>
           <ul class="mt-5 space-y-4 text-sm">
             <li v-for="item in ['Marketplace database', '30-day analytics', 'Administrator access']" :key="item" class="flex items-center gap-3">
@@ -306,7 +306,7 @@ onMounted(loadDashboard)
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-bg-alt bg-surface shadow-sm">
+    <section class="overflow-hidden rounded-ui-lg border border-border bg-surface shadow-elevation-1">
       <div class="flex items-center justify-between gap-4 border-b border-bg-alt p-5 sm:p-6">
         <div>
           <h2 class="text-lg font-bold text-text-main sm:text-xl">Recent Transactions</h2>
@@ -317,7 +317,7 @@ onMounted(loadDashboard)
       <div class="overflow-x-auto">
         <table class="w-full min-w-[900px] border-collapse text-left">
           <thead>
-            <tr class="border-b border-bg-alt bg-bg-alt/50 text-xs font-bold uppercase tracking-wider text-text-muted">
+            <tr class="border-b border-border bg-bg-alt/50 text-xs font-medium text-text-muted">
               <th class="p-4 sm:px-6">Transaction ID</th>
               <th class="p-4 sm:px-6">Customer</th>
               <th class="p-4 sm:px-6">Product</th>
@@ -335,7 +335,7 @@ onMounted(loadDashboard)
               <td class="max-w-[260px] truncate p-4 text-text-muted sm:px-6" :title="(order.product_names || []).join(', ')">{{ productSummary(order) }}</td>
               <td class="whitespace-nowrap p-4 text-text-muted sm:px-6">{{ formatDateTime(order.created_at) }}</td>
               <td class="whitespace-nowrap p-4 font-bold text-text-main sm:px-6">{{ formatIDR(order.total_amount) }}</td>
-              <td class="p-4 sm:px-6"><span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide" :class="statusClasses[order.status] || 'bg-bg-alt text-text-muted'">{{ statusLabels[order.status] || order.status }}</span></td>
+              <td class="p-4 sm:px-6"><span class="inline-flex rounded-ui-xs px-2.5 py-1 text-xs font-medium" :class="statusClasses[order.status] || 'bg-bg-alt text-text-muted'">{{ statusLabels[order.status] || order.status }}</span></td>
             </tr>
           </tbody>
         </table>

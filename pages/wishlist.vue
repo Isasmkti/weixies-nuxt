@@ -97,7 +97,7 @@
                             </span>
                             
                             <!-- Add to Cart (Optional) -->
-                            <button @click.stop="addToCart(item.product_id)"
+                            <button @click.stop="addToCart(item.product)"
                                     class="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors duration-300 shadow-sm"
                                     title="Add to Cart">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,9 +167,16 @@ const removeFromWishlist = async (productId) => {
     }
 }
 
-const addToCart = async (productId) => {
+const addToCart = async (product) => {
+    const licenses = [...(product?.product_licenses || [])]
+        .filter((license) => license.is_active !== false)
+        .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
+    if (licenses.length !== 1) {
+        if (product?.slug) router.push(`/products/${product.slug}`)
+        return
+    }
     try {
-        await cartStore.stAddToCart(profileId, productId)
+        await cartStore.stAddToCart(profileId, product.id, licenses[0].id)
         
         Swal.fire({
             toast: true,

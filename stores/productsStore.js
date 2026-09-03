@@ -89,7 +89,10 @@ export const useProductsStore = defineStore('products', {
         },
 
         async stAll(page, options = {}) {
-            const targetPage = Number.isFinite(page) && page > 0 ? page : this.page
+            const parsedPage = Number(page)
+            const targetPage = Number.isFinite(parsedPage) && parsedPage > 0
+                ? Math.floor(parsedPage)
+                : this.page
             const {
                 limit = this.limit,
                 sortBy = this.sortBy,
@@ -100,6 +103,10 @@ export const useProductsStore = defineStore('products', {
                 maxPrice = this.maxPrice,
                 force = false
             } = options
+            const parsedLimit = Number(limit)
+            const targetLimit = Number.isFinite(parsedLimit) && parsedLimit > 0
+                ? Math.floor(parsedLimit)
+                : this.limit
 
             const normalizedCategorySlug = Array.isArray(categorySlug)
                 ? categorySlug
@@ -107,7 +114,7 @@ export const useProductsStore = defineStore('products', {
 
             const filtersChanged = (
                 targetPage !== this.page ||
-                Number(limit) !== Number(this.limit) ||
+                targetLimit !== Number(this.limit) ||
                 sortBy !== this.sortBy ||
                 sortOrder !== this.sortOrder ||
                 search !== this.search ||
@@ -127,10 +134,11 @@ export const useProductsStore = defineStore('products', {
             this.error = null
 
             try {
-                const res = await withTimeout(
+                let resolvedPage = targetPage
+                let res = await withTimeout(
                     productsService.sAll(
                         targetPage,
-                        limit,
+                        targetLimit,
                         sortBy,
                         sortOrder,
                         search,
@@ -142,11 +150,37 @@ export const useProductsStore = defineStore('products', {
 
                 if (current !== this.requestId) return
 
+                const firstTotal = Number(res?.total) || 0
+                const lastAvailablePage = Math.ceil(firstTotal / targetLimit)
+
+                // A product can disappear between page changes (for example after
+                // moderation). Recover to the final valid page instead of leaving
+                // the catalog on an empty, out-of-range page.
+                if (lastAvailablePage > 0 && targetPage > lastAvailablePage) {
+                    resolvedPage = lastAvailablePage
+                    res = await withTimeout(
+                        productsService.sAll(
+                            resolvedPage,
+                            targetLimit,
+                            sortBy,
+                            sortOrder,
+                            search,
+                            normalizedCategorySlug,
+                            minPrice,
+                            maxPrice
+                        )
+                    )
+
+                    if (current !== this.requestId) return
+                } else if (firstTotal === 0) {
+                    resolvedPage = 1
+                }
+
                 const rawData = Array.isArray(res?.data) ? res.data : []
                 this.products = rawData.map(p => this._mapProduct(p))
                 this.total = Number(res?.total) || 0
-                this.page = targetPage
-                this.limit = Number(limit) || this.limit
+                this.page = resolvedPage
+                this.limit = targetLimit
                 this.sortBy = sortBy
                 this.sortOrder = sortOrder
                 this.search = search
@@ -230,8 +264,8 @@ export const useProductsStore = defineStore('products', {
         async createProduct(payload) {
             this.loading = true
             try {
-                const { images, categoryIds, specs, syncImages, zipFile, ...productData } = payload
-                const rawProduct = await productsService.sCreate(productData, images, categoryIds, zipFile, specs, syncImages)
+                const { images, categoryIds, specs, licenses, syncImages, zipFile, ...productData } = payload
+                const rawProduct = await productsService.sCreate(productData, images, categoryIds, zipFile, specs, syncImages, licenses)
                 const newProduct = this._mapProduct(rawProduct)
                 this.products.unshift(newProduct)
                 return newProduct
@@ -246,8 +280,8 @@ export const useProductsStore = defineStore('products', {
         async updateProduct(id, payload) {
             this.loading = true
             try {
-                const { images, categoryIds, specs, syncImages, zipFile, ...productData } = payload
-                const rawUpdated = await productsService.sUpdate(id, productData, images, categoryIds, zipFile, specs, syncImages)
+                const { images, categoryIds, specs, licenses, syncImages, zipFile, ...productData } = payload
+                const rawUpdated = await productsService.sUpdate(id, productData, images, categoryIds, zipFile, specs, syncImages, licenses)
                 const updated = this._mapProduct(rawUpdated)
                 const index = this.products.findIndex(p => p.id === id)
                 if (index !== -1) {

@@ -1,20 +1,37 @@
 <template>
-  <div class="mx-auto max-w-[1600px] font-poppins">
+  <div class="mx-auto max-w-[1440px]">
     <!-- Header -->
     <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
       <div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-text-main tracking-tight">My Orders</h1>
-        <p class="text-text-muted mt-1 font-montserrat">Your digital purchases & download library</p>
+        <h1 class="text-3xl font-semibold tracking-tight text-text-main">My orders</h1>
+        <p class="mt-1 text-sm text-text-muted">Your digital purchases and download library</p>
       </div>
       <NuxtLink
         to="/products"
-        class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all duration-300"
+        class="inline-flex items-center gap-2 rounded-ui-md bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
         Browse Products
       </NuxtLink>
+    </div>
+
+    <div v-if="!loading && !error && orders.length" class="no-scrollbar mb-6 overflow-x-auto" aria-label="Filter orders by status">
+      <div class="inline-flex min-w-max items-center gap-1 rounded-ui-full border border-border bg-bg-alt p-1">
+        <button
+          v-for="filter in availableStatusFilters"
+          :key="filter.value"
+          type="button"
+          :aria-pressed="activeStatus === filter.value"
+          class="inline-flex items-center gap-2 rounded-ui-full px-4 py-2 text-sm font-medium transition"
+          :class="activeStatus === filter.value ? 'bg-surface text-primary shadow-elevation-1' : 'text-text-muted hover:text-text-main'"
+          @click="activeStatus = filter.value"
+        >
+          {{ filter.label }}
+          <span class="rounded-ui-full px-1.5 py-0.5 text-[10px] leading-none" :class="activeStatus === filter.value ? 'bg-primary/10 text-primary' : 'bg-surface text-text-muted'">{{ filter.count }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -42,10 +59,19 @@
       </NuxtLink>
     </div>
 
+    <div v-else-if="filteredOrders.length === 0" class="flex flex-col items-center rounded-ui-lg border border-dashed border-border bg-surface px-6 py-16 text-center">
+      <div class="flex h-12 w-12 items-center justify-center rounded-ui-md bg-bg-alt text-text-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 4h18M6 10h12m-8 6h4" /></svg>
+      </div>
+      <h2 class="mt-4 text-lg font-semibold text-text-main">No {{ statusLabel(activeStatus).toLowerCase() }} orders</h2>
+      <p class="mt-1 text-sm text-text-muted">Choose another status to view your orders.</p>
+      <button type="button" class="mt-4 text-sm font-semibold text-primary hover:underline" @click="activeStatus = 'all'">Show all orders</button>
+    </div>
+
     <!-- Orders List -->
     <div v-else class="space-y-4">
       <div
-        v-for="order in orders"
+        v-for="order in filteredOrders"
         :key="order.id"
         class="bg-surface rounded-2xl border border-bg-alt/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       >
@@ -159,7 +185,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount, onMounted } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
@@ -172,7 +198,59 @@ const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
 const resumingOrder = ref(null)
+const activeStatus = ref('all')
 let refreshTimer = null
+
+const preferredStatusOrder = [
+  'pending',
+  'paid',
+  'refunded',
+  'partially_refunded',
+  'failed',
+  'expired',
+  'cancelled',
+  'chargeback',
+]
+
+const statusLabel = (status) => {
+  if (status === 'all') return 'All'
+  return String(status || '')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+const statusCounts = computed(() => orders.value.reduce((counts, order) => {
+  const status = String(order?.status || 'unknown')
+  counts[status] = (counts[status] || 0) + 1
+  return counts
+}, {}))
+
+const availableStatusFilters = computed(() => {
+  const statuses = new Set(Object.keys(statusCounts.value))
+  if (activeStatus.value !== 'all') statuses.add(activeStatus.value)
+
+  const orderedStatuses = [...statuses].sort((left, right) => {
+    const leftIndex = preferredStatusOrder.indexOf(left)
+    const rightIndex = preferredStatusOrder.indexOf(right)
+    if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right)
+    if (leftIndex === -1) return 1
+    if (rightIndex === -1) return -1
+    return leftIndex - rightIndex
+  })
+
+  return [
+    { value: 'all', label: 'All', count: orders.value.length },
+    ...orderedStatuses.map((status) => ({
+      value: status,
+      label: statusLabel(status),
+      count: statusCounts.value[status] || 0,
+    })),
+  ]
+})
+
+const filteredOrders = computed(() => activeStatus.value === 'all'
+  ? orders.value
+  : orders.value.filter((order) => String(order?.status) === activeStatus.value))
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
