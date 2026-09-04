@@ -19,6 +19,25 @@ export default defineEventHandler(async (event) => {
 
   await enforceRateLimit(`direct-thread:${user.id}`, 10, 3600);
 
+  // Validate with the service client before looking up/resuming a thread. This
+  // avoids leaking an old self-thread and turns the DB guard into a clear 403.
+  const { data: targetSeller, error: sellerError } = await admin
+    .from('sellers')
+    .select('id, profile_id, status')
+    .eq('id', sellerId)
+    .maybeSingle();
+  if (sellerError) throw sellerError;
+  if (!targetSeller || targetSeller.status !== 'approved') {
+    throw createError({ statusCode: 404, statusMessage: 'The selected seller is unavailable.' });
+  }
+  if (targetSeller.profile_id === user.id) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'You cannot start a conversation with your own store.',
+      data: { error: 'self_chat_not_allowed' },
+    });
+  }
+
   let existingQuery = admin
     .from('buyer_seller_threads')
     .select('id')
@@ -36,9 +55,15 @@ export default defineEventHandler(async (event) => {
     .select('id')
     .single();
   if (error) {
+    if (error.code === '42501' && String(error.message || '').includes('self_chat_not_allowed')) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'You cannot start a conversation with your own store.',
+        data: { error: 'self_chat_not_allowed' },
+      });
+    }
     throw createError({ statusCode: error.code === '23514' ? 400 : 403, statusMessage: error.message });
   }
 
   return { thread: await getDirectThreadForUser(data.id, user.id), resumed: false };
 });
-

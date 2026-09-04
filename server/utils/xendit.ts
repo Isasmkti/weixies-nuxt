@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { resolveXenditBankBeneficiary } from './xendit-beneficiary.js';
 
 export type LocalPaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled';
 
@@ -53,18 +54,9 @@ export interface CreateXenditPayoutInput {
   idempotencyKey: string;
   amount: number;
   sellerId: string;
-  recipientType: 'INDIVIDUAL' | 'BUSINESS';
+  bankCode: string;
   accountHolderName: string;
   accountNumber: string;
-  routingType: string;
-  routingValue: string;
-  givenName?: string | null;
-  surname?: string | null;
-  businessName?: string | null;
-  addressLine1: string;
-  city: string;
-  province: string;
-  postalCode: string;
 }
 
 export class XenditApiError extends Error {
@@ -149,32 +141,26 @@ export async function createXenditPayout(
   input: CreateXenditPayoutInput,
   secretKey: string,
 ): Promise<XenditPayout> {
+  const beneficiary = resolveXenditBankBeneficiary({
+    bankCode: input.bankCode,
+    accountNumber: input.accountNumber,
+    accountHolderName: input.accountHolderName,
+  });
   const recipient: Record<string, any> = {
-    type: input.recipientType,
+    type: beneficiary.recipientType,
     relationship: 'BUSINESS_PARTNER',
     account_details: {
       currency: 'IDR',
       account_country: 'ID',
-      account_holder_name: input.accountHolderName,
-      account_number: input.accountNumber,
-      routing_type_1: input.routingType,
-      routing_value_1: input.routingValue,
+      account_holder_name: beneficiary.accountHolderName,
+      account_number: beneficiary.accountNumber,
+      routing_type_1: beneficiary.routingType,
+      routing_value_1: beneficiary.routingValue,
     },
-    address: {
-      country: 'ID',
-      street_line_1: input.addressLine1,
-      city: input.city,
-      province_state: input.province,
-      postal_code: input.postalCode,
-    },
+    address: { country: 'ID' },
+    given_name: beneficiary.givenName,
+    surname: beneficiary.surname,
   };
-
-  if (input.recipientType === 'BUSINESS') {
-    recipient.business_name = input.businessName;
-  } else {
-    recipient.given_name = input.givenName;
-    recipient.surname = input.surname;
-  }
 
   return xenditFetch<XenditPayout>('/v3/payouts', secretKey, {
     method: 'POST',

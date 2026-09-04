@@ -86,6 +86,13 @@ export default defineEventHandler(async (event) => {
     if (isSelfPurchaseDatabaseError(checkoutError) || String(checkoutError?.message || '').includes('cannot purchase your own product')) {
       throwSelfPurchase('checkout', [productId]);
     }
+    if (checkoutError?.code === '23514' && String(checkoutError?.message || '').includes('product_license_mismatch')) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'The selected license does not belong to this product. Please refresh and choose a license again.',
+        data: { error: 'product_license_mismatch', product_id: productId },
+      });
+    }
     throw createError({
       statusCode: checkoutError?.code === 'P0002' ? 404 : 409,
       statusMessage: checkoutError?.message || 'Checkout could not be started.',

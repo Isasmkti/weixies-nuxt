@@ -46,18 +46,9 @@ export default defineEventHandler(async (event) => {
       idempotencyKey: payout.provider_reference_id,
       amount: Number(payout.amount),
       sellerId: payout.seller_id,
-      recipientType: payout.recipient_type_snapshot,
+      bankCode: payout.bank_name_snapshot,
       accountHolderName: payout.account_holder_name_snapshot,
       accountNumber: payout.bank_account_snapshot,
-      routingType: payout.routing_type_snapshot,
-      routingValue: payout.routing_value_snapshot,
-      givenName: payout.recipient_given_name_snapshot,
-      surname: payout.recipient_surname_snapshot,
-      businessName: payout.recipient_business_name_snapshot,
-      addressLine1: payout.address_line_1_snapshot,
-      city: payout.city_snapshot,
-      province: payout.province_snapshot,
-      postalCode: payout.postal_code_snapshot,
     }, secretKey);
 
     const result = await applyXenditPayoutObject('admin.payout_submitted', providerPayout, providerPayout);
