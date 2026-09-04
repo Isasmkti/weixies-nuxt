@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { resolveXenditBankBeneficiary, splitAccountHolderName } from '../server/utils/xendit-beneficiary.js'
+import {
+  resolveXenditBankBeneficiary,
+  resolveXenditRecipientAddress,
+  splitAccountHolderName,
+} from '../server/utils/xendit-beneficiary.js'
 import { validatePayoutAccount } from '../utils/payoutBanks.js'
 
 test('normalizes the selected bank and account number', () => {
@@ -53,4 +57,25 @@ test('rejects an invalid bank account length', () => {
     accountNumber: '123',
     accountHolderName: 'Budi Santoso',
   }), /10 digits/)
+})
+
+test('always supplies Xendit required recipient address fields', () => {
+  assert.deepEqual(resolveXenditRecipientAddress({}), {
+    country: 'ID',
+    street_line_1: 'Indonesia',
+    city: 'Indonesia',
+  })
+
+  assert.deepEqual(resolveXenditRecipientAddress({
+    addressLine1: 'Jl. Sudirman 10',
+    city: 'Jakarta',
+    province: 'DKI Jakarta',
+    postalCode: '10220',
+  }), {
+    country: 'ID',
+    street_line_1: 'Jl. Sudirman 10',
+    city: 'Jakarta',
+    province_state: 'DKI Jakarta',
+    postal_code: '10220',
+  })
 })

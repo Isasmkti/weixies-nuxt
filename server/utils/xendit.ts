@@ -1,5 +1,8 @@
 import crypto from 'node:crypto';
-import { resolveXenditBankBeneficiary } from './xendit-beneficiary.js';
+import {
+  resolveXenditBankBeneficiary,
+  resolveXenditRecipientAddress,
+} from './xendit-beneficiary.js';
 
 export type LocalPaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled';
 
@@ -57,6 +60,10 @@ export interface CreateXenditPayoutInput {
   bankCode: string;
   accountHolderName: string;
   accountNumber: string;
+  addressLine1?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
 }
 
 export class XenditApiError extends Error {
@@ -157,7 +164,7 @@ export async function createXenditPayout(
       routing_type_1: beneficiary.routingType,
       routing_value_1: beneficiary.routingValue,
     },
-    address: { country: 'ID' },
+    address: resolveXenditRecipientAddress(input),
     given_name: beneficiary.givenName,
     surname: beneficiary.surname,
   };

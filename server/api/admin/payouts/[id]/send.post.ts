@@ -49,6 +49,10 @@ export default defineEventHandler(async (event) => {
       bankCode: payout.bank_name_snapshot,
       accountHolderName: payout.account_holder_name_snapshot,
       accountNumber: payout.bank_account_snapshot,
+      addressLine1: payout.address_line_1_snapshot,
+      city: payout.city_snapshot,
+      province: payout.province_snapshot,
+      postalCode: payout.postal_code_snapshot,
     }, secretKey);
 
     const result = await applyXenditPayoutObject('admin.payout_submitted', providerPayout, providerPayout);

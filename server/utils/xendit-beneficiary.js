@@ -30,3 +30,18 @@ export function resolveXenditBankBeneficiary(input) {
     ...splitAccountHolderName(payoutAccount.accountHolderName),
   }
 }
+
+export function resolveXenditRecipientAddress(input = {}) {
+  const streetLine1 = String(input.addressLine1 || '').trim() || 'Indonesia'
+  const city = String(input.city || '').trim() || 'Indonesia'
+  const province = String(input.province || '').trim()
+  const postalCode = String(input.postalCode || '').trim()
+
+  return {
+    country: 'ID',
+    street_line_1: streetLine1,
+    city,
+    ...(province ? { province_state: province } : {}),
+    ...(postalCode ? { postal_code: postalCode } : {}),
+  }
+}
