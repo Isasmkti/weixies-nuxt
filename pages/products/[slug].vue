@@ -145,19 +145,28 @@ import { computed, onMounted, ref, watch } from 'vue'
 import defaultProduct from '../../components/defaultProduct.vue'
 import { getUser } from '../../services/authService'
 import { getCurrentSeller } from '../../services/sellerService'
+import { sGetBySlug } from '../../services/productsService'
 import { useReviewsStore } from '../../stores/reviewsStore'
 import { supabase } from '../../utils/supabase'
+import { seoDescription, serializeJsonLd } from '../../utils/seo'
 
 definePageMeta({ layout: 'product' })
 
 const router = useRouter()
+const route = useRoute()
+const productSlug = computed(() => String(route.params.slug || ''))
+const { data: initialProduct } = await useAsyncData(
+  `public-product-${productSlug.value}`,
+  () => sGetBySlug(productSlug.value),
+)
 const wishlistStore = useWishlistStore()
 const reviewsStore = useReviewsStore()
 const profileId = ref(null)
 const sellerStore = ref(null)
 const currentSeller = ref(null)
 const startingConversation = ref(false)
-const { product, loading, error, addingToCart, formattedPrice, addToCart, productImages, selectedImage, productLicenses, selectedLicenseId, cartStore, formatIDR } = useProductDetailUI()
+const { product, loading, error, addingToCart, formattedPrice, addToCart, productImages, selectedImage, productLicenses, selectedLicenseId, cartStore, formatIDR } = useProductDetailUI(productSlug.value, initialProduct.value)
+const { canonicalUrl, absoluteUrl } = useSeoSite()
 
 const shortDescription = computed(() => String(product.value?.description || '').slice(0, 220) || 'A ready-to-use digital product for your next project.')
 const productSpecs = computed(() => [...(product.value?.product_specs || [])]
@@ -181,6 +190,68 @@ const sellerName = computed(() => sellerStore.value?.store_name || 'Weixies Mark
 const sellerMeta = computed(() => sellerStore.value?.created_at
   ? `Member since ${new Date(sellerStore.value.created_at).getFullYear()}`
   : 'Digital product seller')
+const seoSummary = computed(() => seoDescription(
+  product.value?.description,
+  'Discover this premium digital product on Weixies.',
+))
+const seoImage = computed(() => absoluteUrl(productImages.value[0]?.image_url || '/weixies-logo.svg'))
+const activeLicensePrices = computed(() => productLicenses.value
+  .map(license => Number(license.price))
+  .filter(price => Number.isSafeInteger(price) && price > 0))
+
+useSeoMeta({
+  title: () => product.value?.name || 'Product not available',
+  description: () => seoSummary.value,
+  robots: () => product.value ? 'index, follow' : 'noindex, nofollow',
+  ogTitle: () => product.value ? `${product.value.name} | Weixies` : 'Product not available | Weixies',
+  ogDescription: () => seoSummary.value,
+  ogUrl: () => canonicalUrl.value,
+  ogImage: () => seoImage.value,
+  twitterTitle: () => product.value ? `${product.value.name} | Weixies` : 'Product not available | Weixies',
+  twitterDescription: () => seoSummary.value,
+  twitterImage: () => seoImage.value,
+})
+
+const productJsonLd = computed(() => {
+  if (!product.value) return null
+  const prices = activeLicensePrices.value.length
+    ? activeLicensePrices.value
+    : [Number(product.value.price)].filter(price => Number.isSafeInteger(price) && price > 0)
+  const offer = prices.length ? {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'IDR',
+    lowPrice: Math.min(...prices),
+    highPrice: Math.max(...prices),
+    offerCount: prices.length,
+    availability: 'https://schema.org/InStock',
+    url: canonicalUrl.value,
+  } : undefined
+  const aggregateRating = product.value.reviewCount > 0 ? {
+    '@type': 'AggregateRating',
+    ratingValue: Number(product.value.averageRating.toFixed(2)),
+    reviewCount: product.value.reviewCount,
+  } : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.value.name,
+    description: seoSummary.value,
+    image: productImages.value.map(image => absoluteUrl(image.image_url)).filter(Boolean),
+    sku: String(product.value.id),
+    category: product.value.categories?.map(category => category.name).filter(Boolean).join(', ') || undefined,
+    offers: offer,
+    aggregateRating,
+  }
+})
+
+useHead(() => ({
+  script: productJsonLd.value ? [{
+    key: 'product-jsonld',
+    type: 'application/ld+json',
+    textContent: serializeJsonLd(productJsonLd.value),
+  }] : [],
+}))
 const isOwnProduct = computed(() => Boolean(
   product.value?.seller_id
   && currentSeller.value?.id

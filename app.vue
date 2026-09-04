@@ -8,8 +8,36 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { supabase } from './utils/supabase'
+import { SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE, SEO_SITE_NAME } from './utils/seo'
+
+const route = useRoute()
+const { canonicalUrl, absoluteUrl } = useSeoSite()
+const indexableRoute = computed(() => (
+  route.path === '/welcome'
+  || route.path === '/products'
+  || route.path.startsWith('/products/')
+  || route.path.startsWith('/stores/')
+))
+
+useHead(() => ({
+  titleTemplate: (title) => {
+    if (!title || title === SEO_SITE_NAME || title === SEO_DEFAULT_TITLE) return SEO_DEFAULT_TITLE
+    return `${title} | ${SEO_SITE_NAME}`
+  },
+  link: [{ key: 'canonical', rel: 'canonical', href: canonicalUrl.value }],
+}))
+
+useSeoMeta({
+  description: SEO_DEFAULT_DESCRIPTION,
+  ogSiteName: SEO_SITE_NAME,
+  ogType: 'website',
+  ogDescription: SEO_DEFAULT_DESCRIPTION,
+  ogImage: () => absoluteUrl('/weixies-logo.svg'),
+  twitterCard: 'summary_large_image',
+  robots: () => indexableRoute.value ? 'index, follow' : 'noindex, nofollow',
+})
 
 const isAuthenticated = ref(false)
 let authSubscription = null

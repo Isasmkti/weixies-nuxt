@@ -182,9 +182,31 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import defaultProduct from '../../components/defaultProduct.vue'
 import { getUser } from '../../services/authService'
+import { SEO_DEFAULT_DESCRIPTION } from '../../utils/seo'
 
 const router = useRouter()
 const route = useRoute()
+const bootstrapProductsStore = useProductsStore()
+const bootstrapCategoriesStore = useCategoriesStore()
+const { canonicalUrl, absoluteUrl } = useSeoSite()
+
+await callOnce('public-catalog-data', () => Promise.all([
+  bootstrapProductsStore.ensureProductsLoaded({ force: false }),
+  bootstrapCategoriesStore.fetchCategories(),
+]))
+
+useSeoMeta({
+  title: 'Digital Product Catalog',
+  description: 'Browse premium digital assets, templates, design resources, and creative tools from verified marketplace sellers.',
+  ogTitle: 'Digital Product Catalog | Weixies',
+  ogDescription: SEO_DEFAULT_DESCRIPTION,
+  ogUrl: () => canonicalUrl.value,
+  ogImage: () => absoluteUrl('/weixies-logo.svg'),
+  twitterTitle: 'Digital Product Catalog | Weixies',
+  twitterDescription: SEO_DEFAULT_DESCRIPTION,
+  twitterImage: () => absoluteUrl('/weixies-logo.svg'),
+})
+
 const wishlistStore = useWishlistStore()
 const profileId = ref(null)
 const searchInputEl = ref(null)

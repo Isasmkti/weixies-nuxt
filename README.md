@@ -90,6 +90,31 @@ webhook remains the source of truth that marks the order refunded, revokes the
 buyer's product access, and closes the review. If the quality claim is rejected,
 release the hold so the earning returns to the next automatic payout run.
 
+## SEO and Google Search Console
+
+Public landing, catalog, product-detail, and approved-store pages are rendered
+on the server with route-specific canonical URLs, social metadata, and structured
+data. Private application routes are marked `noindex, nofollow`.
+
+Set `NUXT_PUBLIC_SITE_URL` in every deployed environment to the exact public
+origin, without a path or trailing slash. For example:
+
+```dotenv
+NUXT_PUBLIC_SITE_URL=https://weixies-nuxt.vercel.app
+```
+
+After deployment, verify that these endpoints return successfully:
+
+- `https://your-domain.example/robots.txt`
+- `https://your-domain.example/sitemap.xml`
+
+The sitemap contains only published products and approved storefronts. In
+Google Search Console, verify the production domain or URL-prefix property,
+submit `https://your-domain.example/sitemap.xml`, then use URL Inspection for
+the landing page and a representative product page. If the production domain
+changes, update `NUXT_PUBLIC_SITE_URL` before requesting indexing so canonical
+and sitemap URLs continue to match the final domain.
+
 ## AI customer service (Phases 1-3)
 
 The AI customer-service foundation, secure chat flow, and knowledge retrieval

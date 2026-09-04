@@ -4,6 +4,7 @@ import defaultProduct from '../../components/defaultProduct.vue'
 import { getCurrentSeller, updateSellerStoreProfile } from '../../services/sellerService'
 import { supabase } from '../../utils/supabase'
 import { INDONESIAN_PAYOUT_BANKS, normalizePayoutBankCode } from '../../utils/payoutBanks'
+import { seoDescription, serializeJsonLd } from '../../utils/seo'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug || ''))
@@ -52,6 +53,45 @@ const { data: products, pending: productsLoading, error: productsError, refresh:
   },
   { watch: [store] },
 )
+
+const { canonicalUrl, absoluteUrl } = useSeoSite()
+const storeSeoDescription = computed(() => seoDescription(
+  store.value?.store_description,
+  `Browse digital products from ${store.value?.store_name || 'this seller'} on Weixies.`,
+))
+const storeSeoImage = computed(() => absoluteUrl(store.value?.store_image_url || '/weixies-logo.svg'))
+
+useSeoMeta({
+  title: () => store.value?.store_name || 'Store not available',
+  description: () => storeSeoDescription.value,
+  robots: () => store.value ? 'index, follow' : 'noindex, nofollow',
+  ogTitle: () => store.value ? `${store.value.store_name} | Weixies` : 'Store not available | Weixies',
+  ogDescription: () => storeSeoDescription.value,
+  ogUrl: () => canonicalUrl.value,
+  ogImage: () => storeSeoImage.value,
+  twitterTitle: () => store.value ? `${store.value.store_name} | Weixies` : 'Store not available | Weixies',
+  twitterDescription: () => storeSeoDescription.value,
+  twitterImage: () => storeSeoImage.value,
+})
+
+useHead(() => ({
+  script: store.value ? [{
+    key: 'store-jsonld',
+    type: 'application/ld+json',
+    textContent: serializeJsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'ProfilePage',
+      dateCreated: store.value.created_at,
+      mainEntity: {
+        '@type': 'Organization',
+        name: store.value.store_name,
+        description: storeSeoDescription.value,
+        image: storeSeoImage.value,
+        url: canonicalUrl.value,
+      },
+    }),
+  }] : [],
+}))
 
 watch(store, () => refreshProducts())
 

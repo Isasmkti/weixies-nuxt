@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  ssr: true,
   // DevTools is useful for targeted debugging, but loading it on every dev
   // startup adds several seconds on some Windows environments. Enable it only
   // when explicitly requested with NUXT_DEVTOOLS=true.
@@ -18,9 +19,11 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Weixies Webshop',
+      title: 'Weixies - Digital Products Marketplace',
+      htmlAttrs: { lang: 'en' },
       meta: [
-        { name: 'description', content: 'A simple ecommerce' },
+        { name: 'description', content: 'Discover premium digital products, design assets, templates, and creative tools from trusted sellers on Weixies.' },
+        { name: 'theme-color', content: '#4f46e5' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/weixies-logo.svg' },

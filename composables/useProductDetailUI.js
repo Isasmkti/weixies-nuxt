@@ -5,14 +5,14 @@ import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
 import { formatIDR } from '../utils/currency'
 
-export function useProductDetailUI(initialSlug) {
+export function useProductDetailUI(initialSlug, initialProduct = null) {
   const router = useRouter()
   const route = useRoute()
   const productsStore = useProductsStore()
   const cartStore = useCartStore()
 
-  const product = ref(null)
-  const loading = ref(true)
+  const product = ref(initialProduct ? productsStore._mapProduct(initialProduct) : null)
+  const loading = ref(!product.value)
   const error = ref('')
   const addingToCart = ref(null)
 
@@ -101,6 +101,21 @@ export function useProductDetailUI(initialSlug) {
     }
   }
 
+  const hydrateInitialProduct = async () => {
+    const slug = String(route.params.slug || initialSlug || '')
+    if (!product.value || String(product.value.slug || '') !== slug) {
+      await fetchProduct()
+      return
+    }
+
+    loading.value = false
+    await fetchRandomProducts()
+    const user = await getUser()
+    if (user && cartStore.items.length === 0) {
+      await cartStore.stGetCart(user.id)
+    }
+  }
+
   const addToCart = async (productId) => {
     const id = productId || product.value?.id
     if (!id) return
@@ -120,7 +135,7 @@ export function useProductDetailUI(initialSlug) {
     }
   }
 
-  onMounted(fetchProduct)
+  onMounted(hydrateInitialProduct)
   watch(() => route.params.slug, fetchProduct)
 
   return {

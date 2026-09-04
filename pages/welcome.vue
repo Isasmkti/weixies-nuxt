@@ -12,7 +12,45 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useWelcomeStore } from '../stores/welcomeStore'
+import { SEO_DEFAULT_DESCRIPTION, seoDescription, serializeJsonLd } from '../utils/seo'
+
 definePageMeta({ layout: false })
+
+const welcomeStore = useWelcomeStore()
+const { canonicalUrl, absoluteUrl } = useSeoSite()
+
+await callOnce('welcome-public-content', () => welcomeStore.stAll())
+
+const welcomeDescription = computed(() => seoDescription(welcomeStore.hero?.description, SEO_DEFAULT_DESCRIPTION))
+const welcomeImage = computed(() => absoluteUrl(welcomeStore.hero?.image || '/weixies-logo.svg'))
+
+useSeoMeta({
+  title: 'Premium Digital Products Marketplace',
+  description: () => welcomeDescription.value,
+  ogTitle: 'Premium Digital Products Marketplace | Weixies',
+  ogDescription: () => welcomeDescription.value,
+  ogUrl: () => canonicalUrl.value,
+  ogImage: () => welcomeImage.value,
+  twitterTitle: 'Premium Digital Products Marketplace | Weixies',
+  twitterDescription: () => welcomeDescription.value,
+  twitterImage: () => welcomeImage.value,
+})
+
+useHead(() => ({
+  script: [{
+    key: 'website-jsonld',
+    type: 'application/ld+json',
+    textContent: serializeJsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Weixies',
+      url: canonicalUrl.value,
+      description: welcomeDescription.value,
+    }),
+  }],
+}))
 </script>
 
 <script>
