@@ -66,6 +66,19 @@ export interface CreateXenditPayoutInput {
   postalCode?: string | null;
 }
 
+export interface XenditRefund {
+  id: string;
+  payment_request_id?: string | null;
+  payment_id?: string | null;
+  invoice_id?: string | null;
+  reference_id?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  status?: string | null;
+  failure_code?: string | null;
+  [key: string]: any;
+}
+
 export class XenditApiError extends Error {
   statusCode: number;
   errorCode: string | null;
@@ -141,6 +154,35 @@ export async function createXenditInvoice(
 export async function getXenditInvoice(invoiceId: string, secretKey: string): Promise<XenditInvoice> {
   return xenditFetch<XenditInvoice>(`/v2/invoices/${encodeURIComponent(invoiceId)}`, secretKey, {
     method: 'GET',
+  });
+}
+
+export async function getXenditPayment(paymentId: string, secretKey: string): Promise<Record<string, any>> {
+  return xenditFetch<Record<string, any>>(`/v3/payments/${encodeURIComponent(paymentId)}`, secretKey, {
+    method: 'GET',
+    headers: { 'Api-version': '2024-11-11' },
+  });
+}
+
+export async function createXenditRefund(input: {
+  paymentRequestId: string;
+  referenceId: string;
+  amount: number;
+  orderId: string;
+}, secretKey: string): Promise<XenditRefund> {
+  return xenditFetch<XenditRefund>('/refunds', secretKey, {
+    method: 'POST',
+    body: JSON.stringify({
+      payment_request_id: input.paymentRequestId,
+      reference_id: input.referenceId,
+      currency: 'IDR',
+      amount: input.amount,
+      reason: 'OTHERS',
+      metadata: {
+        order_id: input.orderId,
+        reason: 'PRODUCT_QUALITY',
+      },
+    }),
   });
 }
 

@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
+import { sPublicSignupBanner } from '../services/signupBannerService'
 
 definePageMeta({ layout: false })
 
@@ -14,6 +15,15 @@ const fullName = ref('')
 const errorMsg = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
+const signupBanner = ref(null)
+
+onMounted(async () => {
+  try {
+    signupBanner.value = await sPublicSignupBanner()
+  } catch (error) {
+    console.warn('[Sign-up] Managed banner could not be loaded; using the default image.', error)
+  }
+})
 
 const handleRegister = async () => {
   isLoading.value = true
@@ -34,9 +44,14 @@ const handleRegister = async () => {
   <div class="flex min-h-screen w-full font-poppins bg-bg">
     <!-- Left Side: Image / Brand Visual -->
     <div class="relative hidden w-0 flex-1 lg:block">
-      <!-- Image with Overlay -->
-      <div class="absolute inset-0 h-full w-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1964&auto=format&fit=crop');">
-      </div>
+      <img
+        v-if="signupBanner?.image_url"
+        :src="signupBanner.image_url"
+        :alt="signupBanner.alt_text"
+        class="absolute inset-0 h-full w-full object-cover"
+        @error="signupBanner = null"
+      >
+      <div v-else class="absolute inset-0 h-full w-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1964&auto=format&fit=crop');"></div>
       <div class="absolute inset-0 bg-primary-dark/60 mix-blend-multiply"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
       <div class="absolute bottom-0 left-0 p-12 text-white z-10">

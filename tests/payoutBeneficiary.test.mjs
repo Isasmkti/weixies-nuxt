@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import test from 'node:test'
-import {
+import { validatePayoutAccount } from '../utils/payoutBanks.js'
+
+// Node's test runner does not know Nuxt's `~/` alias. Load the exact server
+// module source with that one specifier resolved to its local file URL.
+const beneficiarySource = readFileSync(resolve('server/utils/xendit-beneficiary.js'), 'utf8')
+  .replace("'~/utils/payoutBanks.js'", `'${pathToFileURL(resolve('utils/payoutBanks.js')).href}'`)
+const beneficiaryModule = await import(`data:text/javascript;base64,${Buffer.from(beneficiarySource).toString('base64')}`)
+const {
   resolveXenditBankBeneficiary,
   resolveXenditRecipientAddress,
   splitAccountHolderName,
-} from '../server/utils/xendit-beneficiary.js'
-import { validatePayoutAccount } from '../utils/payoutBanks.js'
+} = beneficiaryModule
 
 test('normalizes the selected bank and account number', () => {
   assert.deepEqual(validatePayoutAccount({

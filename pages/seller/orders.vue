@@ -23,6 +23,14 @@ const totalPaidEarning = computed(() => orderItems.value
 const pendingPayout = computed(() => orderItems.value
   .filter((item) => orderOf(item)?.status === 'paid' && ['pending', 'held'].includes(item.payout_status))
   .reduce((sum, item) => sum + (Number(item.seller_earning) || 0), 0))
+const refundReview = computed(() => orderItems.value
+  .filter((item) => orderOf(item)?.status === 'paid' && item.payout_status === 'refund_review')
+  .reduce((sum, item) => sum + (Number(item.seller_earning) || 0), 0))
+const payoutStatusLabel = status => ({
+  held: '3-day protection',
+  refund_review: 'Quality review',
+  released: 'Paid out',
+}[status] || status)
 
 const formatIDR = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0)
 const formatDate = (value) => value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '-'
@@ -52,9 +60,10 @@ onMounted(async () => {
       <NuxtLink to="/seller" class="rounded-xl border border-bg-alt bg-surface px-4 py-2.5 text-sm font-bold text-text-main hover:text-primary">Back to dashboard</NuxtLink>
     </div>
 
-    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+    <div class="mb-6 grid gap-4 sm:grid-cols-3">
       <article class="rounded-2xl border border-bg-alt bg-surface p-5"><p class="text-sm font-semibold text-text-muted">Paid earnings</p><p class="mt-2 text-2xl font-black text-text-main">{{ formatIDR(totalPaidEarning) }}</p></article>
       <article class="rounded-2xl border border-bg-alt bg-surface p-5"><p class="text-sm font-semibold text-text-muted">Awaiting payout</p><p class="mt-2 text-2xl font-black text-primary">{{ formatIDR(pendingPayout) }}</p></article>
+      <article class="rounded-2xl border border-bg-alt bg-surface p-5"><p class="text-sm font-semibold text-text-muted">Quality review hold</p><p class="mt-2 text-2xl font-black text-amber-600">{{ formatIDR(refundReview) }}</p></article>
     </div>
 
     <div class="mb-5 flex flex-wrap gap-2">
@@ -74,7 +83,7 @@ onMounted(async () => {
           <div><p class="text-xs font-bold uppercase text-text-muted">Price</p><p class="mt-1 font-bold text-text-main">{{ formatIDR(item.price) }}</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Platform commission</p><p class="mt-1 font-bold text-red-600">-{{ formatIDR(item.commission_amount) }}</p><p class="mt-1 text-[11px] text-text-muted">{{ (Number(item.commission_rate_snapshot || 0) * 100).toFixed(2).replace(/\.00$/, '') }}% snapshot</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Your earning</p><p class="mt-1 font-black text-primary">{{ formatIDR(item.seller_earning) }}</p></div>
-          <div><p class="text-xs font-bold uppercase text-text-muted">Status</p><span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="orderStatusClass(orderOf(item)?.status)">{{ orderOf(item)?.status }}</span><p class="mt-1 text-[10px] capitalize text-text-muted">Payout: {{ item.payout_status }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-text-muted">Status</p><span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="orderStatusClass(orderOf(item)?.status)">{{ orderOf(item)?.status }}</span><p class="mt-1 text-[10px] text-text-muted">Payout: {{ payoutStatusLabel(item.payout_status) }}</p></div>
         </div>
       </div>
     </div>

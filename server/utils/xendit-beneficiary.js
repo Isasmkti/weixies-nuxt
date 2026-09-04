@@ -1,4 +1,4 @@
-import { validatePayoutAccount } from '../../utils/payoutBanks.js'
+import { validatePayoutAccount } from '~/utils/payoutBanks.js'
 
 const BANK_SWIFT_CODES = Object.freeze({
   BCA: 'CENAIDJA',

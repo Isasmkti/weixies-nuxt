@@ -32,11 +32,12 @@ Configure the Xendit callback token as `XENDIT_WEBHOOK_TOKEN` (or
 public HTTPS endpoints in the Xendit dashboard:
 
 - Invoice/payment callback: `/api/webhook/xendit`
-- Successful refund callback: `/api/webhook/xendit-refund`
+- Refund status callback: `/api/webhook/xendit-refund`
 - Payout status callback: `/api/webhook/xendit-payout`
 
 The refund endpoint currently accepts full-order refunds. It rejects partial
-refunds so seller earnings cannot be reversed by an ambiguous amount.
+refunds so seller earnings cannot be reversed by an ambiguous amount. Subscribe
+the refund endpoint to both `refund.succeeded` and `refund.failed`.
 
 Automated seller payouts use Xendit Payouts API v3. The secret API key must
 have `MONEY-OUT` permission. Configure `XENDIT_PAYOUT_WEBHOOK_TOKEN` with the
@@ -57,6 +58,37 @@ Xendit dashboard checklist for seller payouts:
    the Xendit Business ID to `XENDIT_BUSINESS_ID`.
 5. Confirm the Indonesia-to-Indonesia IDR beneficiary routing values against
    Xendit's current Dynamic Schema Sheet before the first production payout.
+
+## Three-day automatic seller settlement
+
+Migration `0038_three_day_automatic_payouts.sql` changes the seller earning
+protection period from seven days to three days and adds the refund-review
+ledger. Apply it before deploying the matching server code:
+
+```powershell
+npx.cmd supabase db push --dry-run
+npx.cmd supabase db push
+npx.cmd supabase migration list
+```
+
+Set a strong random `CRON_SECRET` in the production Vercel project. The
+`vercel.json` schedule calls `GET /api/cron/automated-payouts` every day in the
+02:00 UTC hour (09:00 Asia/Jakarta hour), and Vercel sends that secret as a
+Bearer token.
+The job first retries or synchronizes unfinished Xendit payouts, then creates
+and submits mature seller balances. Because the schedule is daily, a balance
+is submitted on the first run after its exact 72-hour protection deadline.
+
+Admin payout pages are monitoring-only. For a damaged or materially defective
+digital product, use `/admin/orders` before the payout is submitted. The action
+atomically moves all seller items on the order to `refund_review`, excluding
+them from payout selection, and requests a full refund. The existing checkout
+uses the legacy Xendit Invoice API; if Xendit does not expose a
+`payment_request_id` for that transaction, the page keeps seller funds frozen
+and links the admin to finish the refund in the Xendit Dashboard. The refund
+webhook remains the source of truth that marks the order refunded, revokes the
+buyer's product access, and closes the review. If the quality claim is rejected,
+release the hold so the earning returns to the next automatic payout run.
 
 ## AI customer service (Phases 1-3)
 

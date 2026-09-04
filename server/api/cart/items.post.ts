@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 import { requireRequestUser } from '~/server/utils/request-auth';
 import { findSelfPurchaseConflicts, isSelfPurchaseDatabaseError, throwSelfPurchase } from '~/server/utils/self-purchase';
@@ -31,12 +32,39 @@ export default defineEventHandler(async (event) => {
   if (licenseError) throw licenseError;
   if (!license) throw createError({ statusCode: 404, statusMessage: 'The selected product license is unavailable.' });
 
-  const { data: cart, error: cartError } = await supabase
+  const { data: existingCart, error: cartLookupError } = await supabase
     .from('cart')
-    .upsert({ profile_id: user.id }, { onConflict: 'profile_id', ignoreDuplicates: false })
     .select('id')
-    .single();
-  if (cartError) throw cartError;
+    .eq('profile_id', user.id)
+    .maybeSingle();
+  if (cartLookupError) throw cartLookupError;
+
+  let cart = existingCart;
+  if (!cart) {
+    const { data: createdCart, error: cartCreateError } = await supabase
+      .from('cart')
+      .insert({ id: randomUUID(), profile_id: user.id })
+      .select('id')
+      .single();
+
+    if (cartCreateError?.code === '23505') {
+      const { data: concurrentCart, error: concurrentCartError } = await supabase
+        .from('cart')
+        .select('id')
+        .eq('profile_id', user.id)
+        .single();
+      if (concurrentCartError) throw concurrentCartError;
+      cart = concurrentCart;
+    } else if (cartCreateError) {
+      throw cartCreateError;
+    } else {
+      cart = createdCart;
+    }
+  }
+
+  if (!cart?.id) {
+    throw createError({ statusCode: 500, statusMessage: 'Cart could not be created.' });
+  }
 
   const { data: existing, error: lookupError } = await supabase
     .from('cart_items')

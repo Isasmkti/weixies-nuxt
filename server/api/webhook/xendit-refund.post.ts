@@ -16,21 +16,47 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid Xendit callback token.' });
   }
 
-  const eventName = String(body?.event || '').toLowerCase();
-  const refund = body?.data || body;
+  const envelope = body?.data;
+  const eventName = String(body?.event || envelope?.event || '').toLowerCase();
+  const refund = envelope?.data || envelope || body;
   const refundId = String(refund?.id || '').trim();
 
   if (!refundId) {
     throw createError({ statusCode: 400, statusMessage: 'Missing refund ID.' });
   }
-  if (eventName && eventName !== 'refund.succeeded') {
-    return { status: 'ignored', reason: 'refund_not_succeeded' };
+  if (eventName && !['refund.succeeded', 'refund.failed'].includes(eventName)) {
+    return { status: 'ignored', reason: 'unsupported_refund_event' };
+  }
+
+  const configuredBusinessId = String(config.xenditBusinessId || '').trim();
+  const receivedBusinessId = String(body?.business_id || envelope?.business_id || '').trim();
+  if (configuredBusinessId && receivedBusinessId !== configuredBusinessId) {
+    throw createError({ statusCode: 401, statusMessage: 'Xendit business ID does not match.' });
   }
 
   const invoiceId = String(refund?.invoice_id || refund?.invoiceId || '').trim();
   const providerPaymentId = String(refund?.payment_id || refund?.paymentId || '').trim();
   const externalId = String(refund?.external_id || refund?.externalId || '').trim();
+  const providerReferenceId = String(refund?.reference_id || refund?.referenceId || '').trim();
+  let trackedRequest: any = null;
   let payment: any = null;
+
+  if (providerReferenceId) {
+    const { data } = await supabase
+      .from('order_refund_requests')
+      .select('id, order_id, status')
+      .eq('provider_reference_id', providerReferenceId)
+      .maybeSingle();
+    trackedRequest = data;
+  }
+  if (!trackedRequest && refundId) {
+    const { data } = await supabase
+      .from('order_refund_requests')
+      .select('id, order_id, status')
+      .eq('provider_refund_id', refundId)
+      .maybeSingle();
+    trackedRequest = data;
+  }
 
   if (invoiceId) {
     const { data } = await supabase
@@ -63,6 +89,46 @@ export default defineEventHandler(async (event) => {
       .limit(1)
       .maybeSingle();
     payment = data;
+  }
+
+  if (!payment && trackedRequest?.order_id) {
+    const { data } = await supabase
+      .from('payments')
+      .select('id, order_id, provider_invoice_id, status')
+      .eq('provider', 'xendit')
+      .eq('order_id', trackedRequest.order_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    payment = data;
+  }
+
+  if (!trackedRequest && payment?.order_id) {
+    const { data } = await supabase
+      .from('order_refund_requests')
+      .select('id, order_id, status')
+      .eq('order_id', payment.order_id)
+      .maybeSingle();
+    trackedRequest = data;
+  }
+
+  if (eventName === 'refund.failed') {
+    if (!trackedRequest) {
+      return { status: 'ignored', reason: 'unknown_refund_reference' };
+    }
+    const { error: requestUpdateError } = await supabase
+      .from('order_refund_requests')
+      .update({
+        status: 'failed',
+        provider_refund_id: refundId,
+        provider_failure_code: refund?.failure_code || 'REFUND_FAILED',
+        provider_response: body,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', trackedRequest.id);
+    if (requestUpdateError) throw requestUpdateError;
+    return { status: 'ok', refundStatus: 'failed', sellerFundsRemainOnHold: true };
   }
 
   if (!payment) {
@@ -122,6 +188,19 @@ export default defineEventHandler(async (event) => {
     .update({ status: 'refunded' })
     .eq('id', payment.id);
   if (paymentUpdateError) throw paymentUpdateError;
+
+  const { error: requestUpdateError } = await supabase
+    .from('order_refund_requests')
+    .update({
+      status: 'succeeded',
+      provider_refund_id: refundId,
+      provider_failure_code: null,
+      provider_response: body,
+      resolved_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_id', order.id);
+  if (requestUpdateError) throw requestUpdateError;
 
   await logPaymentEvent({
     order_id: order.id,

@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useThemeStore } from '../stores/themeStore'
 import { useAuth } from '../composables/useAuth'
 import { getCurrentSeller } from '../services/sellerService'
+import { supabase } from '../utils/supabase'
 import Swal from 'sweetalert2'
 
 const theme = useThemeStore()
@@ -16,6 +17,40 @@ const selectedFile = ref(null)
 const previewUrl = ref(null)
 const sellerApplication = ref(null)
 const loggingOut = ref(false)
+const unreadMessageCount = ref(0)
+let messageChannel = null
+
+const displayedUnreadMessageCount = computed(() => (
+    unreadMessageCount.value > 99 ? '99+' : String(unreadMessageCount.value)
+))
+
+const loadUnreadMessageCount = async () => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+            unreadMessageCount.value = 0
+            return
+        }
+        const data = await $fetch('/api/direct-messages/unread-count', {
+            headers: { Authorization: `Bearer ${session.access_token}` }
+        })
+        unreadMessageCount.value = Math.max(0, Number(data?.unread_count) || 0)
+    } catch (error) {
+        console.error('Failed to load unread message count:', error)
+    }
+}
+
+const subscribeToMessageNotifications = () => {
+    if (messageChannel) return
+    messageChannel = supabase
+        .channel('dashboard-message-notifications')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'buyer_seller_messages'
+        }, loadUnreadMessageCount)
+        .subscribe()
+}
 
 const handleLogout = async () => {
     if (loggingOut.value) return
@@ -165,12 +200,21 @@ const handleUpdate = async () => {
 
 onMounted(async () => {
     await fetchProfile()
+    await loadUnreadMessageCount()
+    subscribeToMessageNotifications()
     try {
         sellerApplication.value = await getCurrentSeller()
     } catch (error) {
         console.error('Failed to load seller application:', error)
     }
     startEditing()
+})
+
+onBeforeUnmount(() => {
+    if (messageChannel) {
+        supabase.removeChannel(messageChannel)
+        messageChannel = null
+    }
 })
 </script>
 
@@ -246,12 +290,16 @@ onMounted(async () => {
                 </NuxtLink>
 
                 <NuxtLink to="/messages" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                    <span class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.6 12h.01m3.74 0h.01m3.74 0h.01M21 12c0 4.6-4 8.3-9 8.3a9.8 9.8 0 0 1-2.6-.4A6 6 0 0 1 5.4 21a6 6 0 0 1-.5-.1 4.5 4.5 0 0 0 1-2C3.4 16.9 2.3 15 2.3 12c0-4.6 4-8.3 9-8.3s9.7 3.7 9.7 8.3Z" /></svg>
+                        <span v-if="unreadMessageCount" class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-ui-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface" :aria-label="`${unreadMessageCount} unread messages`">{{ displayedUnreadMessageCount }}</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block text-base font-semibold text-text-main">Messages</span>
-                        <span class="mt-1 block text-sm text-text-muted">Continue conversations with sellers</span>
+                        <span class="flex items-center gap-2 text-base font-semibold text-text-main">
+                            Messages
+                            <span v-if="unreadMessageCount" class="rounded-ui-full bg-danger/10 px-2 py-0.5 text-xs font-bold text-danger">{{ displayedUnreadMessageCount }} unread</span>
+                        </span>
+                        <span class="mt-1 block text-sm text-text-muted">{{ unreadMessageCount ? 'You have new messages to read' : 'Continue conversations with sellers' }}</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>

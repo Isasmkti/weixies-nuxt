@@ -28,6 +28,11 @@ const menuItems = [
         icon: 'M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 16.5v-9zM7 14l2.5-2.5 2 2L15 10l3 4'
     },
     {
+        name: 'Sign-up Banner',
+        to: '/admin/signup-banner',
+        icon: 'M3 5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25v13.5A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V5.25zM3 15l4.5-4.5 3.75 3.75L15 10.5l6 6'
+    },
+    {
         name: 'Products',
         to: '/admin/products',
         icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
@@ -46,6 +51,11 @@ const menuItems = [
         name: 'Activity Logs',
         to: '/admin/logs',
         icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+    },
+    {
+        name: 'Orders & Refunds',
+        to: '/admin/orders',
+        icon: 'M9 14.25 6.75 12m0 0L9 9.75M6.75 12h7.5a4.5 4.5 0 0 1 0 9h-3M3.75 4.5h16.5v3.75H3.75V4.5Zm1.5 3.75v10.5h3'
     },
     {
         name: 'AI Knowledge',

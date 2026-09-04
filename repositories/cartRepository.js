@@ -19,19 +19,32 @@ const CART_ITEM_SELECT = `
 `
 
 export async function rGetCartWithCreation(profileId) {
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupError } = await supabase
         .from('cart')
         .select('*')
         .eq('profile_id', profileId)
         .maybeSingle()
 
+    if (lookupError) throw lookupError
     if (existing) return existing
+
+    const cartId = globalThis.crypto?.randomUUID?.()
+    if (!cartId) throw new Error('Unable to generate a secure cart ID.')
 
     const { data, error } = await supabase
         .from('cart')
-        .insert({ profile_id: profileId })
+        .insert({ id: cartId, profile_id: profileId })
         .select()
         .single()
+    if (error?.code === '23505') {
+        const { data: concurrentCart, error: concurrentError } = await supabase
+            .from('cart')
+            .select('*')
+            .eq('profile_id', profileId)
+            .single()
+        if (concurrentError) throw concurrentError
+        return concurrentCart
+    }
     if (error) throw error
     return data
 }
