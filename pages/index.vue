@@ -16,7 +16,8 @@
     <!-- MAIN CONTENT -->
 
       <!-- HERO BANNER CAROUSEL -->
-      <HomePromoCarousel :items="carouselItems" :loading="carouselLoading" />
+      <p v-if="homeError" role="alert" class="mb-4 rounded-xl border border-danger/20 p-4 text-sm text-danger">Some content could not be loaded. <button class="underline" @click="refreshHome()">Try again</button></p>
+      <HomePromoCarousel :items="carouselItems" :loading="pageLoading" />
 
       <!-- CATEGORY GRID -->
       <section class="mt-6">
@@ -30,11 +31,11 @@
           </NuxtLink>
         </div>
 
-        <div v-if="categoriesLoading" class="flex gap-4 overflow-hidden">
-          <div v-for="i in 6" :key="i" class="shrink-0 w-20 h-24 rounded-2xl bg-bg-alt animate-pulse"></div>
+        <div v-if="pageLoading" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3" role="status" aria-label="Loading categories">
+          <div v-for="i in 8" :key="i" class="h-24 rounded-2xl bg-bg-alt animate-pulse motion-reduce:animate-none"></div>
         </div>
 
-        <div v-else class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+        <div v-else-if="categories.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
           <button
             v-for="cat in categories"
             :key="cat.id"
@@ -49,6 +50,9 @@
             <span class="text-[10px] md:text-xs font-semibold text-text-muted group-hover:text-text-main transition-colors text-center line-clamp-1">{{ cat.name }}</span>
           </button>
         </div>
+        <NuxtLink v-else to="/products" class="flex min-h-24 items-center justify-center rounded-2xl border border-dashed border-border bg-surface px-4 text-sm font-semibold text-primary transition hover:border-primary/40 hover:bg-primary/5">
+          Browse all products
+        </NuxtLink>
       </section>
 
       <!-- FEATURED PRODUCTS -->
@@ -64,8 +68,8 @@
         </div>
 
         <!-- Loading Skeleton -->
-        <div v-if="productsLoading" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <div v-for="i in 4" :key="i" class="rounded-2xl bg-bg-alt animate-pulse">
+        <div v-if="pageLoading" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" role="status" aria-label="Loading products">
+          <div v-for="i in 8" :key="i" class="rounded-2xl bg-bg-alt animate-pulse motion-reduce:animate-none">
             <div class="aspect-square rounded-t-2xl bg-bg-alt"></div>
             <div class="p-3 space-y-2">
               <div class="h-3 bg-surface rounded-full w-3/4"></div>
@@ -76,15 +80,15 @@
 
         <!-- Products Grid -->
         <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <div
+          <NuxtLink
             v-for="product in featuredProducts"
             :key="product.id"
-            @click="router.push(`/products/${product.slug}`)"
+            :to="`/products/${product.slug}`"
             class="group bg-surface rounded-2xl border border-bg-alt/50 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer"
           >
             <!-- Image -->
             <div class="relative aspect-square overflow-hidden bg-bg-alt">
-              <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <img v-if="product.image_url" :src="product.image_url" :alt="product.name" width="640" height="640" loading="lazy" decoding="async" fetchpriority="low" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div v-else class="w-full h-full flex items-center justify-center text-text-muted/30">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -110,7 +114,7 @@
                 <span class="text-[10px] text-text-muted font-medium">{{ product.averageRating?.toFixed(1) }} ({{ product.reviewCount }})</span>
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </div>
       </section>
 
@@ -135,42 +139,53 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import HomePromoCarousel from '../components/home/HomePromoCarousel.vue'
-import { useAuth } from '../composables/useAuth'
 import { useCategoriesStore } from '../stores/categoriesStore'
 import { useProductsStore } from '../stores/productsStore'
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
 import { sPublicHomeCarouselItems } from '../services/homeCarouselService'
+import { sFeatured as fetchFeaturedProducts } from '../services/productsService'
 import { formatIDR } from '../utils/currency'
 
 
 const router = useRouter()
-const { fetchProfile } = useAuth()
 const categoriesStore = useCategoriesStore()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-const categories = computed(() => categoriesStore.categories)
-const categoriesLoading = computed(() => categoriesStore.loading)
-const productsLoading = computed(() => productsStore.loading)
-const featuredProducts = computed(() => productsStore.products.slice(0, 8))
-const carouselItems = ref([])
-const carouselLoading = ref(true)
-
-const loadCarousel = async () => {
-  carouselLoading.value = true
-  try {
-    carouselItems.value = await sPublicHomeCarouselItems()
-  } catch (error) {
-    console.warn('[Home] Carousel content could not be loaded.', error)
-    carouselItems.value = []
-  } finally {
-    carouselLoading.value = false
-  }
-}
+const categories = computed(() => homeContent.value?.categories || [])
+// Home has its own product selection; catalog filters must not affect it.
+const { data: homeContent, status: homeStatus, error: homeError, refresh: refreshHome } = useAsyncData(
+  'home-public-content',
+  async () => {
+    const results = await Promise.allSettled([
+      sPublicHomeCarouselItems(),
+      fetchFeaturedProducts(8),
+      categoriesStore.fetchCategories(),
+    ])
+    const failed = results.find(result => result.status === 'rejected')
+    if (failed) throw failed.reason
+    if (categoriesStore.error) throw new Error(categoriesStore.error)
+    const [carousel, productRows, categories] = results.map(result => result.value)
+    const products = productRows.map(product => productsStore._mapProduct(product))
+    const productCategories = products.flatMap(product => product.categories || [])
+    const resolvedCategories = categories?.length
+      ? categories
+      : [...new Map(productCategories.map(category => [String(category.id), category])).values()]
+    return {
+      carousel,
+      categories: resolvedCategories,
+      products,
+    }
+  },
+  { lazy: true },
+)
+const pageLoading = computed(() => homeStatus.value === 'idle' || homeStatus.value === 'pending')
+const featuredProducts = computed(() => homeContent.value?.products || [])
+const carouselItems = computed(() => homeContent.value?.carousel || [])
 
 const goToSearch = () => {
   router.push({ path: '/products', query: { focus: 'search' } })
@@ -187,22 +202,10 @@ const isNewProduct = (createdAt) => {
 }
 
 onMounted(async () => {
-  // Fetch data
-  await fetchProfile()
-
-  const promises = [categoriesStore.fetchCategories(), loadCarousel()]
-
-  // Only fetch products if not already loaded
-  if (!productsStore.products.length) {
-    promises.push(productsStore.ensureProductsLoaded({ force: false }))
-  }
-
   const user = await getUser()
   if (user) {
-    promises.push(cartStore.stGetCart(user.id))
+    await cartStore.stGetCart(user.id)
   }
-
-  await Promise.all(promises)
 })
 
 </script>

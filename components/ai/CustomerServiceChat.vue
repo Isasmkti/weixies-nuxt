@@ -15,8 +15,9 @@ const MAX_MESSAGE_LENGTH = 2000
 const MAX_MESSAGE_SOURCES = 6
 const MAX_SOURCE_TITLE_LENGTH = 120
 const SAFE_PRODUCT_SOURCE_URL = /^\/products\/[a-z0-9]+(?:-[a-z0-9]+)*$/
+const props = defineProps({ initiallyOpen: Boolean })
 const route = useRoute()
-const isOpen = ref(false)
+const isOpen = ref(props.initiallyOpen)
 const conversation = ref(null)
 const messages = ref([])
 const draft = ref('')
@@ -314,6 +315,7 @@ onMounted(async () => {
   } catch {
     applyIdentity(null)
   }
+  if (isOpen.value) await loadHistory()
 })
 
 onBeforeUnmount(() => {

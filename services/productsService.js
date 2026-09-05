@@ -1,4 +1,4 @@
-import { rAll, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses } from '../repositories/productsRepository'
+import { rAll, rFeatured, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses } from '../repositories/productsRepository'
 import { saveProductImages } from './productImagesService'
 import { normalizeProductSpecs } from '../utils/productSpecs'
 import { normalizeProductLicenses } from '../utils/productLicenses'
@@ -21,6 +21,10 @@ export async function sAll(page, limit, sortBy, sortOrder, search, categorySlug,
     } catch (error) {
         throw error
     }
+}
+
+export async function sFeatured(limit = 8) {
+    return rFeatured(limit)
 }
 
 export async function sGetById(id) {

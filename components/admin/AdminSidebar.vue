@@ -1,15 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
-const { profile, fetchProfile, signOut } = useAuth()
+const { profile, signOut } = useAuth()
 const isCollapsed = ref(false)
-
-onMounted(async () => {
-    await fetchProfile()
-})
 
 const handleLogout = async () => {
     await signOut()

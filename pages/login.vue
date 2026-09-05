@@ -2,13 +2,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
-import { getUserProfile } from '../services/authService'
 import loginVideo from '../assets/weix-vid.mp4'
 
 definePageMeta({ layout: false })
 
 const router = useRouter()
-const { signIn } = useAuth()
+const { signIn, profile } = useAuth()
 
 const email = ref('')
 const password = ref('')
@@ -21,12 +20,10 @@ const handleLogin = async () => {
     errorMsg.value = ''
     try {
         await signIn(email.value, password.value)
-        const profile = await getUserProfile();
-
-        if (profile.role === "admin") {
-            router.push("/admin");
+        if (profile.value?.role === "admin") {
+            await router.push("/admin");
         } else {
-            router.push("/");
+            await router.push("/");
         }
     } catch (err) {
         errorMsg.value = err.message

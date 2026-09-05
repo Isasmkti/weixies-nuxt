@@ -93,8 +93,6 @@ useHead(() => ({
   }] : [],
 }))
 
-watch(store, () => refreshProducts())
-
 const isStoreOwner = computed(() => (
   currentSeller.value?.status === 'approved' && currentSeller.value?.id === store.value?.id
 ))

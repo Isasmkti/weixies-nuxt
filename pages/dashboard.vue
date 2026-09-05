@@ -7,6 +7,7 @@ import { useAuth } from '../composables/useAuth'
 import { getCurrentSeller } from '../services/sellerService'
 import { supabase } from '../utils/supabase'
 import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 
 const theme = useThemeStore()
 const router = useRouter()
@@ -17,6 +18,8 @@ const selectedFile = ref(null)
 const previewUrl = ref(null)
 const sellerApplication = ref(null)
 const loggingOut = ref(false)
+const pageLoading = ref(true)
+const pageError = ref('')
 const unreadMessageCount = ref(0)
 let messageChannel = null
 
@@ -194,20 +197,32 @@ const handleUpdate = async () => {
         })
     }
 
-    await fetchProfile()
-    console.log('Profile after update:', profile.value)
 }
 
-onMounted(async () => {
-    await fetchProfile()
-    await loadUnreadMessageCount()
-    subscribeToMessageNotifications()
+const initializeDashboard = async () => {
+    pageLoading.value = true
+    pageError.value = ''
     try {
-        sellerApplication.value = await getCurrentSeller()
+        const results = await Promise.allSettled([
+            fetchProfile(),
+            loadUnreadMessageCount(),
+            getCurrentSeller(),
+        ])
+        const failed = results.find(result => result.status === 'rejected')
+        if (failed) throw failed.reason
+        sellerApplication.value = results[2].value
+        startEditing()
     } catch (error) {
-        console.error('Failed to load seller application:', error)
+        pageError.value = 'Unable to load your account. Please try again.'
+        console.error('Failed to load dashboard:', error)
+    } finally {
+        pageLoading.value = false
     }
-    startEditing()
+}
+
+onMounted(() => {
+    subscribeToMessageNotifications()
+    initializeDashboard()
 })
 
 onBeforeUnmount(() => {
@@ -221,6 +236,21 @@ onBeforeUnmount(() => {
 <template>
     
         <div class="mx-auto max-w-[1440px] space-y-6 py-4 md:py-6">
+            <div v-if="pageLoading" role="status" aria-label="Loading dashboard" class="space-y-6 animate-pulse motion-reduce:animate-none">
+                <div class="flex h-80 flex-col items-center justify-center gap-4 rounded-ui-xl border border-border bg-surface">
+                    <div class="h-20 w-20 rounded-ui-lg bg-bg-alt"></div>
+                    <div class="h-6 w-48 rounded bg-bg-alt"></div>
+                    <div class="h-4 w-32 rounded bg-bg-alt"></div>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2"><div v-for="i in 2" :key="i" class="h-24 rounded-ui-lg bg-bg-alt"></div></div>
+                <div class="h-44 rounded-ui-xl bg-bg-alt"></div>
+                <div class="h-72 rounded-ui-lg bg-bg-alt"></div>
+            </div>
+            <div v-else-if="pageError" role="alert" class="rounded-ui-lg border border-border bg-surface p-6 text-text-main">
+                <p>{{ pageError }}</p>
+                <button class="mt-4 text-primary underline" @click="initializeDashboard">Try again</button>
+            </div>
+            <template v-else>
             <!-- Hero Profile Section -->
             <div
                 class="rounded-ui-xl border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
@@ -476,6 +506,7 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
             </div>
+            </template>
         </div>
     
 </template>

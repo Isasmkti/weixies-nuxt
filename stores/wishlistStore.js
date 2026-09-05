@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import * as wishlistService from '../services/wishlistService'
+const pendingReads = new WeakMap()
 
 export const useWishlistStore = defineStore('wishlist', {
     state: () => ({
         items: [],
         loading: false,
         error: null,
+        profileId: null,
         togglingProducts: {} // to track which product is being toggled
     }),
     getters: {
@@ -19,15 +21,29 @@ export const useWishlistStore = defineStore('wishlist', {
     actions: {
         async stGetWishlists(profileId) {
             if (!profileId) return
+            const pending = pendingReads.get(this)
+            if (pending?.profileId === profileId && this.profileId === profileId) return pending.promise
+            if (this.profileId !== profileId) this.items = []
+            this.profileId = profileId
+            const request = this.loadWishlists(profileId)
+            pendingReads.set(this, { profileId, promise: request })
+            try {
+                return await request
+            } finally {
+                if (pendingReads.get(this)?.promise === request) pendingReads.delete(this)
+            }
+        },
+        async loadWishlists(profileId) {
             try {
                 this.loading = true
                 this.error = null
                 const items = await wishlistService.sGetWishlists(profileId)
+                if (this.profileId !== profileId) return
                 this.items = items
             } catch (err) {
-                this.error = err.message
+                if (this.profileId === profileId) this.error = err.message
             } finally {
-                this.loading = false
+                if (this.profileId === profileId) this.loading = false
             }
         },
 

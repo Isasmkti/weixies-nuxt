@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 import { sCreateReview, sGetReviewsByProfileAndProductIds } from '../../services/reviewsService'
 
 const props = defineProps({

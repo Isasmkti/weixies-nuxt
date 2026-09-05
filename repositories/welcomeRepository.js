@@ -26,7 +26,7 @@ export async function rUpsertSection(section, content) {
 export async function rUploadAsset(filePath, file) {
     const { error } = await supabase.storage
         .from('welcome-assets')
-        .upload(filePath, file, { contentType: file.type, upsert: false })
+        .upload(filePath, file, { contentType: file.type, cacheControl: '31536000', upsert: false })
 
     if (error) throw error
 

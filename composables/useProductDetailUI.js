@@ -54,50 +54,38 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
     return formatIDR(selectedLicense.value?.price ?? product.value?.price)
   })
 
-  const randomProducts = ref([])
+  // No page renders recommendations: do not fetch a catalog just for this value.
+  const randomProducts = computed(() => productsStore.products
+    .filter(item => item.slug !== (route.params.slug || initialSlug)).slice(0, 3))
 
-  const fetchRandomProducts = async () => {
-    try {
-      if (productsStore.products.length === 0) {
-        await productsStore.ensureProductsLoaded({ force: false })
-      }
-
-      const allProducts = productsStore.products
-      const currentSlug = route.params.slug || initialSlug
-
-      const others = allProducts.filter(p => p.slug !== currentSlug)
-      const shuffled = [...others].sort(() => 0.5 - Math.random())
-      randomProducts.value = shuffled.slice(0, 3)
-    } catch (err) {
-      console.error('Error fetching random products:', err)
-    }
+  const loadCart = async () => {
+    const user = await getUser()
+    if (user) await cartStore.stGetCart(user.id)
   }
+  let productRequestId = 0
 
   const fetchProduct = async () => {
     const slug = route.params.slug || initialSlug
     if (!slug) return
+    const requestId = ++productRequestId
     loading.value = true
     error.value = ''
     try {
       const foundProduct = await productsStore.sGetBySlug(slug)
+      if (requestId !== productRequestId) return
       if (!foundProduct) {
         throw new Error('The product could not be found.')
       }
 
       product.value = foundProduct
 
-      await fetchRandomProducts()
-
-      const user = await getUser()
-      if (user && cartStore.items.length === 0) {
-        await cartStore.stGetCart(user.id)
-      }
     } catch (err) {
+      if (requestId !== productRequestId) return
       product.value = null
       error.value = err.message || 'Failed to load this product.'
       console.error('Error fetching product:', err)
     } finally {
-      loading.value = false
+      if (requestId === productRequestId) loading.value = false
     }
   }
 
@@ -109,11 +97,6 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
     }
 
     loading.value = false
-    await fetchRandomProducts()
-    const user = await getUser()
-    if (user && cartStore.items.length === 0) {
-      await cartStore.stGetCart(user.id)
-    }
   }
 
   const addToCart = async (productId) => {
@@ -135,7 +118,7 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
     }
   }
 
-  onMounted(hydrateInitialProduct)
+  onMounted(() => Promise.allSettled([hydrateInitialProduct(), loadCart()]))
   watch(() => route.params.slug, fetchProduct)
 
   return {

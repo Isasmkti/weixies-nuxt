@@ -60,7 +60,7 @@ export async function rDeleteHomeCarouselItem(id) {
 export async function rUploadHomeCarouselImage(path, file) {
   const { error } = await supabase.storage
     .from('home-carousel')
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false })
 
   if (error) throw error
   return path
@@ -76,4 +76,3 @@ export function rHomeCarouselImageUrl(path) {
   if (!path) return ''
   return supabase.storage.from('home-carousel').getPublicUrl(path).data.publicUrl
 }
-

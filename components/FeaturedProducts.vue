@@ -131,7 +131,7 @@ const carouselProducts = computed(() => {
     const products = store.products || []
     if (!products.length) return []
 
-    const repetitions = Math.max(1, Math.ceil(8 / products.length))
+    const repetitions = Math.max(1, Math.ceil(5 / products.length))
     return Array.from({ length: repetitions }, () => products).flat()
 })
 

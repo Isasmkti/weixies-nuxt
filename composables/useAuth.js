@@ -1,9 +1,6 @@
-import { ref } from 'vue'
 import { supabase } from '../utils/supabase'
 
-const user = ref(null)
-const profile = ref(null)
-const loading = ref(false)
+const profileRequests = new WeakMap()
 const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024
 const PROFILE_IMAGE_EXTENSIONS = {
   'image/jpeg': 'jpg',
@@ -13,6 +10,16 @@ const PROFILE_IMAGE_EXTENSIONS = {
 }
 
 export function useAuth() {
+  const user = useState('auth-user', () => null)
+  const profile = useState('auth-profile', () => null)
+  const loading = useState('auth-loading', () => false)
+  const profileFetchedAt = useState('auth-profile-fetched-at', () => 0)
+  const resetProfile = () => {
+    user.value = null
+    profile.value = null
+    profileFetchedAt.value = 0
+    profileRequests.delete(profile)
+  }
 
   const signUp = async (email, password, fullName) => {
     loading.value = true
@@ -43,26 +50,38 @@ export function useAuth() {
     if (error) throw error
 
     user.value = data.user
-    await fetchProfile()
+    await fetchProfile({ force: true })
 
     return data
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
     user.value = null
     profile.value = null
+    profileFetchedAt.value = 0
   }
 
-  const fetchProfile = async () => {
+  const fetchProfile = async ({ force = false } = {}) => {
     // Get current user without a network round-trip (see authService.getUser
     // for the rationale on getSession() vs getUser()).
      const { data: { session } } = await supabase.auth.getSession()
      const currentUser = session?.user
-  if (!currentUser) return
+  if (!currentUser) {
+    user.value = null
+    profile.value = null
+    profileFetchedAt.value = 0
+    return null
+  }
 
   user.value = currentUser
+  if (profile.value?.id !== currentUser.id) profile.value = null
+  if (!force && profile.value && Date.now() - profileFetchedAt.value < 30_000) return profile.value
+  const pending = profileRequests.get(profile)
+  if (pending?.userId === currentUser.id) return pending.promise
 
+  const request = (async () => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -78,7 +97,18 @@ export function useAuth() {
       }
     }
 
-    profile.value = data
+    if (user.value?.id === currentUser.id && profileRequests.get(profile)?.promise === request) {
+      profile.value = data
+      profileFetchedAt.value = Date.now()
+    }
+    return data
+  })()
+  profileRequests.set(profile, { userId: currentUser.id, promise: request })
+  try {
+    return await request
+  } finally {
+    if (profileRequests.get(profile)?.promise === request) profileRequests.delete(profile)
+  }
   }
 
   const updateProfile = async (payload) => {
@@ -90,7 +120,7 @@ export function useAuth() {
         .eq('id', user.value.id)
 
       if (error) throw error
-      await fetchProfile()
+      await fetchProfile({ force: true })
     } finally {
       loading.value = false
     }
@@ -121,7 +151,7 @@ export function useAuth() {
 
       const { error } = await supabase.storage
         .from('profile_img')
-        .upload(fileName, file, { contentType: file.type, upsert: false })
+        .upload(fileName, file, { contentType: file.type, cacheControl: '31536000', upsert: false })
 
       if (error) throw error
 
@@ -144,6 +174,7 @@ export function useAuth() {
     signOut,
     fetchProfile,
     updateProfile,
-    uploadProfileImage
+    uploadProfileImage,
+    resetProfile
   }
 }

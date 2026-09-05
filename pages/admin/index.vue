@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import { getAdminDashboard } from '../../services/adminDashboardService'
 import { useThemeStore } from '../../stores/themeStore'
 
 const themeStore = useThemeStore()
+const ApexChart = defineAsyncComponent(() => import('vue3-apexcharts'))
 const dashboard = ref({
   metrics: {
     gmv: 0,
@@ -262,7 +263,7 @@ onMounted(loadDashboard)
         </div>
         <div v-if="loading" class="h-[330px] animate-pulse rounded-xl bg-bg-alt" />
         <ClientOnly v-else>
-          <apexchart type="area" height="330" :options="chartOptions" :series="chartSeries" />
+          <ApexChart type="area" height="330" :options="chartOptions" :series="chartSeries" />
           <template #fallback><div class="h-[330px] animate-pulse rounded-xl bg-bg-alt" /></template>
         </ClientOnly>
       </article>

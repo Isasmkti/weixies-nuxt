@@ -18,11 +18,15 @@
     </div>
 
     <template v-else-if="currentItem">
-      <MotionGroup preset="fade" :duration="1000" :delay="500">
+      <MotionGroup preset="fade" :duration="350">
         <div class="absolute inset-0">
           <img
             :src="currentItem.image"
             alt="Hero Background"
+            width="1920"
+            height="1080"
+            decoding="async"
+            fetchpriority="high"
             class="h-full w-full scale-110 object-cover animate-subtle-zoom"
           />
 
@@ -32,7 +36,7 @@
         </div>
       </MotionGroup>
 
-      <MotionGroup preset="fade" :duration="1000" :delay="1000">
+      <MotionGroup preset="fade" :duration="350" :delay="100">
         <main class="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-6 pb-20 pt-28 text-center sm:px-8 md:pb-28 md:pt-40 lg:px-12 lg:pb-36 lg:pt-48">
           <h1
             class="max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.02em] text-white drop-shadow-2xl sm:text-5xl md:text-6xl lg:text-7xl"
@@ -79,6 +83,7 @@
 
 <script setup>
 import { onMounted, computed } from 'vue'
+import { MotionGroupComponent as MotionGroup } from '@vueuse/motion'
 import { useWelcomeStore } from '../stores/welcomeStore'
 
 const store = useWelcomeStore()

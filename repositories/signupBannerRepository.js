@@ -37,7 +37,7 @@ export async function rSaveSignupBanner(payload) {
 export async function rUploadSignupBanner(path, file) {
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, file, { contentType: file.type, cacheControl: '31536000', upsert: false })
   if (error) throw error
   return path
 }

@@ -33,6 +33,29 @@ const MAX_PRODUCT_FILE_SIZE = 200 * 1024 * 1024
 const ZIP_MIME_TYPES = new Set(['application/zip', 'application/x-zip-compressed', 'application/octet-stream', ''])
 const PRODUCT_IMAGE_BUCKET = 'product-images'
 
+export async function rFeatured(limit = 8) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 8, 1), 24)
+    const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          slug,
+          description,
+          price,
+          created_at,
+          product_images(image_url, is_primary),
+          product_categories(categories(id, name, slug)),
+          reviews(rating)
+        `)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(safeLimit)
+
+    if (error) throw error
+    return data || []
+}
+
 export async function rAll(page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search = '', categorySlug = [], minPrice = null, maxPrice = null) {
     let query = supabase
         .from('products')
@@ -253,7 +276,7 @@ export async function rGetProductImages(productId) {
 export async function rUploadProductImage(filePath, file) {
     const { error } = await supabase.storage
         .from(PRODUCT_IMAGE_BUCKET)
-        .upload(filePath, file, { contentType: file.type, upsert: false })
+        .upload(filePath, file, { contentType: file.type, cacheControl: '31536000', upsert: false })
 
     if (error) {
         const status = Number(error?.statusCode || error?.status || 0)

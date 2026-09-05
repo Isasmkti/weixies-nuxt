@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { sAll as getPublishedProducts } from '../services/productsService'
+import { sFeatured as getPublishedProducts } from '../services/productsService'
 import { sAll as getWelcomeContent } from '../services/welcomeService'
 import {
     cloneWelcomeContent,
@@ -71,8 +71,7 @@ export const useWelcomeStore = defineStore('welcome', {
             this.productsError = null
 
             try {
-                const { data } = await getPublishedProducts(1, 12, 'created_at', 'desc', '', [], null, null)
-                this.products = data || []
+                this.products = await getPublishedProducts(12)
             } catch (error) {
                 this.productsError = error.message || 'Failed to load products'
             } finally {

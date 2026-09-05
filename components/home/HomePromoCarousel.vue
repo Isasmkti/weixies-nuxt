@@ -93,6 +93,10 @@ onBeforeUnmount(stopRotation)
           v-if="currentItem.image_url"
           :src="currentItem.image_url"
           :alt="currentItem.title"
+          width="1600"
+          height="900"
+          decoding="async"
+          fetchpriority="high"
           class="absolute inset-0 h-full w-full object-cover"
         >
         <div
@@ -194,4 +198,3 @@ onBeforeUnmount(stopRotation)
   }
 }
 </style>
-

@@ -127,6 +127,7 @@ import { getCurrentSeller } from '../services/sellerService'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
 import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 import defaultProduct from '../components/defaultProduct.vue'
 
 const router = useRouter()

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import * as cartService from '../services/cartService'
+const pendingReads = new WeakMap()
 
 export const useCartStore = defineStore('cart', {
     state: () => ({
@@ -7,22 +8,40 @@ export const useCartStore = defineStore('cart', {
         items: [],
         loading: false,
         error: null,
+        profileId: null,
         // Using an object for better reactivity and serialization compatibility
         addingProducts: {} 
     }),
     actions: {
         async stGetCart(profileId) {
             if (!profileId) return
+            const pending = pendingReads.get(this)
+            if (pending?.profileId === profileId && this.profileId === profileId) return pending.promise
+            if (this.profileId !== profileId) {
+                this.cart = null
+                this.items = []
+            }
+            this.profileId = profileId
+            const request = this.loadCart(profileId)
+            pendingReads.set(this, { profileId, promise: request })
+            try {
+                return await request
+            } finally {
+                if (pendingReads.get(this)?.promise === request) pendingReads.delete(this)
+            }
+        },
+        async loadCart(profileId) {
             try {
                 this.loading = true
                 this.error = null
                 const { cart, items } = await cartService.sGetCart(profileId)
+                if (this.profileId !== profileId) return
                 this.cart = cart
                 this.items = items
             } catch (err) {
-                this.error = err.message
+                if (this.profileId === profileId) this.error = err.message
             } finally {
-                this.loading = false
+                if (this.profileId === profileId) this.loading = false
             }
         },
 
