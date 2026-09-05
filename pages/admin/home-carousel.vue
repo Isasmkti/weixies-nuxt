@@ -8,6 +8,7 @@ import {
   sUpdateHomeCarouselItem,
   sUploadHomeCarouselImage,
 } from '../../services/homeCarouselService'
+import { confirmAction } from '../../utils/sweetAlert'
 
 const items = ref([])
 const loading = ref(true)
@@ -177,7 +178,13 @@ async function saveItem() {
 }
 
 async function removeItem(item) {
-  if (!confirm(`Delete “${item.title}”? This also removes its stored image.`)) return
+  const confirmed = await confirmAction({
+    title: 'Delete carousel item?',
+    text: `“${item.title}” and its stored image will be removed.`,
+    confirmButtonText: 'Delete item',
+    confirmButtonColor: 'rgb(var(--color-danger))',
+  })
+  if (!confirmed) return
   clearMessages()
   try {
     await sDeleteHomeCarouselItem(item)
@@ -236,12 +243,12 @@ onMounted(loadItems)
     <header class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-xs font-black uppercase tracking-[0.25em] text-primary">Content management</p>
-        <h1 class="mt-2 text-4xl font-extrabold tracking-tight text-text-main">Home Carousel</h1>
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Home Carousel</h1>
         <p class="mt-2 max-w-2xl font-montserrat text-text-muted">Publish promotional campaigns and marketplace news in the automatic Home carousel.</p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <NuxtLink to="/" target="_blank" class="rounded-xl border border-bg-alt bg-surface px-5 py-3 text-sm font-bold text-text-main transition hover:border-primary/30 hover:text-primary">Preview Home</NuxtLink>
-        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary-dark" @click="openCreate">
+      <div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap">
+        <NuxtLink to="/" target="_blank" class="text-center rounded-xl border border-bg-alt bg-surface px-3 py-3 text-sm font-bold text-text-main transition hover:border-primary/30 hover:text-primary sm:px-5">Preview Home</NuxtLink>
+        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary-dark sm:px-5" @click="openCreate">
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14" /></svg>
           Add Item
         </button>
@@ -252,7 +259,7 @@ onMounted(loadItems)
     <div v-if="successMessage" class="mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-4 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{{ successMessage }}</div>
 
     <section v-if="editorOpen" class="mb-8 overflow-hidden rounded-3xl border border-primary/20 bg-surface shadow-xl shadow-primary/5">
-      <div class="flex items-center justify-between border-b border-bg-alt px-6 py-5">
+      <div class="flex items-center justify-between border-b border-bg-alt px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.18em] text-primary">Editor</p>
           <h2 class="mt-1 text-xl font-black text-text-main">{{ editorTitle }}</h2>
@@ -262,7 +269,7 @@ onMounted(loadItems)
         </button>
       </div>
 
-      <form class="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="saveItem">
+      <form class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="saveItem">
         <div class="space-y-5">
           <div class="grid gap-5 sm:grid-cols-2">
             <label :class="labelClass">Content type<select v-model="form.content_type" :class="inputClass"><option value="promo">Promotion</option><option value="news">News</option></select></label>

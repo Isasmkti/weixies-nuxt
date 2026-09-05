@@ -1,11 +1,16 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
+const route = useRoute()
 const { profile, signOut } = useAuth()
 const isCollapsed = ref(false)
+const openGroups = reactive({
+    content: ['/admin/home-carousel', '/admin/signup-banner', '/admin/welcome'].some(path => route.path.startsWith(path)),
+    products: route.path.startsWith('/admin/products')
+})
 
 const handleLogout = async () => {
     await signOut()
@@ -16,27 +21,55 @@ const menuItems = [
     {
         name: 'Dashboard',
         to: '/admin',
+        exact: true,
         icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
     },
     {
-        name: 'Home Carousel',
+        name: 'Content',
         to: '/admin/home-carousel',
-        icon: 'M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 16.5v-9zM7 14l2.5-2.5 2 2L15 10l3 4'
-    },
-    {
-        name: 'Sign-up Banner',
-        to: '/admin/signup-banner',
-        icon: 'M3 5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25v13.5A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V5.25zM3 15l4.5-4.5 3.75 3.75L15 10.5l6 6'
+        group: 'content',
+        icon: 'M4 5.25A2.25 2.25 0 0 1 6.25 3h11.5A2.25 2.25 0 0 1 20 5.25v13.5A2.25 2.25 0 0 1 17.75 21H6.25A2.25 2.25 0 0 1 4 18.75V5.25ZM8 7h8M8 11h8M8 15h5',
+        children: [
+            {
+                name: 'Home Carousel',
+                to: '/admin/home-carousel',
+                icon: 'M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 16.5v-9zM7 14l2.5-2.5 2 2L15 10l3 4'
+            },
+            {
+                name: 'Sign-up Banner',
+                to: '/admin/signup-banner',
+                icon: 'M3 5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25v13.5A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V5.25zM3 15l4.5-4.5 3.75 3.75L15 10.5l6 6'
+            },
+            {
+                name: 'Welcome Page',
+                to: '/admin/welcome',
+                icon: 'M2.25 12l8.954-8.955a1.126 1.126 0 011.592 0L21.75 12M4.5 9.75v9.375c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v4.875h4.125c.621 0 1.125-.504 1.125-1.125V9.75'
+            }
+        ]
     },
     {
         name: 'Products',
         to: '/admin/products',
-        icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-    },
-    {
-        name: 'Product Review',
-        to: '/admin/products/review',
-        icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
+        group: 'products',
+        icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+        children: [
+            {
+                name: 'All Products',
+                to: '/admin/products',
+                exact: true,
+                icon: 'M4 6h16M4 12h16M4 18h16'
+            },
+            {
+                name: 'Product Review',
+                to: '/admin/products/review',
+                icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
+            },
+            {
+                name: 'Product Categories',
+                to: '/admin/products/categories',
+                icon: 'M20 13V6a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-1.4.58L4.58 11.1a2 2 0 0 0 0 2.82l5.5 5.5a2 2 0 0 0 2.82 0l6.52-6.52A2 2 0 0 0 20 13Z'
+            }
+        ]
     },
     {
         name: 'Sellers',
@@ -59,11 +92,6 @@ const menuItems = [
         icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5A4.5 4.5 0 003 9.5v9A4.5 4.5 0 017.5 14c1.746 0 3.332.477 4.5 1.253m0-9C13.168 5.477 14.754 5 16.5 5A4.5 4.5 0 0121 9.5v9a4.5 4.5 0 00-4.5-4.5c-1.746 0-3.332.477-4.5 1.253'
     },
     {
-        name: 'Welcome Page',
-        to: '/admin/welcome',
-        icon: 'M2.25 12l8.954-8.955a1.126 1.126 0 011.592 0L21.75 12M4.5 9.75v9.375c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v4.875h4.125c.621 0 1.125-.504 1.125-1.125V9.75'
-    },
-    {
         name: 'Payouts',
         to: '/admin/payouts',
         icon: 'M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.111 1.453-.342 1.682-1.04l.867-2.603M2.25 18.75V5.25A2.25 2.25 0 0 1 4.5 3h9.75a2.25 2.25 0 0 1 2.25 2.25v4.5M2.25 18.75a60.055 60.055 0 0 0 8.922.826m5.328-9.826h3.75a1.5 1.5 0 0 1 1.5 1.5v3.75a1.5 1.5 0 0 1-1.5 1.5h-3.75a1.5 1.5 0 0 1-1.5-1.5v-3.75a1.5 1.5 0 0 1 1.5-1.5Z'
@@ -74,6 +102,24 @@ const menuItems = [
         icon: 'M10 19l-7-7m0 0l7-7m-7 7h18'
     }
 ]
+
+const routeIsActive = (item) => item.exact
+    ? route.path === item.to
+    : route.path === item.to || route.path.startsWith(`${item.to}/`)
+
+const groupIsActive = item => item.children?.some(child => routeIsActive(child))
+const groupIsOpen = item => Boolean(openGroups[item.group])
+const toggleGroup = item => {
+    openGroups[item.group] = !openGroups[item.group]
+}
+
+watch(() => route.path, (path) => {
+    for (const item of menuItems) {
+        if (item.children?.some(child => path === child.to || path.startsWith(`${child.to}/`))) {
+            openGroups[item.group] = true
+        }
+    }
+})
 </script>
 
 <template>
@@ -93,17 +139,52 @@ const menuItems = [
 
         <!-- Navigation -->
         <nav class="flex-1 px-4 space-y-2 overflow-y-auto container no-scrollbar">
-            <NuxtLink v-for="(item, index) in menuItems" :key="index" :to="item.to"
-                :class="['group flex items-center gap-3 rounded-ui-md px-4 py-3 text-text-muted transition-colors duration-200 hover:bg-bg hover:text-primary', isCollapsed ? 'justify-center' : '']"
-                active-class="bg-primary/10 text-primary font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
-                </svg>
-                <transition name="fade">
-                    <span v-if="!isCollapsed">{{ item.name }}</span>
-                </transition>
-            </NuxtLink>
+            <template v-for="item in menuItems" :key="item.name">
+                <div v-if="item.children" class="space-y-1">
+                    <NuxtLink v-if="isCollapsed" :to="item.to" :title="item.name"
+                        :class="['group flex items-center justify-center rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', groupIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
+                        </svg>
+                    </NuxtLink>
+
+                    <template v-else>
+                        <button type="button" :aria-expanded="groupIsOpen(item)" :aria-controls="`admin-${item.group}-menu`"
+                            :class="['group flex w-full items-center gap-3 rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', groupIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']"
+                            @click="toggleGroup(item)">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
+                            </svg>
+                            <span class="min-w-0 flex-1 text-left">{{ item.name }}</span>
+                            <svg class="h-4 w-4 shrink-0 transition-transform duration-200" :class="groupIsOpen(item) ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </button>
+
+                        <Transition name="submenu">
+                            <div v-if="groupIsOpen(item)" :id="`admin-${item.group}-menu`" class="ml-5 space-y-1 border-l border-border pl-3">
+                                <NuxtLink v-for="child in item.children" :key="child.name" :to="child.to"
+                                    :class="['group flex items-center gap-2.5 rounded-ui-sm px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-bg hover:text-primary', routeIsActive(child) ? 'bg-primary/10 font-semibold text-primary' : 'text-text-muted']">
+                                    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="child.icon" />
+                                    </svg>
+                                    <span>{{ child.name }}</span>
+                                </NuxtLink>
+                            </div>
+                        </Transition>
+                    </template>
+                </div>
+
+                <NuxtLink v-else :to="item.to" :title="isCollapsed ? item.name : undefined"
+                    :class="['group flex items-center gap-3 rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', isCollapsed ? 'justify-center' : '', routeIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
+                    </svg>
+                    <transition name="fade">
+                        <span v-if="!isCollapsed">{{ item.name }}</span>
+                    </transition>
+                </NuxtLink>
+            </template>
         </nav>
 
         <!-- Footer / Logout -->
@@ -174,6 +255,20 @@ const menuItems = [
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+
+.submenu-enter-active,
+.submenu-leave-active {
+    overflow: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, max-height 0.25s ease;
+    max-height: 180px;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-4px);
 }
 
 .no-scrollbar {

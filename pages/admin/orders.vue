@@ -1,13 +1,13 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { supabase } from '../../utils/supabase'
+import { confirmAction, showAlert, showErrorDialog, showSuccess } from '../../utils/sweetAlert'
 
 const orders = ref([])
 const loading = ref(true)
 const workingId = ref(null)
 const statusFilter = ref('reviewable')
 const errorMessage = ref('')
-const successMessage = ref('')
 
 const authFetch = async (url, options = {}) => {
   const { data: { session } } = await supabase.auth.getSession()
@@ -36,6 +36,14 @@ const canStartRefund = order => order.status === 'paid'
   && sellerItems(order).some(item => item.payout_status === 'held')
 const isOnHold = order => sellerItems(order).some(item => item.payout_status === 'refund_review')
 const productNames = order => sellerItems(order).map(item => item.product?.name).filter(Boolean).join(', ') || 'Digital product'
+const downloadedItems = order => (order.order_items || []).filter(item => item.is_downloaded)
+const downloadSummary = (order) => {
+  const downloaded = downloadedItems(order)
+  if (!downloaded.length) return 'Not downloaded'
+  const totalAccesses = downloaded.reduce((sum, item) => sum + Number(item.download_count || 0), 0)
+  const latest = downloaded.map(item => item.downloaded_at).filter(Boolean).sort().at(-1)
+  return `${totalAccesses || downloaded.length} access${(totalAccesses || downloaded.length) === 1 ? '' : 'es'} · ${formatDateTime(latest)}`
+}
 
 const filteredOrders = computed(() => orders.value.filter((order) => {
   if (statusFilter.value === 'all') return true
@@ -69,38 +77,68 @@ const loadOrders = async () => {
 }
 
 const requestRefund = async (order) => {
-  const reason = window.prompt('Describe the product quality issue. This will immediately hold the seller payout:')
-  if (!reason?.trim()) return
-  if (!window.confirm(`Place ${order.order_number} on hold and request a full ${formatIDR(order.total_amount)} refund?`)) return
+  const currentReason = refundOf(order)?.reason || ''
+  const dialog = await showAlert({
+    icon: 'warning',
+    title: `Review order #${order.order_number}`,
+    text: `A full ${formatIDR(order.total_amount)} refund will be requested and the seller payout will remain on hold.`,
+    input: 'textarea',
+    inputValue: currentReason,
+    inputLabel: 'Product quality issue',
+    inputPlaceholder: 'Describe the issue clearly for the audit record...',
+    inputAttributes: {
+      maxlength: '1000',
+      'aria-label': 'Product quality issue',
+    },
+    showCancelButton: true,
+    cancelButtonText: 'Keep order',
+    confirmButtonText: currentReason ? 'Retry refund' : 'Hold & refund',
+    confirmButtonColor: 'rgb(var(--color-danger))',
+    focusCancel: true,
+    inputValidator: (value) => {
+      const length = String(value || '').trim().length
+      if (length < 5) return 'Please describe the issue in at least 5 characters.'
+      if (length > 1000) return 'The reason cannot exceed 1,000 characters.'
+      return undefined
+    },
+  })
+  if (!dialog.isConfirmed) return
+  const reason = String(dialog.value || '').trim()
 
   workingId.value = order.id
   errorMessage.value = ''
-  successMessage.value = ''
   try {
     const result = await authFetch(`/api/admin/orders/${order.id}/refund`, {
       method: 'POST',
       body: { reason: reason.trim() },
     })
-    successMessage.value = result.message || 'Refund submitted. Seller funds remain held until Xendit confirms it.'
     await loadOrders()
+    await showSuccess(
+      result.status === 'manual_action_required' ? 'Seller payout is on hold' : 'Refund submitted',
+      result.message || 'Seller funds remain held until Xendit confirms the refund.',
+    )
   } catch (error) {
-    errorMessage.value = error?.data?.statusMessage || error.message || 'Refund review could not be created.'
+    await showErrorDialog('Refund could not be submitted', error?.data?.statusMessage || error.message || 'Refund review could not be created.')
   } finally {
     workingId.value = null
   }
 }
 
 const releaseHold = async (order) => {
-  if (!window.confirm(`Release the refund hold for ${order.order_number}? It can be paid automatically on the next run.`)) return
+  const confirmed = await confirmAction({
+    title: 'Release refund hold?',
+    text: `Order #${order.order_number} will become eligible for the next automatic seller payout run.`,
+    confirmButtonText: 'Release hold',
+  })
+  if (!confirmed) return
   workingId.value = order.id
   errorMessage.value = ''
-  successMessage.value = ''
   try {
     await authFetch(`/api/admin/orders/${order.id}/refund-hold`, { method: 'DELETE' })
-    successMessage.value = 'Refund hold released.'
     await loadOrders()
+    await showSuccess('Refund hold released', `Order #${order.order_number} can enter the next automatic payout run.`)
   } catch (error) {
-    errorMessage.value = error?.data?.statusMessage || error.message || 'Refund hold could not be released.'
+    await showErrorDialog('Hold could not be released', error?.data?.statusMessage || error.message || 'Refund hold could not be released.')
   } finally {
     workingId.value = null
   }
@@ -116,19 +154,44 @@ onMounted(loadOrders)
         <h1 class="text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Order quality & refunds</h1>
         <p class="mt-2 max-w-3xl text-sm text-text-muted">Seller earnings are held for three days. Put a problematic order under review before the deadline to keep it out of automatic payouts.</p>
       </div>
-      <button class="rounded-ui-sm border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text-main transition hover:border-primary/40 hover:text-primary" :disabled="loading" @click="loadOrders">Refresh</button>
+      <button class="w-full rounded-ui-sm border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text-main transition hover:border-primary/40 hover:text-primary sm:w-auto" :disabled="loading" @click="loadOrders">Refresh</button>
     </div>
 
     <p v-if="errorMessage" class="mt-6 rounded-ui-md border border-danger/20 bg-danger/10 p-4 text-sm text-danger">{{ errorMessage }}</p>
-    <p v-if="successMessage" class="mt-6 rounded-ui-md border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">{{ successMessage }}</p>
-
     <div class="mt-6 inline-flex max-w-full gap-1 overflow-x-auto rounded-ui-md border border-border bg-surface p-1">
       <button v-for="filter in ['reviewable', 'on_hold', 'refunded', 'all']" :key="filter" class="whitespace-nowrap rounded-ui-sm px-4 py-2 text-sm font-semibold capitalize transition" :class="statusFilter === filter ? 'bg-primary text-white' : 'text-text-muted hover:bg-bg-alt hover:text-text-main'" @click="statusFilter = filter">{{ filter.replace('_', ' ') }}</button>
     </div>
 
     <div v-if="loading" class="mt-6 rounded-ui-lg border border-border bg-surface p-12 text-center text-text-muted">Loading orders...</div>
     <div v-else-if="filteredOrders.length === 0" class="mt-6 rounded-ui-lg border border-dashed border-border bg-surface p-12 text-center text-text-muted">No orders match this filter.</div>
-    <div v-else class="mt-6 overflow-x-auto rounded-ui-lg border border-border bg-surface shadow-elevation-1">
+    <div v-else class="mt-6 overflow-hidden rounded-ui-lg border border-border bg-surface shadow-elevation-1">
+      <div class="divide-y divide-border md:hidden">
+        <article v-for="order in filteredOrders" :key="`mobile-${order.id}`" class="space-y-4 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="font-bold text-text-main">#{{ order.order_number }}</p>
+              <p class="mt-1 text-xs text-text-muted">{{ formatDateTime(order.paid_at) }}</p>
+            </div>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="order.status === 'refunded' ? 'bg-sky-100 text-sky-700' : isOnHold(order) ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'">{{ refundOf(order)?.status?.replace('_', ' ') || order.status }}</span>
+          </div>
+          <dl class="grid grid-cols-2 gap-3 text-sm">
+            <div class="min-w-0 rounded-ui-sm bg-bg p-3"><dt class="text-xs text-text-muted">Buyer</dt><dd class="mt-1 truncate font-semibold text-text-main">{{ buyerOf(order)?.full_name || 'Buyer' }}</dd></div>
+            <div class="rounded-ui-sm bg-bg p-3"><dt class="text-xs text-text-muted">Amount</dt><dd class="mt-1 font-bold text-text-main">{{ formatIDR(order.total_amount) }}</dd></div>
+            <div class="col-span-2 min-w-0 rounded-ui-sm bg-bg p-3"><dt class="text-xs text-text-muted">Products</dt><dd class="mt-1 text-text-main">{{ productNames(order) }}</dd><p class="mt-1 text-xs font-semibold" :class="downloadedItems(order).length ? 'text-emerald-600' : 'text-text-muted'">{{ downloadSummary(order) }}</p></div>
+            <div class="col-span-2 rounded-ui-sm bg-bg p-3"><dt class="text-xs text-text-muted">Payout window</dt><dd class="mt-1 font-semibold" :class="isOnHold(order) ? 'text-amber-600' : 'text-text-main'">{{ isOnHold(order) ? 'Paused for review' : deadlineLabel(order) }}</dd><p class="mt-1 text-xs text-text-muted">{{ formatDateTime(holdDeadline(order)) }}</p></div>
+          </dl>
+          <p v-if="refundOf(order)?.reason" class="rounded-ui-sm border border-border p-3 text-xs text-text-muted">{{ refundOf(order).reason }}</p>
+          <div class="flex flex-wrap gap-2">
+            <button v-if="canStartRefund(order)" class="min-h-10 flex-1 rounded-ui-sm bg-danger px-3 py-2 text-xs font-bold text-white disabled:opacity-50" :disabled="workingId === order.id" @click="requestRefund(order)">{{ workingId === order.id ? 'Processing...' : 'Review & refund' }}</button>
+            <template v-else-if="isOnHold(order)">
+              <a v-if="['manual_action_required', 'submitted'].includes(refundOf(order)?.status)" href="https://dashboard.xendit.co/transactions" target="_blank" rel="noopener noreferrer" class="min-h-10 flex-1 rounded-ui-sm bg-primary px-3 py-2.5 text-center text-xs font-bold text-white">Open Xendit</a>
+              <button v-if="refundOf(order)?.status === 'failed'" class="min-h-10 flex-1 rounded-ui-sm bg-danger px-3 py-2 text-xs font-bold text-white disabled:opacity-50" :disabled="workingId === order.id" @click="requestRefund(order)">Retry refund</button>
+              <button v-if="!['submitted', 'succeeded'].includes(refundOf(order)?.status)" class="min-h-10 flex-1 rounded-ui-sm border border-border px-3 py-2 text-xs font-bold text-text-main" :disabled="workingId === order.id" @click="releaseHold(order)">Release hold</button>
+            </template>
+          </div>
+        </article>
+      </div>
+      <div class="hidden overflow-x-auto md:block">
       <table class="w-full min-w-[1120px] text-left">
         <thead class="border-b border-border bg-bg-alt/50 text-xs font-semibold uppercase tracking-wide text-text-muted">
           <tr><th class="p-4">Order</th><th class="p-4">Buyer</th><th class="p-4">Product</th><th class="p-4">Amount</th><th class="p-4">Payout window</th><th class="p-4">Review status</th><th class="p-4 text-right">Action</th></tr>
@@ -137,7 +200,7 @@ onMounted(loadOrders)
           <tr v-for="order in filteredOrders" :key="order.id" class="align-top transition hover:bg-bg-alt/30">
             <td class="p-4"><p class="font-bold text-text-main">#{{ order.order_number }}</p><p class="mt-1 text-xs text-text-muted">{{ formatDateTime(order.paid_at) }}</p></td>
             <td class="p-4"><p class="font-semibold text-text-main">{{ buyerOf(order)?.full_name || 'Buyer' }}</p><p class="text-xs text-text-muted">{{ buyerOf(order)?.email || '-' }}</p></td>
-            <td class="max-w-64 p-4 text-sm text-text-main">{{ productNames(order) }}</td>
+            <td class="max-w-64 p-4 text-sm text-text-main"><p>{{ productNames(order) }}</p><p class="mt-1 text-xs font-semibold" :class="downloadedItems(order).length ? 'text-emerald-600' : 'text-text-muted'">{{ downloadSummary(order) }}</p></td>
             <td class="p-4 font-bold text-text-main">{{ formatIDR(order.total_amount) }}</td>
             <td class="p-4"><p class="text-sm font-semibold" :class="isOnHold(order) ? 'text-amber-600' : 'text-text-main'">{{ isOnHold(order) ? 'Paused for review' : deadlineLabel(order) }}</p><p class="mt-1 text-xs text-text-muted">{{ formatDateTime(holdDeadline(order)) }}</p></td>
             <td class="p-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize" :class="order.status === 'refunded' ? 'bg-sky-100 text-sky-700' : isOnHold(order) ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'">{{ refundOf(order)?.status?.replace('_', ' ') || order.status }}</span><p v-if="refundOf(order)?.reason" class="mt-2 max-w-64 text-xs text-text-muted">{{ refundOf(order).reason }}</p><p v-if="refundOf(order)?.provider_failure_code" class="mt-1 text-xs text-danger">{{ refundOf(order).provider_failure_code }}</p></td>
@@ -153,6 +216,7 @@ onMounted(loadOrders)
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </template>

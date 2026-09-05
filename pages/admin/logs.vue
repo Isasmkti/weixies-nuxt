@@ -49,14 +49,14 @@ onMounted(loadLogs)
 
 <template>
   <div class="max-w-[1600px] mx-auto font-poppins">
-    <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-10">
+    <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:mb-10">
       <div>
-        <h1 class="text-4xl font-extrabold text-text-main tracking-tight">Activity Logs</h1>
+        <h1 class="text-3xl font-extrabold text-text-main tracking-tight sm:text-4xl">Activity Logs</h1>
         <p class="mt-2 text-text-muted font-montserrat">Recent buyer, seller, admin, and system activity.</p>
       </div>
       <button
         :disabled="loading"
-        class="rounded-xl border border-bg-alt bg-surface px-5 py-3 font-bold text-text-main transition hover:bg-bg-alt disabled:cursor-not-allowed disabled:opacity-60"
+        class="w-full rounded-xl border border-bg-alt bg-surface px-5 py-3 font-bold text-text-main transition hover:bg-bg-alt disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         @click="loadLogs"
       >
         {{ loading ? 'Refreshing...' : 'Refresh logs' }}
@@ -88,6 +88,7 @@ onMounted(loadLogs)
           <option value="seller_payout">Seller payouts</option>
           <option value="order_refund">Order refunds</option>
           <option value="ai_knowledge">AI Knowledge</option>
+          <option value="category">Product categories</option>
         </select>
       </label>
     </div>
@@ -95,7 +96,22 @@ onMounted(loadLogs)
     <p v-if="errorMessage" class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">{{ errorMessage }}</p>
 
     <div class="overflow-hidden rounded-2xl border border-bg-alt bg-surface shadow-sm">
-      <div class="overflow-x-auto">
+      <div class="divide-y divide-border md:hidden">
+        <div v-if="loading" class="p-8 text-center text-sm text-text-muted">Loading activity logs...</div>
+        <div v-else-if="filteredLogs.length === 0" class="p-8 text-center text-sm text-text-muted">No activity logs match these filters.</div>
+        <article v-for="log in filteredLogs" v-else :key="`mobile-${log.id}`" class="space-y-3 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0"><p class="truncate font-mono text-sm font-semibold text-primary">{{ log.action }}</p><p class="mt-1 text-xs text-text-muted">{{ formatDateTime(log.created_at) }}</p></div>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" :class="actorClasses[log.actor_type] || 'bg-bg-alt text-text-muted'">{{ log.actor_type }}</span>
+          </div>
+          <dl class="grid grid-cols-2 gap-3 rounded-ui-sm bg-bg p-3 text-xs">
+            <div class="min-w-0"><dt class="text-text-muted">Actor</dt><dd class="mt-1 truncate font-bold text-text-main">{{ log.actor_name || 'System' }}</dd></div>
+            <div class="min-w-0"><dt class="text-text-muted">Resource</dt><dd class="mt-1 truncate font-semibold capitalize text-text-main">{{ log.entity_type.replace('_', ' ') }}</dd></div>
+          </dl>
+          <p class="break-words text-xs leading-5 text-text-muted">{{ formatMetadata(log.metadata) }}</p>
+        </article>
+      </div>
+      <div class="hidden overflow-x-auto md:block">
         <table class="w-full min-w-[1000px] text-left border-collapse">
           <thead>
             <tr class="bg-bg-alt/50 text-sm uppercase tracking-wider text-text-muted">

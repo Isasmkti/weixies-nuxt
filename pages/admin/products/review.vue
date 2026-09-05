@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { getProductsForModeration, setProductModerationStatus } from '../../../services/adminProductModerationService'
+import { confirmAction } from '../../../utils/sweetAlert'
 
 const products = ref([])
 const statusFilter = ref('pending_review')
@@ -38,7 +39,13 @@ const loadProducts = async () => {
 
 const updateStatus = async (product, status) => {
   const verb = status === 'published' ? 'approve' : status === 'rejected' ? 'reject' : 'suspend'
-  if (!confirm(`Are you sure you want to ${verb} ${product.name}?`)) return
+  const confirmed = await confirmAction({
+    title: `${verb.charAt(0).toUpperCase()}${verb.slice(1)} product?`,
+    text: `This will ${verb} “${product.name}”.`,
+    confirmButtonText: `${verb.charAt(0).toUpperCase()}${verb.slice(1)} product`,
+    confirmButtonColor: status === 'published' ? 'rgb(var(--color-primary))' : 'rgb(var(--color-danger))',
+  })
+  if (!confirmed) return
 
   updatingId.value = product.id
   errorMessage.value = ''

@@ -9,6 +9,7 @@ import {
   cloneWelcomeContent,
   WELCOME_CONTENT_DEFAULTS,
 } from '../../utils/welcomeContent'
+import { confirmAction } from '../../utils/sweetAlert'
 
 const form = ref(cloneWelcomeContent())
 const loading = ref(true)
@@ -98,8 +99,13 @@ const addFooterLink = (column) => {
   column.links.push({ label: 'New Link', url: '#' })
 }
 
-const restoreDefaults = () => {
-  if (!confirm('Restore every editor field to the original welcome content? Click Save Changes afterward to publish it.')) return
+const restoreDefaults = async () => {
+  const confirmed = await confirmAction({
+    title: 'Restore welcome defaults?',
+    text: 'Every editor field will be reset locally. Changes are only published after you save them.',
+    confirmButtonText: 'Restore defaults',
+  })
+  if (!confirmed) return
   form.value = cloneWelcomeContent(WELCOME_CONTENT_DEFAULTS)
   successMessage.value = 'Defaults restored locally. Save changes to publish them.'
 }
@@ -112,7 +118,7 @@ onMounted(loadContent)
     <header class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-xs font-black uppercase tracking-[0.25em] text-primary">Content management</p>
-        <h1 class="mt-2 text-4xl font-extrabold tracking-tight text-text-main">Welcome Page</h1>
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Welcome Page</h1>
         <p class="mt-2 max-w-2xl font-montserrat text-text-muted">
           Edit every public welcome section. The product carousel remains connected to the published catalog.
         </p>

@@ -57,7 +57,7 @@ onMounted(async () => {
   <div class="mx-auto max-w-6xl py-6 font-poppins">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Seller workspace</p><h1 class="mt-2 text-3xl font-black text-text-main">Store orders</h1><p class="mt-2 text-text-muted">Only items attributed to your store are shown.</p></div>
-      <NuxtLink to="/seller" class="rounded-xl border border-bg-alt bg-surface px-4 py-2.5 text-sm font-bold text-text-main hover:text-primary">Back to dashboard</NuxtLink>
+      <div class="flex flex-wrap gap-2"><NuxtLink to="/seller/refunds" class="rounded-xl border border-primary/25 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10">Store refunds</NuxtLink><NuxtLink to="/seller" class="rounded-xl border border-bg-alt bg-surface px-4 py-2.5 text-sm font-bold text-text-main hover:text-primary">Back to dashboard</NuxtLink></div>
     </div>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-3">
@@ -83,7 +83,7 @@ onMounted(async () => {
           <div><p class="text-xs font-bold uppercase text-text-muted">Price</p><p class="mt-1 font-bold text-text-main">{{ formatIDR(item.price) }}</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Platform commission</p><p class="mt-1 font-bold text-red-600">-{{ formatIDR(item.commission_amount) }}</p><p class="mt-1 text-[11px] text-text-muted">{{ (Number(item.commission_rate_snapshot || 0) * 100).toFixed(2).replace(/\.00$/, '') }}% snapshot</p></div>
           <div><p class="text-xs font-bold uppercase text-text-muted">Your earning</p><p class="mt-1 font-black text-primary">{{ formatIDR(item.seller_earning) }}</p></div>
-          <div><p class="text-xs font-bold uppercase text-text-muted">Status</p><span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="orderStatusClass(orderOf(item)?.status)">{{ orderOf(item)?.status }}</span><p class="mt-1 text-[10px] text-text-muted">Payout: {{ payoutStatusLabel(item.payout_status) }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-text-muted">Status</p><span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="orderStatusClass(orderOf(item)?.status)">{{ orderOf(item)?.status }}</span><p class="mt-1 text-[10px] text-text-muted">Payout: {{ payoutStatusLabel(item.payout_status) }}</p><p v-if="orderOf(item)?.status === 'paid'" class="mt-1 text-[10px] font-semibold" :class="item.is_downloaded ? 'text-emerald-600' : 'text-text-muted'">{{ item.is_downloaded ? `Buyer accessed ${item.download_count || 1}× · ${formatDate(item.downloaded_at)}` : 'Not downloaded by buyer' }}</p></div>
         </div>
       </div>
     </div>

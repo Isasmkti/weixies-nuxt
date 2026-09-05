@@ -93,18 +93,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Failed to generate download link.' });
   }
 
-  // 5. Log the download
-  await supabaseAdmin.from('download_logs').insert({
-    profile_id: user.id,
-    product_id: productId,
-    downloaded_at: new Date().toISOString(),
-    ip_address: getRequestIP(event, { xForwardedFor: true }) || null,
-    user_agent: getRequestHeader(event, 'user-agent') || null,
+  // 5. Persist the event and its per-order-item summary atomically. The
+  // browser cannot set this flag directly.
+  const { data: downloadRows, error: downloadError } = await supabaseAdmin.rpc('record_order_item_download', {
+    p_order_item_id: orderedItem.id,
+    p_profile_id: user.id,
+    p_ip_address: getRequestIP(event, { xForwardedFor: true }) || null,
+    p_user_agent: getRequestHeader(event, 'user-agent') || null,
   });
+
+  if (downloadError) {
+    console.error('[Download] Failed to record download history:', downloadError);
+    throw createError({ statusCode: 500, statusMessage: 'Download history could not be recorded.' });
+  }
+
+  const download = Array.isArray(downloadRows) ? downloadRows[0] : downloadRows;
 
   return {
     url: signedData.signedUrl,
     file_name: productFile.file_name,
     expires_in: SIGNED_URL_EXPIRES_IN,
+    download: download || null,
   };
 });

@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
         seller_earning,
         payout_status,
         available_for_payout_at,
+        is_downloaded,
+        downloaded_at,
+        download_count,
         product:products(name)
       ),
       payments(id, provider, provider_invoice_id, status, raw_response),

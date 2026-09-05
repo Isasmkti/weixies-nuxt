@@ -307,7 +307,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <section class="grid gap-4 sm:grid-cols-2" aria-label="Account activity">
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Account activity">
                 <NuxtLink to="/orders" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></svg>
@@ -330,6 +330,17 @@ onBeforeUnmount(() => {
                             <span v-if="unreadMessageCount" class="rounded-ui-full bg-danger/10 px-2 py-0.5 text-xs font-bold text-danger">{{ displayedUnreadMessageCount }} unread</span>
                         </span>
                         <span class="mt-1 block text-sm text-text-muted">{{ unreadMessageCount ? 'You have new messages to read' : 'Continue conversations with sellers' }}</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
+
+                <NuxtLink to="/refunds" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h14a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4H8m-5-8 4-4m-4 4 4 4" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-base font-semibold text-text-main">My refunds</span>
+                        <span class="mt-1 block text-sm text-text-muted">Reasons, returned amounts, and progress</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>

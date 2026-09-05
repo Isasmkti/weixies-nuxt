@@ -10,6 +10,9 @@ export async function rGetSellerOrderItems(sellerId) {
       commission_amount,
       seller_earning,
       payout_status,
+      is_downloaded,
+      downloaded_at,
+      download_count,
       products(id, name, slug, product_images(image_url, is_primary)),
       orders!inner(id, order_number, status, created_at, paid_at)
     `)

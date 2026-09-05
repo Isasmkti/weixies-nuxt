@@ -26,9 +26,9 @@ onMounted(async () => {
         <component v-else :is="profile?.role === 'admin' ? AdminSidebar : Sidebar" />
 
         <!-- Main Area -->
-        <div class="flex flex-col flex-1 min-h-screen">
-            <main class="flex-1 overflow-y-auto bg-bg relative pb-16 md:pb-0">
-                <div class="p-4 md:p-8">
+        <div class="flex min-h-screen min-w-0 flex-1 flex-col">
+            <main class="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg">
+                <div class="min-w-0 p-3 pb-24 sm:p-4 sm:pb-24 md:p-8 md:pb-8">
                     <slot />
                 </div>
             </main>

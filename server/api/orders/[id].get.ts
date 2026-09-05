@@ -23,6 +23,9 @@ export default defineEventHandler(async (event) => {
         id,
         price,
         seller_id,
+        is_downloaded,
+        downloaded_at,
+        download_count,
         order_item_licenses (
           id,
           license_name_snapshot,

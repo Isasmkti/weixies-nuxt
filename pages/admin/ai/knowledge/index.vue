@@ -7,6 +7,7 @@ import {
   indexAiProducts,
   updateAiKnowledgeArticle,
 } from '~/services/aiKnowledgeService'
+import { confirmAction } from '~/utils/sweetAlert'
 
 const articles = ref([])
 const loading = ref(true)
@@ -80,7 +81,12 @@ const loadArticles = async () => {
 
 const changeStatus = async (article, status) => {
   const action = status === 'published' ? 'publish' : 'archive'
-  if (!confirm(`Are you sure you want to ${action} "${article.title}"?`)) return
+  const confirmed = await confirmAction({
+    title: `${action === 'publish' ? 'Publish' : 'Archive'} article?`,
+    text: `This will ${action} "${article.title}".`,
+    confirmButtonText: action === 'publish' ? 'Publish article' : 'Archive article',
+  })
+  if (!confirmed) return
 
   workingId.value = `status:${article.id}`
   errorMessage.value = ''
@@ -99,7 +105,14 @@ const changeStatus = async (article, status) => {
 }
 
 const indexArticle = async (article) => {
-  if (articleIsIndexed(article) && !confirm(`Reindex "${article.title}" with its current content?`)) return
+  if (articleIsIndexed(article)) {
+    const confirmed = await confirmAction({
+      title: 'Reindex article?',
+      text: `The current AI index for "${article.title}" will be replaced.`,
+      confirmButtonText: 'Reindex article',
+    })
+    if (!confirmed) return
+  }
 
   workingId.value = `index:${article.id}`
   errorMessage.value = ''
@@ -116,7 +129,13 @@ const indexArticle = async (article) => {
 }
 
 const removeArticle = async (article) => {
-  if (!confirm(`Delete "${article.title}" permanently? This action cannot be undone.`)) return
+  const confirmed = await confirmAction({
+    title: 'Delete knowledge article?',
+    text: `"${article.title}" will be permanently deleted. This action cannot be undone.`,
+    confirmButtonText: 'Delete article',
+    confirmButtonColor: 'rgb(var(--color-danger))',
+  })
+  if (!confirmed) return
 
   workingId.value = `delete:${article.id}`
   errorMessage.value = ''
@@ -327,4 +346,3 @@ onMounted(loadArticles)
     </div>
   </div>
 </template>
-

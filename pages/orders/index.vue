@@ -6,15 +6,16 @@
         <h1 class="text-3xl font-semibold tracking-tight text-text-main">My orders</h1>
         <p class="mt-1 text-sm text-text-muted">Your digital purchases and download library</p>
       </div>
-      <NuxtLink
-        to="/products"
-        class="inline-flex items-center gap-2 rounded-ui-md bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-        </svg>
-        Browse Products
-      </NuxtLink>
+      <div class="flex flex-wrap gap-2">
+        <NuxtLink to="/refunds" class="inline-flex items-center gap-2 rounded-ui-md border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-text-main transition hover:border-primary/40 hover:text-primary">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h14a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4H8m-5-8 4-4m-4 4 4 4" /></svg>
+          Refund Center
+        </NuxtLink>
+        <NuxtLink to="/products" class="inline-flex items-center gap-2 rounded-ui-md bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+          Browse Products
+        </NuxtLink>
+      </div>
     </div>
 
     <div v-if="!loading && !error && orders.length" class="no-scrollbar mb-6 overflow-x-auto" aria-label="Filter orders by status">
@@ -124,6 +125,10 @@
               <div class="flex-grow min-w-0">
                 <p class="font-bold text-text-main truncate">{{ item.product?.name }}</p>
                 <p class="text-sm text-text-muted font-montserrat line-clamp-1">{{ item.product?.description }}</p>
+                <p v-if="order.status === 'paid'" class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold" :class="item.is_downloaded ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-muted'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="item.is_downloaded ? 'bg-emerald-500' : 'bg-text-muted/50'"></span>
+                  {{ item.is_downloaded ? `Downloaded ${item.download_count || 1}× · last ${formatDateTime(item.downloaded_at)}` : 'Not downloaded yet' }}
+                </p>
               </div>
 
               <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap sm:flex-shrink-0">
@@ -140,7 +145,7 @@
                   <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : 'Download' }}
+                  {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : (item.is_downloaded ? 'Download again' : 'Download') }}
                 </button>
 
                 <!-- Resume Button (only while the payment is pending) -->
@@ -168,7 +173,8 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-5 pb-4 flex justify-end">
+        <div class="flex justify-end gap-4 px-5 pb-4">
+          <NuxtLink v-if="order.status === 'refunded'" :to="`/refunds?order=${order.id}`" class="flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Refund status</NuxtLink>
           <NuxtLink
             :to="`/orders/${order.id}`"
             class="text-sm text-primary font-semibold hover:underline flex items-center gap-1"
@@ -189,6 +195,7 @@ import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
+import { showErrorDialog } from '../../utils/sweetAlert'
 
 const router = useRouter()
 
@@ -225,9 +232,12 @@ const statusCounts = computed(() => orders.value.reduce((counts, order) => {
   return counts
 }, {}))
 
+const orderWasDownloaded = order => (order?.order_items || []).some(item => item.is_downloaded)
+const downloadedOrderCount = computed(() => orders.value.filter(orderWasDownloaded).length)
+
 const availableStatusFilters = computed(() => {
   const statuses = new Set(Object.keys(statusCounts.value))
-  if (activeStatus.value !== 'all') statuses.add(activeStatus.value)
+  if (!['all', 'downloaded'].includes(activeStatus.value)) statuses.add(activeStatus.value)
 
   const orderedStatuses = [...statuses].sort((left, right) => {
     const leftIndex = preferredStatusOrder.indexOf(left)
@@ -240,6 +250,9 @@ const availableStatusFilters = computed(() => {
 
   return [
     { value: 'all', label: 'All', count: orders.value.length },
+    ...(downloadedOrderCount.value || activeStatus.value === 'downloaded'
+      ? [{ value: 'downloaded', label: 'Downloaded', count: downloadedOrderCount.value }]
+      : []),
     ...orderedStatuses.map((status) => ({
       value: status,
       label: statusLabel(status),
@@ -248,9 +261,11 @@ const availableStatusFilters = computed(() => {
   ]
 })
 
-const filteredOrders = computed(() => activeStatus.value === 'all'
-  ? orders.value
-  : orders.value.filter((order) => String(order?.status) === activeStatus.value))
+const filteredOrders = computed(() => {
+  if (activeStatus.value === 'all') return orders.value
+  if (activeStatus.value === 'downloaded') return orders.value.filter(orderWasDownloaded)
+  return orders.value.filter(order => String(order?.status) === activeStatus.value)
+})
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -258,6 +273,10 @@ const formatDate = (dateStr) => {
     day: 'numeric', month: 'short', year: 'numeric'
   })
 }
+
+const formatDateTime = (dateStr) => dateStr
+  ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateStr))
+  : '-'
 
 const statusClass = (status) => {
   const map = {
@@ -335,6 +354,9 @@ const handleDownload = async (order, item) => {
       },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
+    item.is_downloaded = true
+    item.downloaded_at = data.download?.downloaded_at || new Date().toISOString()
+    item.download_count = Number(data.download?.download_count) || Number(item.download_count || 0) + 1
     // Trigger browser download
     const link = document.createElement('a')
     link.href = data.url
@@ -345,7 +367,7 @@ const handleDownload = async (order, item) => {
     document.body.removeChild(link)
   } catch (err) {
     console.error('Download error:', err)
-    alert(err?.data?.message || err?.message || 'Download failed.')
+    await showErrorDialog('Download failed', err?.data?.statusMessage || err?.data?.message || err?.message || 'The file could not be downloaded.')
   } finally {
     downloadingItem.value = null
   }
@@ -379,7 +401,7 @@ const continuePayment = async (order) => {
     window.location.href = paymentUrl
   } catch (err) {
     console.error('Continue payment error:', err)
-    alert(err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')
+    await showErrorDialog('Payment page unavailable', err?.data?.statusMessage || err?.data?.message || err?.message || 'Failed to continue payment.')
   } finally {
     resumingOrder.value = null
   }

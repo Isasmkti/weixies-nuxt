@@ -2,13 +2,13 @@
     
         <div class="max-w-[1600px] mx-auto font-poppins">
             <!-- Header -->
-            <div class="flex justify-between items-end mb-10">
+            <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:mb-10">
                 <div>
-                    <h1 class="text-4xl font-extrabold text-text-main tracking-tight mb-2">Manage Products</h1>
+                    <h1 class="mb-2 text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Manage Products</h1>
                     <p class="text-text-muted font-montserrat">Manage your products and inventory.</p>
                 </div>
                 <NuxtLink to="/admin/products/create"
-                    class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg shadow-primary/30 hover:shadow-primary/50 font-semibold flex items-center gap-2">
+                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:bg-primary-dark hover:shadow-primary/50 sm:w-auto">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -21,7 +21,31 @@
 
             <!-- Product List Table -->
             <div class="bg-surface rounded-2xl shadow-sm border border-bg-alt overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="divide-y divide-border md:hidden">
+                    <div v-if="loading" class="p-8 text-center text-sm text-text-muted">Loading products...</div>
+                    <div v-else-if="products.length === 0" class="p-8 text-center text-sm text-text-muted">No products found.</div>
+                    <article v-for="product in products" v-else :key="`mobile-${product.id}`" class="p-4">
+                        <div class="flex gap-3">
+                            <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-bg-alt">
+                                <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="h-full w-full object-cover">
+                                <div v-else class="flex h-full items-center justify-center text-[10px] text-text-muted">No image</div>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h2 class="line-clamp-2 font-bold text-text-main">{{ product.name }}</h2>
+                                    <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold capitalize" :class="product.status === 'published' ? 'bg-emerald-100 text-emerald-800' : product.status === 'pending_review' ? 'bg-amber-100 text-amber-800' : product.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'">{{ String(product.status || 'published').replace('_', ' ') }}</span>
+                                </div>
+                                <p class="mt-1 font-mono text-sm font-bold text-primary">{{ formatIDR(product.price) }}</p>
+                                <div class="mt-2 flex flex-wrap gap-1"><span v-for="cat in product.categories" :key="cat.id" class="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase text-primary">{{ cat.name }}</span><span v-if="!product.categories?.length" class="text-[10px] italic text-text-muted">Untagged</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <NuxtLink :to="`/admin/products/${product.id}/edit`" class="min-h-10 rounded-ui-sm border border-border px-3 py-2.5 text-center text-xs font-bold text-primary">Edit product</NuxtLink>
+                            <button type="button" class="min-h-10 rounded-ui-sm bg-danger/10 px-3 py-2 text-xs font-bold text-danger" @click="deleteProduct(product.id)">Delete</button>
+                        </div>
+                    </article>
+                </div>
+                <div class="hidden overflow-x-auto md:block">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-bg-alt/50 text-text-muted text-sm uppercase tracking-wider">
@@ -124,6 +148,7 @@ import { onMounted, computed } from 'vue'
 
 import { useProductsStore } from '../../../stores/productsStore'
 import { formatIDR } from '../../../utils/currency'
+import { confirmAction, showErrorDialog, showSuccess } from '../../../utils/sweetAlert'
 
 const productsStore = useProductsStore()
 
@@ -135,12 +160,19 @@ onMounted(async () => {
 })
 
 const deleteProduct = async (id) => {
-    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-        try {
-            await productsStore.deleteProduct(id)
-        } catch (error) {
-            alert('Failed to delete product: ' + error.message)
-        }
+    const confirmed = await confirmAction({
+        title: 'Delete product?',
+        text: 'This product will be permanently deleted. This action cannot be undone.',
+        confirmButtonText: 'Delete product',
+        confirmButtonColor: 'rgb(var(--color-danger))',
+    })
+    if (!confirmed) return
+
+    try {
+        await productsStore.deleteProduct(id)
+        await showSuccess('Product deleted', 'The product has been removed from the catalog.')
+    } catch (error) {
+        await showErrorDialog('Product could not be deleted', error.message || 'Please try again.')
     }
 }
 </script>

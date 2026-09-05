@@ -96,3 +96,28 @@ h3,
 p {
     font-family: inherit;
 }
+
+.weixies-swal-popup {
+    border: 1px solid rgb(var(--color-border));
+    border-radius: var(--radius-xl);
+    box-shadow: var(--elevation-3);
+}
+
+.weixies-swal-button {
+    border-radius: var(--radius-sm) !important;
+    padding: 0.7rem 1.1rem !important;
+    font-weight: 700 !important;
+}
+
+.weixies-swal-input {
+    border-color: rgb(var(--color-border)) !important;
+    border-radius: var(--radius-md) !important;
+    background: rgb(var(--color-bg)) !important;
+    color: rgb(var(--color-text)) !important;
+    box-shadow: none !important;
+}
+
+.weixies-swal-input:focus {
+    border-color: rgb(var(--color-primary)) !important;
+    box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.16) !important;
+}

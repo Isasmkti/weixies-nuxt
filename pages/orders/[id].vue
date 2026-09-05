@@ -1,13 +1,14 @@
 <template>
   <div class="mx-auto max-w-6xl font-poppins">
     <!-- Back -->
-    <div class="mb-6">
+    <div class="mb-6 flex items-center justify-between gap-4">
       <NuxtLink to="/orders" class="inline-flex items-center gap-2 text-text-muted hover:text-primary font-semibold transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
         Back to Orders
       </NuxtLink>
+      <NuxtLink :to="orderId ? `/refunds?order=${orderId}` : '/refunds'" class="text-sm font-semibold text-primary hover:underline">Refund Center</NuxtLink>
     </div>
 
     <!-- Loading -->
@@ -102,6 +103,10 @@
                   <span v-if="item.order_item_licenses[0].allow_resale_snapshot" class="font-semibold text-blue-600">Resale allowed</span>
                 </div>
                 <p class="font-extrabold text-primary mt-2">{{ formatIDR(item.price) }}</p>
+                <p v-if="order.status === 'paid'" class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold" :class="item.is_downloaded ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-muted'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="item.is_downloaded ? 'bg-emerald-500' : 'bg-text-muted/50'"></span>
+                  {{ item.is_downloaded ? `Downloaded ${item.download_count || 1}× · last accessed ${formatDateTime(item.downloaded_at)}` : 'This file has not been downloaded yet' }}
+                </p>
               </div>
 
               <!-- Actions -->
@@ -117,7 +122,7 @@
                 <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                {{ downloadingItem === item.product?.id ? 'Preparing...' : 'Download ZIP' }}
+                {{ downloadingItem === item.product?.id ? 'Preparing...' : (item.is_downloaded ? 'Download ZIP again' : 'Download ZIP') }}
               </button>
 
               <!-- Pending state -->
@@ -204,6 +209,7 @@ import OrderProductReview from '../../components/orders/OrderProductReview.vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
+import { showErrorDialog } from '../../utils/sweetAlert'
 
 const router = useRouter()
 const route = useRoute()
@@ -230,7 +236,7 @@ const startOrderConversation = async (item) => {
     })
     if (response?.thread?.id) await router.push(`/messages/${response.thread.id}`)
   } catch (err) {
-    alert(err?.data?.statusMessage || err?.message || 'Unable to open a seller conversation.')
+    await showErrorDialog('Conversation unavailable', err?.data?.statusMessage || err?.message || 'Unable to open a seller conversation.')
   } finally {
     startingConversationItem.value = null
   }
@@ -256,6 +262,10 @@ const formatDate = (dateStr) => {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
+
+const formatDateTime = dateStr => dateStr
+  ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateStr))
+  : '-'
 
 const statusClass = (status) => {
   const map = {
@@ -332,6 +342,9 @@ const handleDownload = async (item) => {
       },
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
+    item.is_downloaded = true
+    item.downloaded_at = data.download?.downloaded_at || new Date().toISOString()
+    item.download_count = Number(data.download?.download_count) || Number(item.download_count || 0) + 1
     // Trigger browser download via signed URL
     const link = document.createElement('a')
     link.href = data.url
@@ -342,7 +355,7 @@ const handleDownload = async (item) => {
     document.body.removeChild(link)
   } catch (err) {
     console.error('Download error:', err)
-    alert(err?.data?.statusMessage || err?.message || 'Download failed. Please try again.')
+    await showErrorDialog('Download failed', err?.data?.statusMessage || err?.message || 'Download failed. Please try again.')
   } finally {
     downloadingItem.value = null
   }

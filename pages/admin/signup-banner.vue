@@ -6,6 +6,7 @@ import {
   sSaveSignupBanner,
   sUploadSignupBanner,
 } from '../../services/signupBannerService'
+import { confirmAction } from '../../utils/sweetAlert'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -97,7 +98,14 @@ async function saveBanner() {
 }
 
 async function removeImage() {
-  if (!form.value.image_path || !confirm('Remove this banner and restore the default sign-up image?')) return
+  if (!form.value.image_path) return
+  const confirmed = await confirmAction({
+    title: 'Remove sign-up banner?',
+    text: 'The uploaded image will be deleted and the default sign-up image will be restored.',
+    confirmButtonText: 'Remove banner',
+    confirmButtonColor: 'rgb(var(--color-danger))',
+  })
+  if (!confirmed) return
   saving.value = true
   clearMessages()
   const paths = [...new Set([form.value.image_path, temporaryImagePath.value].filter(Boolean))]
@@ -128,7 +136,7 @@ onBeforeUnmount(() => {
     <header class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-xs font-black uppercase tracking-[0.25em] text-primary">Authentication content</p>
-        <h1 class="mt-2 text-4xl font-extrabold tracking-tight text-text-main">Sign-up Banner</h1>
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Sign-up Banner</h1>
         <p class="mt-2 max-w-2xl text-text-muted">Manage the image displayed in the desktop visual panel of the sign-up page.</p>
       </div>
       <NuxtLink to="/signup" target="_blank" class="inline-flex items-center justify-center rounded-xl border border-bg-alt bg-surface px-5 py-3 text-sm font-bold text-text-main transition hover:border-primary/30 hover:text-primary">Preview Sign-up</NuxtLink>

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { sAllSellers, sUpdateSellerStatus } from '../../../services/sellersService'
+import { confirmAction } from '../../../utils/sweetAlert'
 
 const sellers = ref([])
 const statusFilter = ref('pending')
@@ -51,7 +52,13 @@ const updateStatus = async (seller, status, reason = null) => {
         ? 'suspend'
         : 'mark as pending'
 
-  if (!confirm(`Are you sure you want to ${action} ${seller.store_name}?`)) return
+  const confirmed = await confirmAction({
+    title: `${action.charAt(0).toUpperCase()}${action.slice(1)} seller?`,
+    text: `This will ${action} “${seller.store_name}”.`,
+    confirmButtonText: `${action.charAt(0).toUpperCase()}${action.slice(1)} seller`,
+    confirmButtonColor: status === 'approved' ? 'rgb(var(--color-primary))' : 'rgb(var(--color-danger))',
+  })
+  if (!confirmed) return
 
   updatingId.value = seller.id
   errorMessage.value = ''
@@ -87,17 +94,17 @@ onMounted(loadSellers)
 
 <template>
   <div class="max-w-[1600px] mx-auto font-poppins">
-    <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-10">
+    <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:mb-10">
       <div>
-        <div class="flex items-center gap-3">
-          <h1 class="text-4xl font-extrabold text-text-main tracking-tight">Seller Applications</h1>
+        <div class="flex flex-wrap items-center gap-3">
+          <h1 class="text-3xl font-extrabold text-text-main tracking-tight sm:text-4xl">Seller Applications</h1>
           <span v-if="pendingCount" class="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">{{ pendingCount }} pending</span>
         </div>
         <p class="mt-2 text-text-muted font-montserrat">Review store applications and manage seller access.</p>
       </div>
       <button
         :disabled="loading"
-        class="rounded-xl border border-bg-alt bg-surface px-5 py-3 font-bold text-text-main transition hover:bg-bg-alt disabled:cursor-not-allowed disabled:opacity-60"
+        class="w-full rounded-xl border border-bg-alt bg-surface px-5 py-3 font-bold text-text-main transition hover:bg-bg-alt disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         @click="loadSellers"
       >
         {{ loading ? 'Refreshing...' : 'Refresh' }}
@@ -119,7 +126,28 @@ onMounted(loadSellers)
     <p v-if="errorMessage" class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">{{ errorMessage }}</p>
 
     <div class="overflow-hidden rounded-2xl border border-bg-alt bg-surface shadow-sm">
-      <div class="overflow-x-auto">
+      <div class="divide-y divide-border md:hidden">
+        <div v-if="loading" class="p-8 text-center text-sm text-text-muted">Loading seller applications...</div>
+        <div v-else-if="filteredSellers.length === 0" class="p-8 text-center text-sm text-text-muted">No {{ statusFilter === 'all' ? '' : statusFilter }} seller applications found.</div>
+        <article v-for="seller in filteredSellers" v-else :key="`mobile-${seller.id}`" class="space-y-4 p-4">
+          <div class="flex items-start gap-3">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-bg-alt bg-bg-alt text-sm font-black text-text-muted">
+              <img v-if="seller.store_image_url" :src="seller.store_image_url" :alt="seller.store_name" class="h-full w-full object-cover">
+              <span v-else>{{ seller.store_name?.charAt(0) || 'S' }}</span>
+            </div>
+            <div class="min-w-0 flex-1"><p class="truncate font-bold text-text-main">{{ seller.store_name }}</p><p class="mt-1 truncate text-xs font-medium text-primary">/stores/{{ seller.store_slug }}</p><p class="mt-1 text-xs text-text-muted">{{ formatDate(seller.created_at) }}</p></div>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold capitalize" :class="statusClasses[seller.status] || 'bg-bg-alt text-text-muted'">{{ seller.status }}</span>
+          </div>
+          <p class="line-clamp-3 text-sm text-text-muted">{{ seller.store_description || 'No store description provided.' }}</p>
+          <div class="grid grid-cols-2 gap-2">
+            <NuxtLink :to="`/admin/sellers/${seller.id}`" class="min-h-10 rounded-lg border border-bg-alt px-3 py-2.5 text-center text-xs font-bold text-text-main">Details</NuxtLink>
+            <button v-if="seller.status !== 'approved'" :disabled="updatingId === seller.id" class="min-h-10 rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-60" @click="updateStatus(seller, 'approved')">Approve</button>
+            <button v-if="seller.status === 'pending'" :disabled="updatingId === seller.id" class="min-h-10 rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-60" @click="openRejectDialog(seller)">Reject</button>
+            <button v-if="seller.status === 'approved'" :disabled="updatingId === seller.id" class="min-h-10 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-60" @click="updateStatus(seller, 'suspended')">Suspend</button>
+          </div>
+        </article>
+      </div>
+      <div class="hidden overflow-x-auto md:block">
         <table class="w-full min-w-[780px] text-left border-collapse">
           <thead>
             <tr class="bg-bg-alt/50 text-sm uppercase tracking-wider text-text-muted">
@@ -184,8 +212,8 @@ onMounted(loadSellers)
       </div>
     </div>
 
-    <div v-if="rejectingSeller" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="rejectingSeller = null">
-      <div class="w-full max-w-lg rounded-2xl border border-bg-alt bg-surface p-6 shadow-2xl">
+    <div v-if="rejectingSeller" class="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" @click.self="rejectingSeller = null">
+      <div class="w-full max-w-lg rounded-t-2xl border border-bg-alt bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:p-6">
         <p class="text-xs font-bold uppercase tracking-wider text-red-600">Reject application</p>
         <h2 class="mt-2 text-2xl font-black text-text-main">{{ rejectingSeller.store_name }}</h2>
         <p class="mt-2 text-sm text-text-muted">Explain what the seller needs to improve before resubmitting.</p>

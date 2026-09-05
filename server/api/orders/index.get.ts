@@ -16,6 +16,9 @@ export default defineEventHandler(async (event) => {
       order_items (
         id,
         price,
+        is_downloaded,
+        downloaded_at,
+        download_count,
         product:products (
           id,
           name,

@@ -13,7 +13,7 @@
                     'Create Product' }}</h1>
             </div>
 
-            <div class="bg-surface p-8 rounded-2xl shadow-lg border border-bg-alt">
+            <div class="rounded-2xl border border-bg-alt bg-surface p-4 shadow-lg sm:p-8">
                 <form @submit.prevent="handleSubmit" class="space-y-6">
 
                     <!-- Name -->
