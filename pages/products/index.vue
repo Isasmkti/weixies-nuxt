@@ -84,7 +84,8 @@
                 class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
               >
               <defaultProduct v-else class="h-full w-full p-8 text-text-muted/50" />
-              <span v-if="isNewProduct(product.created_at)" class="absolute left-2 top-2 rounded-md bg-primary px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white">New</span>
+              <span v-if="isPurchased(product.id)" class="absolute left-2 top-2 rounded-md bg-primary px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white">Purchased</span>
+              <span v-else-if="isNewProduct(product.created_at)" class="absolute left-2 top-2 rounded-md bg-primary px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white">New</span>
               <button
                 v-if="!isOwnProduct(product)"
                 type="button"
@@ -110,8 +111,11 @@
               <p v-else class="mt-1.5 text-xs text-text-muted">No reviews yet</p>
               <div class="mt-3 flex items-center justify-between gap-2">
                 <span class="truncate text-base font-black text-primary">{{ formatIDR(product.price) }}</span>
+                <NuxtLink v-if="isPurchased(product.id)" :to="`/purchases?product=${product.id}`" title="View in My Purchases" aria-label="View in My Purchases" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition hover:bg-primary hover:text-white" @click.stop>
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6" /></svg>
+                </NuxtLink>
                 <button
-                  v-if="!isOwnProduct(product)"
+                  v-else-if="!isOwnProduct(product)"
                   type="button"
                   :aria-label="isInCart(product.id) ? 'View cart' : 'Add to cart'"
                   :title="isInCart(product.id) ? 'Already in cart' : 'Add to cart'"
@@ -217,7 +221,7 @@ const minPrice = ref('')
 const maxPrice = ref('')
 const priceError = ref('')
 const { recentSearches, addSearch, clearAll: clearAllSearches } = useRecentSearches()
-const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, isOwnProduct, productsStore, cartStore, formatIDR } = useCatalogUI()
+const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, isOwnProduct, isPurchased, productsStore, cartStore, formatIDR } = useCatalogUI()
 
 watch(() => productsStore.minPrice, (value) => { minPrice.value = value ?? '' }, { immediate: true })
 watch(() => productsStore.maxPrice, (value) => { maxPrice.value = value ?? '' }, { immediate: true })

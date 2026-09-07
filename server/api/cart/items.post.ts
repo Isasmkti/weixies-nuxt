@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 import { requireRequestUser } from '~/server/utils/request-auth';
 import { findSelfPurchaseConflicts, isSelfPurchaseDatabaseError, throwSelfPurchase } from '~/server/utils/self-purchase';
+import { requireUnpurchasedProduct, throwPurchaseDatabaseConflict } from '~/server/utils/purchase-eligibility';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -21,6 +22,7 @@ export default defineEventHandler(async (event) => {
   const supabase = useSupabaseAdmin();
   const conflicts = await findSelfPurchaseConflicts(supabase, user.id, [productId]);
   if (conflicts.length) throwSelfPurchase('cart', conflicts);
+  await requireUnpurchasedProduct(supabase, user.id, productId);
 
   const { data: license, error: licenseError } = await supabase
     .from('product_licenses')
@@ -84,6 +86,7 @@ export default defineEventHandler(async (event) => {
 
   if (insertError) {
     if (isSelfPurchaseDatabaseError(insertError)) throwSelfPurchase('cart', [productId]);
+    throwPurchaseDatabaseConflict(insertError, productId);
     throw insertError;
   }
 

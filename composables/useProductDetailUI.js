@@ -4,12 +4,16 @@ import { useProductsStore } from '../stores/productsStore'
 import { useCartStore } from '../stores/cartStore'
 import { getUser } from '../services/authService'
 import { formatIDR } from '../utils/currency'
+import { usePurchasesStore } from '../stores/purchasesStore'
+import { showErrorDialog } from '../utils/sweetAlert'
 
 export function useProductDetailUI(initialSlug, initialProduct = null) {
   const router = useRouter()
   const route = useRoute()
   const productsStore = useProductsStore()
   const cartStore = useCartStore()
+  const purchasesStore = usePurchasesStore()
+  const profileId = ref(null)
 
   const product = ref(initialProduct ? productsStore._mapProduct(initialProduct) : null)
   const loading = ref(!product.value)
@@ -60,8 +64,13 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
 
   const loadCart = async () => {
     const user = await getUser()
+    profileId.value = user?.id || null
     if (user) await cartStore.stGetCart(user.id)
   }
+  const isPurchased = computed(() => purchasesStore.isPurchased(product.value?.id))
+  watch(() => [profileId.value, product.value?.id], () => {
+    if (profileId.value && product.value?.id) purchasesStore.loadOwnership([product.value.id]).catch(() => {})
+  })
   let productRequestId = 0
 
   const fetchProduct = async () => {
@@ -101,18 +110,28 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
 
   const addToCart = async (productId) => {
     const id = productId || product.value?.id
-    if (!id) return
-    if (!selectedLicenseId.value) throw new Error('This product does not have an active license.')
+    if (!id || addingToCart.value) return false
+    if (purchasesStore.isPurchased(id)) {
+      await router.push(`/purchases?product=${id}`)
+      return false
+    }
+    if (!selectedLicenseId.value) {
+      await showErrorDialog('License unavailable', 'This product does not have an active license.')
+      return false
+    }
     const user = await getUser()
     if (!user) {
       router.push('/login')
-      return
+      return false
     }
     try {
       addingToCart.value = id
       await cartStore.stAddToCart(user.id, id, selectedLicenseId.value)
+      return true
     } catch (err) {
-      console.error('Failed to add to cart:', err)
+      await purchasesStore.loadOwnership([id], { force: true }).catch(() => {})
+      await showErrorDialog('Unable to add product', err?.message || 'Failed to add to cart.')
+      return false
     } finally {
       addingToCart.value = null
     }
@@ -126,6 +145,7 @@ export function useProductDetailUI(initialSlug, initialProduct = null) {
     loading,
     error,
     addingToCart,
+    isPurchased,
     formattedPrice,
     addToCart,
     productImages,

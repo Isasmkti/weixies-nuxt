@@ -41,7 +41,7 @@
                         </div>
                         <div class="mt-4 grid grid-cols-2 gap-2">
                             <NuxtLink :to="`/admin/products/${product.id}/edit`" class="min-h-10 rounded-ui-sm border border-border px-3 py-2.5 text-center text-xs font-bold text-primary">Edit product</NuxtLink>
-                            <button type="button" class="min-h-10 rounded-ui-sm bg-danger/10 px-3 py-2 text-xs font-bold text-danger" @click="deleteProduct(product.id)">Delete</button>
+                            <button type="button" class="min-h-10 rounded-ui-sm bg-danger/10 px-3 py-2 text-xs font-bold text-danger" @click="archiveProduct(product.id)">Archive</button>
                         </div>
                     </article>
                 </div>
@@ -112,9 +112,9 @@
                                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </NuxtLink>
-                                        <button @click="deleteProduct(product.id)"
+                                        <button @click="archiveProduct(product.id)"
                                             class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                                            title="Delete">
+                                            title="Archive">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -159,20 +159,20 @@ onMounted(async () => {
     await productsStore.ensureProductsLoaded({ page: 1, force: true })
 })
 
-const deleteProduct = async (id) => {
+const archiveProduct = async (id) => {
     const confirmed = await confirmAction({
-        title: 'Delete product?',
-        text: 'This product will be permanently deleted. This action cannot be undone.',
-        confirmButtonText: 'Delete product',
+        title: 'Archive product?',
+        text: 'This product will be removed from the catalog while its order, purchase, download, refund, and payout history remains available.',
+        confirmButtonText: 'Archive product',
         confirmButtonColor: 'rgb(var(--color-danger))',
     })
     if (!confirmed) return
 
     try {
-        await productsStore.deleteProduct(id)
-        await showSuccess('Product deleted', 'The product has been removed from the catalog.')
+        await productsStore.archiveProduct(id)
+        await showSuccess('Product archived', 'The product has been removed from the catalog without deleting its transaction history.')
     } catch (error) {
-        await showErrorDialog('Product could not be deleted', error.message || 'Please try again.')
+        await showErrorDialog('Product could not be archived', error.message || 'Please try again.')
     }
 }
 </script>

@@ -88,6 +88,11 @@
             <NuxtLink :to="`/seller/products/${product.id}/edit`" class="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-primary/30 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10">Manage this product</NuxtLink>
           </div>
 
+          <div v-else-if="isPurchased" class="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <p class="text-sm font-bold text-primary">Purchased</p>
+            <p class="mt-1 text-xs leading-5 text-text-muted">This product is already in your library. Your license and downloads are available in My Purchases.</p>
+            <NuxtLink :to="`/purchases?product=${product.id}`" class="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-dark">View in My Purchases</NuxtLink>
+          </div>
           <div v-else class="grid gap-2.5">
             <button :disabled="addingToCart === product.id || !selectedLicenseId" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0" @click="buyNow"><span v-if="addingToCart === product.id" class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span><svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6Zm-3 4h18M16 10a4 4 0 0 1-8 0" /></svg><span>Buy now</span></button>
             <button :disabled="addingToCart === product.id || !selectedLicenseId" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-bg-alt bg-bg/40 px-5 py-3.5 text-sm font-bold text-text-main transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-70" @click="isInCart(product.id, selectedLicenseId) ? router.push('/cart') : addToCart()"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13 5.4 5M7 13l-2.3 2.3A1 1 0 0 0 5.8 17H17" /></svg><span v-if="isInCart(product.id, selectedLicenseId)">View cart</span><span v-else>Add to cart</span></button>
@@ -165,7 +170,7 @@ const profileId = ref(null)
 const sellerStore = ref(null)
 const currentSeller = ref(null)
 const startingConversation = ref(false)
-const { product, loading, error, addingToCart, formattedPrice, addToCart, productImages, selectedImage, productLicenses, selectedLicenseId, cartStore, formatIDR } = useProductDetailUI(productSlug.value, initialProduct.value)
+const { product, loading, error, addingToCart, isPurchased, formattedPrice, addToCart, productImages, selectedImage, productLicenses, selectedLicenseId, cartStore, formatIDR } = useProductDetailUI(productSlug.value, initialProduct.value)
 const { canonicalUrl, absoluteUrl } = useSeoSite()
 
 const shortDescription = computed(() => String(product.value?.description || '').slice(0, 220) || 'A ready-to-use digital product for your next project.')
@@ -264,11 +269,12 @@ const goBack = () => {
 }
 const buyNow = async () => {
   if (isOwnProduct.value) return
+  if (isPurchased.value) return router.push(`/purchases?product=${product.value.id}`)
   if (isInCart(product.value.id, selectedLicenseId.value)) return router.push('/cart')
   const user = await getUser()
   if (!user) return router.push('/login')
-  await addToCart()
-  return router.push('/cart')
+  const added = await addToCart()
+  if (added) return router.push('/cart')
 }
 const toggleWishlist = async (productId) => { if (isOwnProduct.value) return; if (!profileId.value) { const user = await getUser(); if (!user) return router.push('/login'); profileId.value = user.id }; await wishlistStore.stToggleWishlist(profileId.value, productId) }
 const startConversation = async () => {

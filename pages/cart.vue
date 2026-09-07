@@ -69,7 +69,11 @@
                                     <h2 class="line-clamp-2 text-base font-black leading-snug text-text-main transition group-hover:text-primary sm:text-lg">{{ item.product?.name || 'Unavailable product' }}</h2>
                                 </button>
                                 <p class="mt-1 hidden line-clamp-2 text-sm leading-relaxed text-text-muted sm:block">{{ item.product?.description || 'No product description available.' }}</p>
-                                <p v-if="isConflictingItem(item)" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                                <div v-if="isPurchasedItem(item)" class="mt-2 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold leading-5 text-primary">
+                                    Already purchased. This product is available in your library.
+                                    <NuxtLink :to="`/purchases?product=${item.product_id}`" class="block font-bold underline">View in My Purchases</NuxtLink>
+                                </div>
+                                <p v-else-if="isConflictingItem(item)" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
                                     This product cannot be purchased because it belongs to your store.
                                 </p>
                                 <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -106,7 +110,7 @@
                     <span class="text-right text-2xl font-black tracking-tight text-primary">{{ formatIDR(total) }}</span>
                 </div>
 
-                <div v-if="conflictingItems.length" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">Remove products from your own store before checking out.</div>
+                <div v-if="conflictingItems.length" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">Remove unavailable products before checking out. Products you already purchased are in My Purchases; products from your own store cannot be purchased.</div>
                 <div v-else-if="selectedItems.length > 1" class="mt-5 rounded-xl bg-amber-50 p-3 text-xs font-medium leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">Select only one product to continue with a digital purchase.</div>
                 <div v-else-if="selectedItems.length === 0" class="mt-5 rounded-xl bg-bg-alt/60 p-3 text-xs font-medium leading-relaxed text-text-muted">Select one product from your cart to continue.</div>
 
@@ -126,8 +130,9 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useCartStore } from '../stores/cartStore'
+import { usePurchasesStore } from '../stores/purchasesStore'
 import { getUser } from '../services/authService'
 import { getCurrentSeller } from '../services/sellerService'
 import { supabase } from '../utils/supabase'
@@ -140,6 +145,7 @@ import { findSelfPurchaseProductIds } from '../utils/selfPurchase'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const purchasesStore = usePurchasesStore()
 
 const items = computed(() => cartStore.items)
 const loading = computed(() => cartStore.loading)
@@ -150,15 +156,24 @@ const currentUser = ref(null)
 const currentSeller = ref(null)
 const isCheckingOut = ref(false)
 const serverConflictProductIds = ref([])
+const serverPurchasedProductIds = ref([])
 
 const ownProductIds = computed(() => findSelfPurchaseProductIds(items.value, currentSeller.value?.id))
 const conflictingProductIdSet = computed(() => new Set([
     ...ownProductIds.value,
     ...serverConflictProductIds.value.map(Number),
 ]))
-const isConflictingItem = (item) => conflictingProductIdSet.value.has(Number(item.product_id ?? item.product?.id))
+const isPurchasedItem = item => purchasesStore.isPurchased(item.product_id ?? item.product?.id)
+    || serverPurchasedProductIds.value.includes(Number(item.product_id ?? item.product?.id))
+const isConflictingItem = (item) => isPurchasedItem(item) || conflictingProductIdSet.value.has(Number(item.product_id ?? item.product?.id))
 const conflictingItems = computed(() => items.value.filter(isConflictingItem))
 const purchasableItems = computed(() => items.value.filter((item) => !isConflictingItem(item)))
+watch(() => [currentUser.value?.id, ...items.value.map(item => item.product_id)], () => {
+    if (currentUser.value?.id) purchasesStore.loadOwnership(items.value.map(item => item.product_id), { force: true }).catch(() => {})
+})
+watch(purchasableItems, (available) => {
+    selectedItems.value = selectedItems.value.filter(id => available.some(item => item.id === id))
+})
 
 const allItemsSelected = computed(() => {
     return purchasableItems.value.length > 0 && purchasableItems.value.every(item => selectedItems.value.includes(item.id))
@@ -166,7 +181,7 @@ const allItemsSelected = computed(() => {
 
 const total = computed(() => {
     return items.value.reduce((sum, item) => {
-        if (selectedItems.value.includes(item.id)) {
+        if (!isConflictingItem(item) && selectedItems.value.includes(item.id)) {
             return sum + (Number(item.product_license?.price) || 0)
         }
         return sum
@@ -221,8 +236,8 @@ const handleCheckout = async () => {
     if (conflictingItems.value.length) {
         Swal.fire({
             icon: 'warning',
-            title: 'Remove your store products',
-            text: 'Remove products from your own store before checking out.',
+            title: 'Remove unavailable products',
+            text: 'Products already in My Purchases or belonging to your own store cannot be purchased.',
             background: 'rgb(var(--color-surface))',
             color: 'rgb(var(--color-text))',
             confirmButtonColor: 'rgb(var(--color-primary))'
@@ -287,18 +302,28 @@ const handleCheckout = async () => {
     } catch (err) {
         console.error('Checkout error:', err)
         const errorData = err?.data?.data || err?.data || {}
+        if (errorData.code === 'product_already_purchased') {
+            serverPurchasedProductIds.value = [...new Set([...serverPurchasedProductIds.value, Number(item.product_id)])]
+            await purchasesStore.loadOwnership([item.product_id], { force: true }).catch(() => {})
+        }
         if (Array.isArray(errorData.conflicting_product_ids)) {
             serverConflictProductIds.value = errorData.conflicting_product_ids.map(Number)
             selectedItems.value = selectedItems.value.filter((id) => purchasableItems.value.some((cartItem) => cartItem.id === id))
         }
-        Swal.fire({
-            title: 'Error', 
+        const isPurchasedConflict = errorData.code === 'product_already_purchased'
+        const isPendingConflict = ['product_payment_pending', 'invoice_creation_pending'].includes(errorData.code)
+        const result = await Swal.fire({
+            title: isPurchasedConflict ? 'Already purchased' : isPendingConflict ? 'Payment already pending' : 'Checkout unavailable',
             text: errorData.message || err?.data?.statusMessage || err?.message || 'Failed to initialize checkout.',
             icon: 'error',
             background: 'rgb(var(--color-surface))',
             color: 'rgb(var(--color-text))',
-            confirmButtonColor: 'rgb(var(--color-primary))'
+            confirmButtonColor: 'rgb(var(--color-primary))',
+            showCancelButton: isPurchasedConflict || (isPendingConflict && Boolean(errorData.order_id)),
+            confirmButtonText: isPurchasedConflict ? 'View purchase' : isPendingConflict && errorData.order_id ? 'View existing order' : 'OK',
         })
+        if (result.isConfirmed && isPurchasedConflict) await router.push(`/purchases?product=${item.product_id}`)
+        else if (result.isConfirmed && isPendingConflict && errorData.order_id) await router.push(`/orders/${errorData.order_id}`)
     } finally {
         isCheckingOut.value = false
     }

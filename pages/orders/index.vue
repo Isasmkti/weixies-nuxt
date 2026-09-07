@@ -4,9 +4,10 @@
     <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-text-main">My orders</h1>
-        <p class="mt-1 text-sm text-text-muted">Your digital purchases and download library</p>
+        <p class="mt-1 text-sm text-text-muted">Your payment history, order details, and reviews</p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <NuxtLink to="/purchases" class="inline-flex items-center gap-2 rounded-ui-md border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-primary transition hover:border-primary/40">My Purchases</NuxtLink>
         <NuxtLink to="/refunds" class="inline-flex items-center gap-2 rounded-ui-md border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-text-main transition hover:border-primary/40 hover:text-primary">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h14a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4H8m-5-8 4-4m-4 4 4 4" /></svg>
           Refund Center
@@ -134,19 +135,17 @@
               <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap sm:flex-shrink-0">
                 <span class="font-bold text-text-main">{{ formatIDR(item.price) }}</span>
 
-                <!-- Download Button (only if paid) -->
-                <button
+                <!-- Downloads share the canonical purchase library quota. -->
+                <NuxtLink
                   v-if="order.status === 'paid'"
-                  @click="handleDownload(order, item)"
-                  :disabled="downloadingItem === `${order.id}-${item.product?.id}`"
-                  class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 shadow-md shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  :to="`/purchases?product=${item.product_id}`"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
                 >
-                  <span v-if="downloadingItem === `${order.id}-${item.product?.id}`" class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  {{ downloadingItem === `${order.id}-${item.product?.id}` ? 'Preparing...' : (item.is_downloaded ? 'Download again' : 'Download') }}
-                </button>
+                  View purchase
+                </NuxtLink>
 
                 <!-- Resume Button (only while the payment is pending) -->
                 <button
@@ -196,17 +195,23 @@ import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
 import { showErrorDialog } from '../../utils/sweetAlert'
+import { usePurchasesStore } from '../../stores/purchasesStore'
+import { useCartStore } from '../../stores/cartStore'
 
 const router = useRouter()
+const purchasesStore = usePurchasesStore()
+const cartStore = useCartStore()
 
 const orders = ref([])
 const loading = ref(true)
 const error = ref(null)
 const currentUser = ref(null)
-const downloadingItem = ref(null)
 const resumingOrder = ref(null)
 const activeStatus = ref('all')
 let refreshTimer = null
+let disposed = false
+let fetchingOrders = false
+let pendingPolls = 0
 
 const preferredStatusOrder = [
   'pending',
@@ -314,15 +319,16 @@ onMounted(async () => {
   }
   currentUser.value = user
   await fetchOrders()
-  // Payment webhooks update statuses asynchronously, including pending -> expired.
-  refreshTimer = window.setInterval(() => fetchOrders(true), 10000)
 })
 
 onBeforeUnmount(() => {
-  if (refreshTimer) window.clearInterval(refreshTimer)
+  disposed = true
+  if (refreshTimer) window.clearTimeout(refreshTimer)
 })
 
 const fetchOrders = async (silent = false) => {
+  if (disposed || fetchingOrders) return
+  fetchingOrders = true
   if (!silent) loading.value = true
   error.value = null
   try {
@@ -332,44 +338,26 @@ const fetchOrders = async (silent = false) => {
     const data = await $fetch('/api/orders', {
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
+    if (disposed) return
+    const previousStatuses = new Map(orders.value.map(order => [order.id, order.status]))
     orders.value = data.orders || []
+    if (orders.value.some(order => ['paid', 'refunded'].includes(order.status) && previousStatuses.get(order.id) !== order.status)) {
+      purchasesStore.invalidate()
+      await Promise.allSettled([
+        purchasesStore.loadOwnership(orders.value.flatMap(order => order.order_items || []).map(item => item.product_id), { force: true }),
+        cartStore.stGetCart(currentUser.value?.id),
+      ])
+    }
   } catch (err) {
     console.error('Error fetching orders:', err)
-    error.value = err?.message || 'Failed to load orders.'
+    if (!silent) error.value = err?.message || 'Failed to load orders.'
   } finally {
     if (!silent) loading.value = false
-  }
-}
-
-const handleDownload = async (order, item) => {
-  const key = `${order.id}-${item.product?.id}`
-  downloadingItem.value = key
-  try {
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData?.session?.access_token
-
-    const data = await $fetch(`/api/orders/${order.id}/download`, {
-      query: {
-        product_id: item.product?.id
-      },
-      headers: { Authorization: token ? `Bearer ${token}` : '' }
-    })
-    item.is_downloaded = true
-    item.downloaded_at = data.download?.downloaded_at || new Date().toISOString()
-    item.download_count = Number(data.download?.download_count) || Number(item.download_count || 0) + 1
-    // Trigger browser download
-    const link = document.createElement('a')
-    link.href = data.url
-    link.download = data.file_name || 'download.zip'
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  } catch (err) {
-    console.error('Download error:', err)
-    await showErrorDialog('Download failed', err?.data?.statusMessage || err?.data?.message || err?.message || 'The file could not be downloaded.')
-  } finally {
-    downloadingItem.value = null
+    fetchingOrders = false
+    if (!disposed && orders.value.some(order => order.status === 'pending') && pendingPolls < 30) {
+      pendingPolls += 1
+      refreshTimer = window.setTimeout(() => fetchOrders(true), 10000)
+    }
   }
 }
 

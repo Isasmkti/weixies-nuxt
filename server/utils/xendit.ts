@@ -157,6 +157,16 @@ export async function getXenditInvoice(invoiceId: string, secretKey: string): Pr
   });
 }
 
+// Recover a create-invoice response lost to a timeout/worker restart. The
+// provider reference stays tied to one local order; an empty result is not
+// proof that a still-in-flight create request can safely be repeated.
+export async function getXenditInvoicesByExternalId(externalId: string, secretKey: string): Promise<XenditInvoice[]> {
+  const query = new URLSearchParams({ external_id: externalId, limit: '100' });
+  const invoices = await xenditFetch<XenditInvoice[]>(`/v2/invoices?${query}`, secretKey, { method: 'GET' });
+  if (!Array.isArray(invoices)) throw new Error('Xendit invoice lookup returned an invalid response.');
+  return invoices.filter(invoice => String(invoice.external_id || '') === externalId);
+}
+
 export async function getXenditPayment(paymentId: string, secretKey: string): Promise<Record<string, any>> {
   return xenditFetch<Record<string, any>>(`/v3/payments/${encodeURIComponent(paymentId)}`, secretKey, {
     method: 'GET',

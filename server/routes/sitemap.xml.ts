@@ -47,7 +47,8 @@ export default defineEventHandler(async (event) => {
   const products = await getPublishedProducts(supabase);
   const stores = await getApprovedStores(supabase, Math.max(0, MAX_DYNAMIC_URLS - products.length));
   const entries = [
-    { path: '/welcome', priority: '1.0', changefreq: 'weekly', lastmod: null },
+    { path: '/', priority: '1.0', changefreq: 'daily', lastmod: null },
+    { path: '/welcome', priority: '0.8', changefreq: 'weekly', lastmod: null },
     { path: '/products', priority: '0.9', changefreq: 'daily', lastmod: null },
     ...products.map(product => ({
       path: `/products/${encodeURIComponent(product.slug)}`,

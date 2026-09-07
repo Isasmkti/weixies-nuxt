@@ -25,7 +25,8 @@ import { SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE, SEO_SITE_NAME } from './uti
 const route = useRoute()
 const { canonicalUrl, absoluteUrl } = useSeoSite()
 const indexableRoute = computed(() => (
-  route.path === '/welcome'
+  route.path === '/'
+  || route.path === '/welcome'
   || route.path === '/products'
   || route.path.startsWith('/products/')
   || route.path.startsWith('/stores/')
@@ -55,6 +56,7 @@ const canShowChatLauncher = computed(() => isAuthenticated.value && !route.path.
 const { user: authUser, resetProfile } = useAuth()
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
+const purchasesStore = usePurchasesStore()
 let authSubscription = null
 
 onMounted(async () => {
@@ -62,11 +64,23 @@ onMounted(async () => {
   isAuthenticated.value = Boolean(data.session?.user)
 
   const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user || (authUser.value && authUser.value.id !== session.user.id)) {
+    if (!session?.user
+      || (authUser.value && authUser.value.id !== session.user.id)
+      || (purchasesStore.profileId && purchasesStore.profileId !== session.user.id)) {
       showChat.value = false
       resetProfile()
       cartStore.$reset()
       wishlistStore.$reset()
+      purchasesStore.$reset()
+      // Clear one-time download bindings after leaving the old account. Keep
+      // async work outside Supabase's auth-state callback to avoid auth locks.
+      setTimeout(() => {
+        void fetch('/api/purchases/download-binding', {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          keepalive: true,
+        }).catch(() => {})
+      }, 0)
     }
     isAuthenticated.value = Boolean(session?.user)
   })

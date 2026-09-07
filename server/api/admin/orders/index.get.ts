@@ -12,6 +12,8 @@ export default defineEventHandler(async (event) => {
       order_number,
       total_amount,
       status,
+      purchase_conflict,
+      purchase_conflict_reason,
       created_at,
       paid_at,
       buyer:profiles(full_name, email),
@@ -25,6 +27,7 @@ export default defineEventHandler(async (event) => {
         is_downloaded,
         downloaded_at,
         download_count,
+        download_limit,
         product:products(name)
       ),
       payments(id, provider, provider_invoice_id, status, raw_response),

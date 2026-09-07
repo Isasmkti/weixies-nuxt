@@ -13,8 +13,9 @@ export async function rGetSellerOrderItems(sellerId) {
       is_downloaded,
       downloaded_at,
       download_count,
+      download_limit,
       products(id, name, slug, product_images(image_url, is_primary)),
-      orders!inner(id, order_number, status, created_at, paid_at)
+      orders!inner(id, order_number, status, created_at, paid_at, purchase_conflict, purchase_conflict_reason)
     `)
     .eq('seller_id', sellerId)
     .order('id', { ascending: false })

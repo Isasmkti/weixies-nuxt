@@ -3,6 +3,7 @@ import { logPaymentEvent } from '~/server/utils/payment-logger';
 import { grantDigitalAccessForOrder } from '~/server/utils/order-delivery';
 import {
   getXenditInvoice,
+  getXenditInvoicesByExternalId,
   normalizeXenditInvoiceStatus,
 } from '~/server/utils/xendit';
 
@@ -43,18 +44,19 @@ export async function processPendingOrder(
     }
 
     const xenditPayment = (paymentRows || []).find((row: any) => String(row.provider || '').toLowerCase() === 'xendit' && row.provider_invoice_id);
-    const invoiceId = xenditPayment?.provider_invoice_id;
+    let invoiceId = xenditPayment?.provider_invoice_id;
+    let recoveredInvoice: any = null;
 
     if (!invoiceId) {
-      await logPaymentEvent({
-        order_id: orderId,
-        order_number: order.order_number,
-        event_type: 'error',
-        old_status: order.status,
-        error_message: 'Missing Xendit invoice ID',
-        created_at: new Date().toISOString(),
-      });
-      return { success: false, error: 'Missing Xendit invoice ID' };
+      const candidates = await getXenditInvoicesByExternalId(`ORDER-${order.id}`, secretKey);
+      if (candidates.length !== 1) {
+        return {
+          success: false,
+          error: candidates.length ? 'Multiple provider invoices require reconciliation.' : 'Invoice creation is still unconfirmed.',
+        };
+      }
+      recoveredInvoice = candidates[0];
+      invoiceId = recoveredInvoice.id;
     }
 
     await logPaymentEvent({
@@ -66,7 +68,7 @@ export async function processPendingOrder(
       created_at: new Date().toISOString(),
     });
 
-    const invoice = await getXenditInvoice(invoiceId, secretKey);
+    const invoice = recoveredInvoice || await getXenditInvoice(invoiceId, secretKey);
 
     if (String(invoice.external_id || '').trim() !== `ORDER-${order.id}`) {
       await logPaymentEvent({

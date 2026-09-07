@@ -21,7 +21,18 @@ const loggingOut = ref(false)
 const pageLoading = ref(true)
 const pageError = ref('')
 const unreadMessageCount = ref(0)
+const purchaseCount = ref(null)
+const visiblePurchaseCount = computed(() => purchaseCount.value?.profileId === profile.value?.id ? purchaseCount.value.count : null)
 let messageChannel = null
+
+const loadPurchaseCount = async () => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return
+        const data = await $fetch('/api/purchases/count', { headers: { Authorization: `Bearer ${session.access_token}` } })
+        purchaseCount.value = { profileId: session.user.id, count: data.count }
+    } catch { purchaseCount.value = null }
+}
 
 const displayedUnreadMessageCount = computed(() => (
     unreadMessageCount.value > 99 ? '99+' : String(unreadMessageCount.value)
@@ -207,6 +218,7 @@ const initializeDashboard = async () => {
             fetchProfile(),
             loadUnreadMessageCount(),
             getCurrentSeller(),
+            loadPurchaseCount(),
         ])
         const failed = results.find(result => result.status === 'rejected')
         if (failed) throw failed.reason
@@ -242,7 +254,7 @@ onBeforeUnmount(() => {
                     <div class="h-6 w-48 rounded bg-bg-alt"></div>
                     <div class="h-4 w-32 rounded bg-bg-alt"></div>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2"><div v-for="i in 2" :key="i" class="h-24 rounded-ui-lg bg-bg-alt"></div></div>
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div v-for="i in 4" :key="i" class="h-24 rounded-ui-lg bg-bg-alt"></div></div>
                 <div class="h-44 rounded-ui-xl bg-bg-alt"></div>
                 <div class="h-72 rounded-ui-lg bg-bg-alt"></div>
             </div>
@@ -307,14 +319,24 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Account activity">
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Account activity">
+                <NuxtLink to="/purchases" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16v13H4V7Zm-1-4h18v4H3V3Zm6 8h6" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-center gap-2 text-base font-semibold text-text-main">My purchases <span v-if="visiblePurchaseCount !== null" class="rounded-ui-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{{ visiblePurchaseCount }}</span></span>
+                        <span class="mt-1 block text-sm text-text-muted">Paid products, licenses, and downloads</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
                 <NuxtLink to="/orders" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></svg>
                     </span>
                     <span class="min-w-0 flex-1">
                         <span class="block text-base font-semibold text-text-main">My orders</span>
-                        <span class="mt-1 block text-sm text-text-muted">Payments, downloads, and purchase details</span>
+                        <span class="mt-1 block text-sm text-text-muted">Payments, reviews, and order history</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>

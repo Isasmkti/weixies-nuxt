@@ -142,12 +142,21 @@ export async function rUpdate(id, product) {
     return data
 }
 
-export async function rDelete(id) {
-    const { error } = await supabase
+export async function rArchive(id) {
+    const productId = Number(id)
+    if (!Number.isSafeInteger(productId) || productId <= 0) {
+        throw new Error('A valid product is required.')
+    }
+
+    const { data, error } = await supabase
         .from('products')
-        .delete()
-        .eq('id', id)
+        .update({ status: 'suspended' })
+        .eq('id', productId)
+        .select('id, status')
+        .single()
+
     if (error) throw error
+    return data
 }
 
 export async function rReplaceProductImages(productId, images) {

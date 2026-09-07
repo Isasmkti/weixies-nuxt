@@ -29,6 +29,10 @@
     <!-- Order Detail -->
     <div v-else-if="order" class="space-y-6">
       <h1 class="text-3xl sm:text-4xl font-extrabold text-text-main tracking-tight">Order Detail</h1>
+      <div v-if="order.status === 'pending'" class="flex flex-wrap items-center justify-between gap-3 rounded-ui-md border border-primary/20 bg-primary/5 p-4 text-sm text-text-muted">
+        <span>Waiting for payment confirmation. Your purchase appears only after the payment is verified.</span>
+        <button type="button" :disabled="refreshingOrder" class="font-semibold text-primary hover:underline disabled:opacity-50" @click="refreshPaymentStatus">{{ refreshingOrder ? 'Checking...' : 'Refresh status' }}</button>
+      </div>
 
       <!-- Order Info Card -->
       <section class="relative overflow-hidden rounded-2xl sm:rounded-[2rem] border border-bg-alt/60 bg-surface p-6 sm:p-8 shadow-xl">
@@ -107,22 +111,23 @@
                   <span class="h-1.5 w-1.5 rounded-full" :class="item.is_downloaded ? 'bg-emerald-500' : 'bg-text-muted/50'"></span>
                   {{ item.is_downloaded ? `Downloaded ${item.download_count || 1}× · last accessed ${formatDateTime(item.downloaded_at)}` : 'This file has not been downloaded yet' }}
                 </p>
+                <p v-if="order.status === 'paid' && item.downloads_remaining !== undefined" class="mt-2 text-xs font-semibold text-text-muted">{{ item.downloads_remaining }} of {{ item.download_limit }} downloads remaining</p>
               </div>
 
               <!-- Actions -->
-              <div class="flex-shrink-0 flex flex-col items-end gap-2">
+              <div class="flex min-w-0 flex-shrink-0 flex-col items-start gap-2 sm:items-end">
               <!-- Download (paid only) -->
               <button
                 v-if="order.status === 'paid'"
                 @click="handleDownload(item)"
-                :disabled="downloadingItem === item.product?.id"
+                :disabled="downloadingItem !== null || item.can_download !== true"
                 class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-5 py-2.5 font-semibold text-white transition-all duration-300 shadow-md shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5"
               >
-                <span v-if="downloadingItem === item.product?.id" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                <span v-if="downloadingItem === item.product_id" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                 <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                {{ downloadingItem === item.product?.id ? 'Preparing...' : (item.is_downloaded ? 'Download ZIP again' : 'Download ZIP') }}
+                {{ downloadingItem === item.product_id ? 'Preparing...' : item.downloads_remaining === 0 ? 'Download limit reached' : item.can_download !== true ? 'Download unavailable' : 'Download ZIP' }}
               </button>
 
               <!-- Pending state -->
@@ -142,6 +147,7 @@
 
               <!-- Other states -->
               <span v-else class="text-xs text-text-muted italic capitalize">{{ order.status }}</span>
+              <NuxtLink v-if="order.status === 'paid'" :to="`/purchases?product=${item.product_id}`" class="text-xs font-semibold text-primary hover:underline">View in My Purchases</NuxtLink>
 
               <!-- View Product -->
               <NuxtLink
@@ -204,15 +210,21 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import OrderProductReview from '../../components/orders/OrderProductReview.vue'
 import { getUser } from '../../services/authService'
 import { supabase } from '../../utils/supabase'
 import { formatIDR } from '../../utils/currency'
 import { showErrorDialog } from '../../utils/sweetAlert'
+import { usePurchasesStore } from '../../stores/purchasesStore'
+import { useCartStore } from '../../stores/cartStore'
+import { usePurchaseDownload } from '../../composables/usePurchaseDownload'
 
 const router = useRouter()
 const route = useRoute()
+const purchasesStore = usePurchasesStore()
+const cartStore = useCartStore()
+const { downloadPurchase } = usePurchaseDownload()
 const orderId = computed(() => {
   const id = route.params.id
   return Array.isArray(id) ? id[0] : id
@@ -224,6 +236,11 @@ const error = ref(null)
 const currentUser = ref(null)
 const downloadingItem = ref(null)
 const startingConversationItem = ref(null)
+const refreshingOrder = ref(false)
+let refreshTimer = null
+let pendingPolls = 0
+let orderRequestId = 0
+let disposed = false
 
 const startOrderConversation = async (item) => {
   startingConversationItem.value = item.id
@@ -295,66 +312,84 @@ const statusDotClass = (status) => {
   return map[status] || 'bg-gray-400'
 }
 
-onMounted(async () => {
+const fetchOrder = async ({ silent = false } = {}) => {
+  if (disposed || !currentUser.value) return
+  const requestedOrderId = orderId.value
+  const requestId = ++orderRequestId
+  if (refreshTimer) window.clearTimeout(refreshTimer)
   if (!orderId.value) {
-    // Guard against a transient undefined id during route/component transitions
     error.value = 'Order not found.'
     loading.value = false
     return
   }
-
-  const user = await getUser()
-  if (!user) {
-    router.push('/login')
-    return
-  }
-  currentUser.value = user
-
-  loading.value = true
-  error.value = null
+  if (!silent) loading.value = true
+  refreshingOrder.value = true
+  if (!silent) error.value = null
   try {
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token
 
-    const data = await $fetch(`/api/orders/${orderId.value}`, {
+    const data = await $fetch(`/api/orders/${requestedOrderId}`, {
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     })
+    if (disposed || requestId !== orderRequestId) return
+    const previousStatus = order.value?.status
     order.value = data.order
+    if (['paid', 'refunded'].includes(order.value?.status) && previousStatus !== order.value.status) {
+      purchasesStore.invalidate()
+      await Promise.allSettled([
+        purchasesStore.loadOwnership((order.value.order_items || []).map(item => item.product_id), { force: true }),
+        cartStore.stGetCart(currentUser.value.id),
+      ])
+    }
   } catch (err) {
-    error.value = err?.data?.statusMessage || err?.message || 'Order not found.'
+    if (!disposed && requestId === orderRequestId && !silent) error.value = err?.data?.statusMessage || err?.message || 'Order not found.'
   } finally {
-    loading.value = false
+    if (!disposed && requestId === orderRequestId) {
+      loading.value = false
+      refreshingOrder.value = false
+      if (order.value?.status === 'pending' && pendingPolls < 30) {
+        pendingPolls += 1
+        refreshTimer = window.setTimeout(() => fetchOrder({ silent: true }), 5000)
+      }
+    }
   }
+}
+
+const refreshPaymentStatus = () => {
+  if (refreshingOrder.value) return
+  pendingPolls = 0
+  return fetchOrder({ silent: true })
+}
+
+onMounted(async () => {
+  const user = await getUser()
+  if (!user) return router.push('/login')
+  currentUser.value = user
+  await fetchOrder()
+})
+watch(orderId, () => {
+  order.value = null
+  pendingPolls = 0
+  fetchOrder()
+})
+onBeforeUnmount(() => {
+  disposed = true
+  orderRequestId += 1
+  if (refreshTimer) window.clearTimeout(refreshTimer)
 })
 
 const handleDownload = async (item) => {
-  const productId = item.product?.id
-  if (!productId) return
+  const productId = item.product_id
+  if (!productId || downloadingItem.value !== null || item.can_download !== true || order.value?.status !== 'paid') return
 
   downloadingItem.value = productId
   try {
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData?.session?.access_token
-
-    const data = await $fetch(`/api/orders/${orderId.value}/download`, {
-      query: {
-        product_id: productId
-      },
-      headers: { Authorization: token ? `Bearer ${token}` : '' }
-    })
-    item.is_downloaded = true
-    item.downloaded_at = data.download?.downloaded_at || new Date().toISOString()
-    item.download_count = Number(data.download?.download_count) || Number(item.download_count || 0) + 1
-    // Trigger browser download via signed URL
-    const link = document.createElement('a')
-    link.href = data.url
-    link.download = data.file_name || 'download.zip'
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const download = await downloadPurchase({ orderId: orderId.value, productId })
+    if (download) Object.assign(item, download)
   } catch (err) {
-    console.error('Download error:', err)
+    if (err?.download) Object.assign(item, err.download)
+    await fetchOrder({ silent: true })
     await showErrorDialog('Download failed', err?.data?.statusMessage || err?.message || 'Download failed. Please try again.')
   } finally {
     downloadingItem.value = null

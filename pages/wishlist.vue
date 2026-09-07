@@ -102,7 +102,8 @@
                             </span>
                             
                             <!-- Add to Cart (Optional) -->
-                            <button v-if="!isOwnProduct(item.product)" @click.stop="addToCart(item.product)"
+                            <NuxtLink v-if="purchasesStore.isPurchased(item.product_id)" :to="`/purchases?product=${item.product_id}`" class="rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary hover:text-white" @click.stop>View purchase</NuxtLink>
+                            <button v-else-if="!isOwnProduct(item.product)" @click.stop="addToCart(item.product)"
                                     class="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors duration-300 shadow-sm"
                                     title="Add to Cart">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,10 +119,11 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 
 import { useWishlistStore } from '../stores/wishlistStore'
 import { useCartStore } from '../stores/cartStore'
+import { usePurchasesStore } from '../stores/purchasesStore'
 import { getUser } from '../services/authService'
 import { getCurrentSeller } from '../services/sellerService'
 import { useRouter } from 'vue-router'
@@ -133,6 +135,7 @@ import defaultProduct from '../components/defaultProduct.vue'
 const router = useRouter()
 const wishlistStore = useWishlistStore()
 const cartStore = useCartStore()
+const purchasesStore = usePurchasesStore()
 
 const items = computed(() => wishlistStore.items)
 const loading = computed(() => wishlistStore.loading)
@@ -140,6 +143,9 @@ const error = computed(() => wishlistStore.error)
 
 const profileId = ref(null)
 const currentSeller = ref(null)
+watch(() => [profileId.value, ...items.value.map(item => item.product_id)], () => {
+    if (profileId.value) purchasesStore.loadOwnership(items.value.map(item => item.product_id)).catch(() => {})
+})
 const isOwnProduct = (product) => Boolean(
     product?.seller_id
     && currentSeller.value?.id
@@ -183,6 +189,7 @@ const removeFromWishlist = async (productId) => {
 
 const addToCart = async (product) => {
     if (isOwnProduct(product)) return
+    if (purchasesStore.isPurchased(product?.id)) return router.push(`/purchases?product=${product.id}`)
     const licenses = [...(product?.product_licenses || [])]
         .filter((license) => license.is_active !== false)
         .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -204,6 +211,7 @@ const addToCart = async (product) => {
             color: 'rgb(var(--color-text))',
         })
     } catch (err) {
+        await purchasesStore.loadOwnership([product.id], { force: true }).catch(() => {})
         Swal.fire({
             toast: true,
             position: 'top-end',

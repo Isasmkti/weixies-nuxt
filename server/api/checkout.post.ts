@@ -2,7 +2,10 @@ import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 import { requireRequestUser } from '~/server/utils/request-auth';
 import { enforceRateLimit } from '~/server/utils/rate-limit';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
-import { createXenditInvoice, getXenditInvoice } from '~/server/utils/xendit';
+import { createXenditInvoice, getXenditInvoice, XenditApiError } from '~/server/utils/xendit';
+import { processPendingOrder } from '~/server/utils/xendit-payment-processor';
+import { throwPurchaseConflict } from '~/server/utils/purchase-eligibility';
+import { purchaseConflictPayload, purchaseDatabaseConflict } from '~/utils/purchaseEligibility.js';
 import {
   findSelfPurchaseConflicts,
   getCartProductIds,
@@ -20,7 +23,7 @@ async function persistInvoice(supabase: any, orderId: string, invoice: Record<st
     status: 'pending',
     raw_response: invoice,
     created_at: invoice.created || new Date().toISOString(),
-  }, { onConflict: 'provider_invoice_id' });
+  }, { onConflict: 'provider_invoice_id', ignoreDuplicates: true });
   if (error) throw error;
 }
 
@@ -49,6 +52,7 @@ export default defineEventHandler(async (event) => {
   if (!secretKey) {
     throw createError({ statusCode: 500, statusMessage: 'XENDIT_SECRET_KEY is not configured.' });
   }
+  const origin = checkoutOrigin(config, event);
 
   const productId = Number(body?.product_id);
   if (!Number.isSafeInteger(productId) || productId <= 0) {
@@ -74,14 +78,32 @@ export default defineEventHandler(async (event) => {
     throwSelfPurchase('checkout', conflictingProductIds);
   }
 
-  const { data: checkoutRows, error: checkoutError } = await supabase.rpc('create_checkout_order', {
-    p_profile_id: user.id,
-    p_product_id: productId,
-    p_product_license_id: productLicenseId,
+  const reserveOrder = () => supabase.rpc('create_checkout_order', {
+    p_profile_id: user.id, p_product_id: productId, p_product_license_id: productLicenseId,
   });
-  const checkout = Array.isArray(checkoutRows) ? checkoutRows[0] : checkoutRows;
+  let { data: checkoutRows, error: checkoutError } = await reserveOrder();
+  const pendingConflict = purchaseDatabaseConflict(checkoutError, productId);
+  if (pendingConflict?.code === 'product_payment_pending' && pendingConflict.order_id) {
+    // A stale local pending row must be checked with the provider before a
+    // different tier can replace it. Unknown results continue to block checkout.
+    const reconciled = await processPendingOrder(pendingConflict.order_id, secretKey);
+    if (reconciled.success && ['paid', 'expired', 'failed', 'cancelled'].includes(reconciled.newStatus || '')) {
+      ({ data: checkoutRows, error: checkoutError } = await reserveOrder());
+    }
+  }
+  let checkout = Array.isArray(checkoutRows) ? checkoutRows[0] : checkoutRows;
+
+  if (checkout?.resumed) {
+    const reconciled = await processPendingOrder(checkout.order_id, secretKey);
+    if (reconciled.success && ['paid', 'expired', 'failed', 'cancelled'].includes(reconciled.newStatus || '')) {
+      ({ data: checkoutRows, error: checkoutError } = await reserveOrder());
+      checkout = Array.isArray(checkoutRows) ? checkoutRows[0] : checkoutRows;
+    }
+  }
 
   if (checkoutError || !checkout) {
+    const purchaseConflict = purchaseDatabaseConflict(checkoutError, productId);
+    if (purchaseConflict) throwPurchaseConflict(purchaseConflict);
     console.error('[Checkout] Could not create or resume order:', checkoutError);
     if (isSelfPurchaseDatabaseError(checkoutError) || String(checkoutError?.message || '').includes('cannot purchase your own product')) {
       throwSelfPurchase('checkout', [productId]);
@@ -128,18 +150,13 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!checkout.should_create_invoice || !checkout.invoice_creation_token) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: 'A payment link is already being prepared. Please retry shortly.',
-    });
+    throwPurchaseConflict(purchaseConflictPayload('invoice_creation_pending', productId, checkout.order_id));
   }
 
   const customerEmail = String(user.email || '').trim().slice(0, 254);
   const customerName = String(
     body?.customerName || user.user_metadata?.full_name || customerEmail.split('@')[0] || 'Customer',
   ).trim().slice(0, 100);
-  const origin = checkoutOrigin(config, event);
-
   const invoice = await createXenditInvoice({
     externalId: `ORDER-${checkout.order_id}`,
     amount: Number(checkout.total_amount),
@@ -150,13 +167,27 @@ export default defineEventHandler(async (event) => {
     failureRedirectUrl: `${origin}/orders/${checkout.order_id}`,
   }, secretKey).catch(async (error) => {
     console.error('[Checkout] Failed to create Xendit invoice:', error);
-    await supabase
-      .from('orders')
-      .update({ status: 'failed', invoice_creation_token: null, invoice_creation_started_at: null })
-      .eq('id', checkout.order_id)
-      .eq('status', 'pending')
-      .eq('invoice_creation_token', checkout.invoice_creation_token);
-    throw createError({ statusCode: 502, statusMessage: 'Payment provider could not create an invoice.' });
+    const definitiveFailure = error instanceof XenditApiError && error.isDefinitiveClientError;
+    if (definitiveFailure) {
+      await supabase
+        .from('orders')
+        .update({ status: 'failed', invoice_creation_token: null, invoice_creation_started_at: null })
+        .eq('id', checkout.order_id)
+        .eq('status', 'pending')
+        .eq('invoice_creation_token', checkout.invoice_creation_token);
+    }
+    await logPaymentEvent({
+      order_id: checkout.order_id,
+      order_number: checkout.order_number,
+      event_type: 'error',
+      error_message: definitiveFailure ? 'Invoice creation rejected.' : 'Invoice creation outcome unknown; reconciliation required.',
+      metadata: { external_id: `ORDER-${checkout.order_id}`, definitive_failure: definitiveFailure },
+      created_at: new Date().toISOString(),
+    });
+    if (!definitiveFailure) {
+      throwPurchaseConflict(purchaseConflictPayload('invoice_creation_pending', productId, checkout.order_id));
+    }
+    throw createError({ statusCode: 502, statusMessage: 'Payment provider rejected the invoice. Please retry shortly.' });
   });
 
   await persistInvoice(supabase, checkout.order_id, invoice);

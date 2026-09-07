@@ -11,7 +11,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const user = await getUser()
 
   // Pages that require auth
-  const authRoutes = ['/cart', '/wishlist', '/dashboard', '/admin', '/admin/products', '/admin/products/create', '/become-seller', '/seller']
+  const authRoutes = ['/cart', '/wishlist', '/dashboard', '/purchases', '/admin', '/admin/products', '/admin/products/create', '/become-seller', '/seller']
   const isAdminRoute = to.path.startsWith('/admin')
   const isSellerRoute = to.path === '/seller' || to.path.startsWith('/seller/')
   const requiresAuth = authRoutes.some(route => to.path === route || to.path.startsWith(route + '/'))

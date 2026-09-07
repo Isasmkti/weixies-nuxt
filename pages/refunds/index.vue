@@ -4,8 +4,10 @@ import RefundStatusBadge from '../../components/refunds/RefundStatusBadge.vue'
 import RefundTimeline from '../../components/refunds/RefundTimeline.vue'
 import { getBuyerRefunds } from '../../services/refundsService'
 import { formatIDR } from '../../utils/currency'
+import { usePurchasesStore } from '../../stores/purchasesStore'
 
 const route = useRoute()
+const purchasesStore = usePurchasesStore()
 const refunds = ref([])
 const loading = ref(true)
 const refreshing = ref(false)
@@ -57,7 +59,13 @@ const loadRefunds = async ({ silent = false } = {}) => {
   else loading.value = true
   errorMessage.value = ''
   try {
+    const previousSucceeded = new Set(refunds.value.filter(refund => refund.status === 'succeeded').map(refund => refund.id))
     refunds.value = await getBuyerRefunds()
+    const confirmedRefunds = refunds.value.filter(refund => refund.status === 'succeeded' && !previousSucceeded.has(refund.id))
+    if (confirmedRefunds.length) {
+      purchasesStore.invalidate()
+      await purchasesStore.loadOwnership(confirmedRefunds.flatMap(refund => refund.items || []).map(item => item.product?.id ?? item.product_id).filter(Boolean), { force: true }).catch(() => {})
+    }
   } catch (error) {
     errorMessage.value = error?.data?.statusMessage || error.message || 'Your refund information could not be loaded.'
   } finally {
@@ -120,7 +128,7 @@ onMounted(loadRefunds)
         <div class="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div class="min-w-0 space-y-5">
             <div><p class="text-xs font-bold uppercase tracking-wider text-text-muted">Reason for refund</p><p class="mt-2 whitespace-pre-line text-sm leading-6 text-text-main">{{ refund.reason }}</p></div>
-            <div class="rounded-ui-md border border-border bg-bg/60 p-4 text-sm leading-6 text-text-muted">{{ statusMessage(refund) }}<p v-if="refund.failure_code" class="mt-2 font-mono text-xs text-danger">Provider code: {{ refund.failure_code }}</p></div>
+            <div class="rounded-ui-md border border-border bg-bg/60 p-4 text-sm leading-6 text-text-muted">{{ statusMessage(refund) }}<p v-if="refund.status === 'succeeded'" class="mt-2">Access from this order has ended. You may buy the product again; a new paid purchase includes a new download allowance.</p><p v-if="refund.failure_code" class="mt-2 font-mono text-xs text-danger">Provider code: {{ refund.failure_code }}</p></div>
             <RefundTimeline :status="refund.status" :requested-at="refund.requested_at" :submitted-at="refund.submitted_at" :resolved-at="refund.resolved_at" />
           </div>
 

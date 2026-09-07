@@ -296,11 +296,17 @@ export const useProductsStore = defineStore('products', {
             }
         },
 
-        async deleteProduct(id) {
+        async archiveProduct(id) {
             this.loading = true
             try {
-                await productsService.sDelete(id)
-                this.products = this.products.filter(p => p.id !== id)
+                const archived = await productsService.sArchive(id)
+                const remainingTotal = Math.max(0, Number(this.total) - 1)
+                const lastPage = Math.max(1, Math.ceil(remainingTotal / this.limit))
+                const targetPage = Math.min(this.page, lastPage)
+
+                this.total = remainingTotal
+                await this.stAll(targetPage, { force: true })
+                return archived
             } catch (error) {
                 this.error = error.message
                 throw error

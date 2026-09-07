@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useProductsStore } from '../stores/productsStore'
 import { useCartStore } from '../stores/cartStore'
 import { useCategoriesStore } from '../stores/categoriesStore'
@@ -6,12 +6,16 @@ import { getUser } from '../services/authService'
 import { getCurrentSeller } from '../services/sellerService'
 import { useRouter } from 'vue-router'
 import { formatIDR } from '../utils/currency'
+import { usePurchasesStore } from '../stores/purchasesStore'
+import { showErrorDialog } from '../utils/sweetAlert'
 
 export function useCatalogUI() {
   const router = useRouter()
   const productsStore = useProductsStore()
   const cartStore = useCartStore()
   const categoriesStore = useCategoriesStore()
+  const purchasesStore = usePurchasesStore()
+  const profileId = ref(null)
 
   const products = computed(() => productsStore.products)
   const categories = computed(() => categoriesStore.categories)
@@ -33,6 +37,7 @@ export function useCatalogUI() {
 
   onMounted(async () => {
     const user = await getUser()
+    profileId.value = user?.id || null
     const promises = [
       productsStore.ensureProductsLoaded({ force: false }),
       categoriesStore.fetchCategories()
@@ -45,6 +50,12 @@ export function useCatalogUI() {
 
     await Promise.all(promises)
   })
+
+  watch(() => [profileId.value, ...products.value.map(product => product.id)], () => {
+    if (profileId.value) purchasesStore.loadOwnership(products.value.map(product => product.id)).catch(() => {})
+  })
+  onBeforeUnmount(() => clearTimeout(timeout))
+  const isPurchased = productId => purchasesStore.isPurchased(productId)
 
   const onSortChange = (e) => {
     const [by, order] = e.target.value.split('-')
@@ -75,6 +86,7 @@ export function useCatalogUI() {
   const addToCart = async (productId) => {
     const product = products.value.find((item) => item.id === productId)
     if (isOwnProduct(product)) return
+    if (isPurchased(productId)) return router.push(`/purchases?product=${productId}`)
     const licenses = [...(product?.product_licenses || [])]
       .filter((license) => license.is_active !== false)
       .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -91,7 +103,8 @@ export function useCatalogUI() {
       addingToCart.value = productId
       await cartStore.stAddToCart(user.id, productId, licenses[0].id)
     } catch (err) {
-      console.error('Failed to add to cart:', err)
+      await purchasesStore.loadOwnership([productId], { force: true }).catch(() => {})
+      await showErrorDialog('Unable to add product', err?.message || 'Failed to add to cart.')
     } finally {
       addingToCart.value = null
     }
@@ -127,6 +140,7 @@ export function useCatalogUI() {
     addToCart,
     getMainImage,
     isOwnProduct,
+    isPurchased,
     productsStore,
     cartStore,
     formatIDR

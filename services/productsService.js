@@ -1,4 +1,4 @@
-import { rAll, rFeatured, rGetById, rGetBySlug, rCreate, rUpdate, rDelete, rUpsertProductCategories, rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses } from '../repositories/productsRepository'
+import { rAll, rFeatured, rGetById, rGetBySlug, rCreate, rUpdate, rArchive, rUpsertProductCategories, rCreateProductFile, rReplaceProductSpecs, rSyncProductLicenses } from '../repositories/productsRepository'
 import { saveProductImages } from './productImagesService'
 import { normalizeProductSpecs } from '../utils/productSpecs'
 import { normalizeProductLicenses } from '../utils/productLicenses'
@@ -103,9 +103,9 @@ export async function sUpdate(id, product, images, categoryIds = [], zipFile, sp
     }
 }
 
-export async function sDelete(id) {
+export async function sArchive(id) {
     try {
-        return await rDelete(id)
+        return await rArchive(id)
     } catch (error) {
         throw error
     }

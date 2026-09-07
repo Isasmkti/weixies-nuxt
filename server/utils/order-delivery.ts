@@ -4,6 +4,8 @@ export interface OrderDeliveryResult {
   productIds: string[];
   grantedCount: number;
   cartItemsRemoved: number;
+  conflictingProductIds: string[];
+  requiresReconciliation: boolean;
 }
 
 export async function grantDigitalAccessForOrder(
@@ -24,6 +26,8 @@ export async function grantDigitalAccessForOrder(
     productIds: Array.isArray(data?.productIds) ? data.productIds.map(String) : [],
     grantedCount: Number(data?.grantedCount) || 0,
     cartItemsRemoved: Number(data?.cartItemsRemoved) || 0,
+    conflictingProductIds: Array.isArray(data?.conflictingProductIds) ? data.conflictingProductIds.map(String) : [],
+    requiresReconciliation: Boolean(data?.requiresReconciliation),
   };
 }
 
