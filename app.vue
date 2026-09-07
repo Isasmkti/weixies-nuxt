@@ -45,7 +45,7 @@ useSeoMeta({
   ogSiteName: SEO_SITE_NAME,
   ogType: 'website',
   ogDescription: SEO_DEFAULT_DESCRIPTION,
-  ogImage: () => absoluteUrl('/weixies-logo.svg'),
+  ogImage: () => absoluteUrl('/favicon.png'),
   twitterCard: 'summary_large_image',
   robots: () => indexableRoute.value ? 'index, follow' : 'noindex, nofollow',
 })
