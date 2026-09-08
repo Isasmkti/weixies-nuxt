@@ -2,7 +2,7 @@
   
     <div class="max-w-[1600px] mx-auto font-poppins">
 
-      <!-- SEARCH BAR (navigates to catalog) -->
+      <!-- SEARCH BAR (opens marketplace search) -->
       <button
         @click="goToSearch"
         class="w-full flex items-center gap-3 bg-bg-alt/60 hover:bg-bg-alt rounded-xl px-4 py-3 transition-all duration-300 border border-bg-alt hover:border-primary/20 group cursor-text mb-6"
@@ -10,7 +10,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-text-muted group-hover:text-primary transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M16.65 11A5.65 5.65 0 1111 5.35a5.65 5.65 0 015.65 5.65z" />
         </svg>
-        <span class="text-sm text-text-muted font-medium">Search products...</span>
+        <span class="text-sm text-text-muted font-medium">Search products and sellers...</span>
       </button>
 
     <!-- MAIN CONTENT -->
@@ -124,7 +124,7 @@
           <div class="relative z-10">
             <h2 class="text-2xl md:text-3xl font-black mb-3">Find Your Perfect Product</h2>
             <p class="text-white/80 mb-6 max-w-md mx-auto text-sm md:text-base">Browse thousands of premium items curated just for you.</p>
-            <button @click="goToSearch" class="bg-white text-primary px-8 py-3 rounded-full font-bold text-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+            <button @click="goToCatalog" class="bg-white text-primary px-8 py-3 rounded-full font-bold text-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
               Explore Catalog
             </button>
           </div>
@@ -188,8 +188,10 @@ const featuredProducts = computed(() => homeContent.value?.products || [])
 const carouselItems = computed(() => homeContent.value?.carousel || [])
 
 const goToSearch = () => {
-  router.push({ path: '/products', query: { focus: 'search' } })
+  router.push('/search')
 }
+
+const goToCatalog = () => router.push('/products')
 
 const goToCatalogCategory = (slug) => {
   router.push({ path: '/products', query: { category: slug } })

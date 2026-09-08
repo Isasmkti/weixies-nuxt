@@ -2,10 +2,36 @@
   <div class="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col overflow-hidden rounded-2xl border border-bg-alt bg-surface font-poppins shadow-sm md:h-[calc(100vh-4rem)]">
     <header class="flex items-center gap-3 border-b border-bg-alt px-4 py-3 sm:px-5">
       <NuxtLink to="/messages" class="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-alt hover:text-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6" /></svg></NuxtLink>
-      <div class="min-w-0 flex-1"><h1 class="truncate font-black text-text-main">{{ counterpartName }}</h1><p class="truncate text-xs text-text-muted">{{ thread?.product?.name || 'General store conversation' }}</p></div>
+      <div class="min-w-0 flex-1"><h1 class="truncate font-black text-text-main">{{ counterpartName }}</h1><p class="truncate text-xs text-text-muted">{{ conversationLabel }}</p></div>
       <button v-if="thread" type="button" class="rounded-lg px-2.5 py-2 text-xs font-bold text-text-muted transition hover:bg-red-500/10 hover:text-red-500" @click="reportConversation">Report</button>
       <span v-if="thread" class="rounded-full bg-bg-alt px-2.5 py-1 text-[10px] font-bold uppercase text-text-muted">{{ thread.status }}</span>
     </header>
+
+    <section v-if="productContext" class="flex items-center gap-3 border-b border-bg-alt bg-bg/45 px-4 py-3 sm:px-5" aria-label="Conversation product">
+      <NuxtLink v-if="productIsAvailable" :to="`/products/${productContext.slug}`" class="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-bg-alt bg-bg-alt sm:h-14 sm:w-[4.5rem]">
+        <img v-if="productPrimaryImage" :src="productPrimaryImage" :alt="productContext.name" class="h-full w-full object-cover">
+        <span v-else class="flex h-full w-full items-center justify-center text-lg font-black text-text-muted">{{ productContext.name?.charAt(0)?.toUpperCase() || 'P' }}</span>
+      </NuxtLink>
+      <div v-else class="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-bg-alt bg-bg-alt sm:h-14 sm:w-[4.5rem]">
+        <img v-if="productPrimaryImage" :src="productPrimaryImage" :alt="productContext.name" class="h-full w-full object-cover opacity-70">
+        <span v-else class="flex h-full w-full items-center justify-center text-lg font-black text-text-muted">{{ productContext.name?.charAt(0)?.toUpperCase() || 'P' }}</span>
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-primary">Conversation product</p>
+        <NuxtLink v-if="productIsAvailable" :to="`/products/${productContext.slug}`" class="mt-0.5 block truncate text-sm font-black text-text-main transition hover:text-primary sm:text-base">{{ productContext.name }}</NuxtLink>
+        <p v-else class="mt-0.5 truncate text-sm font-black text-text-main sm:text-base">{{ productContext.name }}</p>
+        <p class="mt-0.5 truncate text-[11px] font-medium text-text-muted sm:text-xs">{{ productCategoryLabel }}</p>
+      </div>
+
+      <div class="shrink-0 text-right">
+        <div class="flex items-center justify-end gap-0.5" :aria-label="productReviewCount ? `${productAverageRating.toFixed(1)} out of 5 stars from ${productReviewCount} reviews` : 'No product ratings yet'">
+          <svg v-for="star in 5" :key="star" class="h-3.5 w-3.5 sm:h-4 sm:w-4" :class="star <= Math.round(productAverageRating) ? 'fill-amber-400 text-amber-400' : 'fill-bg-alt text-bg-alt'" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z" /></svg>
+        </div>
+        <p class="mt-1 text-[10px] font-semibold text-text-muted sm:text-xs">{{ productReviewCount ? `${productAverageRating.toFixed(1)} (${productReviewCount})` : 'No ratings' }}</p>
+        <span v-if="!productIsAvailable" class="mt-1 inline-block rounded-full bg-bg-alt px-2 py-0.5 text-[9px] font-bold uppercase text-text-muted">Unavailable</span>
+      </div>
+    </section>
 
     <div v-if="loading" class="flex flex-1 items-center justify-center"><span class="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></span></div>
     <div v-else-if="error" class="m-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{{ error }}</div>
@@ -51,6 +77,33 @@ let channel = null
 
 const threadId = computed(() => String(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id || ''))
 const counterpartName = computed(() => thread.value?.buyer_id === profileId.value ? (thread.value?.seller?.store_name || 'Seller') : (thread.value?.buyer?.full_name || 'Buyer'))
+const conversationLabel = computed(() => thread.value?.product ? 'Product conversation' : 'General store conversation')
+const productContext = computed(() => {
+  const product = thread.value?.product
+  return Array.isArray(product) ? product[0] || null : product || null
+})
+const productIsAvailable = computed(() => productContext.value?.status === 'published' && Boolean(productContext.value?.slug))
+const productPrimaryImage = computed(() => {
+  const images = Array.isArray(productContext.value?.product_images) ? productContext.value.product_images : []
+  return images.find(image => image.is_primary)?.image_url || images[0]?.image_url || ''
+})
+const productCategories = computed(() => {
+  const links = Array.isArray(productContext.value?.product_categories) ? productContext.value.product_categories : []
+  return links.flatMap((link) => {
+    const categories = Array.isArray(link?.categories) ? link.categories : [link?.categories]
+    return categories.filter(Boolean)
+  })
+})
+const productCategoryLabel = computed(() => {
+  const names = productCategories.value.map(category => category.name).filter(Boolean)
+  return names.length ? names.join(' · ') : 'Uncategorized'
+})
+const productReviews = computed(() => Array.isArray(productContext.value?.reviews) ? productContext.value.reviews : [])
+const productReviewCount = computed(() => productReviews.value.length)
+const productAverageRating = computed(() => {
+  if (!productReviewCount.value) return 0
+  return productReviews.value.reduce((total, review) => total + Number(review?.rating || 0), 0) / productReviewCount.value
+})
 const authHeaders = async () => {
   const { data } = await supabase.auth.getSession()
   return { Authorization: data.session?.access_token ? `Bearer ${data.session.access_token}` : '' }

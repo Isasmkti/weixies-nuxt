@@ -1,6 +1,6 @@
 import { requireRequestUser } from '~/server/utils/request-auth';
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
-import { DIRECT_THREAD_SELECT } from '~/server/utils/direct-messages';
+import { DIRECT_THREAD_LIST_SELECT } from '~/server/utils/direct-messages';
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireRequestUser(event);
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     .eq('profile_id', user.id)
     .maybeSingle();
 
-  let query = supabase.from('buyer_seller_threads').select(DIRECT_THREAD_SELECT);
+  let query = supabase.from('buyer_seller_threads').select(DIRECT_THREAD_LIST_SELECT);
   query = seller?.id
     ? query.or(`buyer_id.eq.${user.id},seller_id.eq.${seller.id}`)
     : query.eq('buyer_id', user.id);
@@ -23,4 +23,3 @@ export default defineEventHandler(async (event) => {
 
   return { threads: data || [], profile_id: user.id };
 });
-

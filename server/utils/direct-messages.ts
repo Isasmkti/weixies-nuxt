@@ -1,6 +1,6 @@
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 
-export const DIRECT_THREAD_SELECT = `
+const DIRECT_THREAD_BASE_SELECT = `
   id,
   buyer_id,
   seller_id,
@@ -13,15 +13,36 @@ export const DIRECT_THREAD_SELECT = `
   created_at,
   updated_at,
   buyer:profiles!buyer_seller_threads_buyer_id_fkey(id, full_name, profile_img),
-  seller:sellers!buyer_seller_threads_seller_id_fkey(id, profile_id, store_name, store_slug, store_image_url),
+  seller:sellers!buyer_seller_threads_seller_id_fkey(id, profile_id, store_name, store_slug, store_image_url)
+`;
+
+export const DIRECT_THREAD_LIST_SELECT = `
+  ${DIRECT_THREAD_BASE_SELECT},
   product:products!buyer_seller_threads_product_id_fkey(id, name, slug)
 `;
 
-export async function getDirectThreadForUser(threadId: string, profileId: string) {
+export const DIRECT_THREAD_DETAIL_SELECT = `
+  ${DIRECT_THREAD_BASE_SELECT},
+  product:products!buyer_seller_threads_product_id_fkey(
+    id,
+    name,
+    slug,
+    status,
+    product_images(id, image_url, is_primary),
+    product_categories(categories(id, name, slug)),
+    reviews(rating)
+  )
+`;
+
+export async function getDirectThreadForUser(
+  threadId: string,
+  profileId: string,
+  options: { includeProductDetails?: boolean } = {},
+) {
   const supabase = useSupabaseAdmin();
   const { data: thread, error } = await supabase
     .from('buyer_seller_threads')
-    .select(DIRECT_THREAD_SELECT)
+    .select(options.includeProductDetails ? DIRECT_THREAD_DETAIL_SELECT : DIRECT_THREAD_LIST_SELECT)
     .eq('id', threadId)
     .maybeSingle();
 
@@ -32,4 +53,3 @@ export async function getDirectThreadForUser(threadId: string, profileId: string
   }
   return thread as any;
 }
-

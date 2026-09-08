@@ -5,7 +5,7 @@ import { getDirectThreadForUser } from '~/server/utils/direct-messages';
 export default defineEventHandler(async (event) => {
   const threadId = String(getRouterParam(event, 'id') || '').trim();
   const { user } = await requireRequestUser(event);
-  const thread = await getDirectThreadForUser(threadId, user.id);
+  const thread = await getDirectThreadForUser(threadId, user.id, { includeProductDetails: true });
   const supabase = useSupabaseAdmin();
   const { data: messages, error } = await supabase
     .from('buyer_seller_messages')
@@ -17,4 +17,3 @@ export default defineEventHandler(async (event) => {
 
   return { thread, messages: messages || [], profile_id: user.id };
 });
-
