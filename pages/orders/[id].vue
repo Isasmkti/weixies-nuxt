@@ -111,7 +111,7 @@
                   <span class="h-1.5 w-1.5 rounded-full" :class="item.is_downloaded ? 'bg-emerald-500' : 'bg-text-muted/50'"></span>
                   {{ item.is_downloaded ? `Downloaded ${item.download_count || 1}× · last accessed ${formatDateTime(item.downloaded_at)}` : 'This file has not been downloaded yet' }}
                 </p>
-                <p v-if="order.status === 'paid' && item.downloads_remaining !== undefined" class="mt-2 text-xs font-semibold text-text-muted">{{ item.downloads_remaining }} of {{ item.download_limit }} downloads remaining</p>
+                <p v-if="order.status === 'paid' && item.downloads_remaining !== undefined" class="mt-2 text-xs font-semibold text-text-muted">{{ item.downloads_remaining }} of {{ item.download_limit }} downloads remaining<span v-if="item.latest_version"> for version {{ item.latest_version }}</span></p>
               </div>
 
               <!-- Actions -->

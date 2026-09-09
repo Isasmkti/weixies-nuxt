@@ -441,7 +441,7 @@ export async function rSyncProductLicenses(productId, licenses = []) {
     return data || []
 }
 
-export async function rCreateProductFile(productId, file) {
+export async function rCreateProductFile(productId, file, { publishImmediately = false } = {}) {
     if (!file) return null
     if (!Number.isSafeInteger(Number(productId)) || Number(productId) <= 0) throw new Error('A valid product is required.')
     if (!String(file.name || '').toLowerCase().endsWith('.zip') || !ZIP_MIME_TYPES.has(String(file.type || '').toLowerCase())) {
@@ -452,7 +452,8 @@ export async function rCreateProductFile(productId, file) {
     }
 
     const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
-    const filePath = `${productId}/${Date.now()}-${safeName}`
+    const releaseId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const filePath = `${productId}/releases/${releaseId}-${safeName}`
 
     const { error: uploadError } = await supabase
         .storage
@@ -461,17 +462,19 @@ export async function rCreateProductFile(productId, file) {
 
     if (uploadError) throw uploadError
 
-    const { data, error } = await supabase
-        .from('product_files')
-        .insert({
-            product_id: productId,
-            file_url: filePath,
-            file_name: file.name,
-            file_size: file.size
-        })
-        .select()
-        .single()
+    const { data, error } = await supabase.rpc('register_product_file_release', {
+        p_product_id: Number(productId),
+        p_file_url: filePath,
+        p_file_name: file.name,
+        p_file_size: file.size,
+        p_publish_immediately: Boolean(publishImmediately),
+    })
 
-    if (error) throw error
+    if (error) {
+        // The object is not a release until its immutable database row exists.
+        // Best-effort cleanup prevents a failed RPC from accumulating ZIPs.
+        await supabase.storage.from('products').remove([filePath]).catch(() => {})
+        throw error
+    }
     return data
 }

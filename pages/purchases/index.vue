@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
     </header>
 
     <div class="mt-6 rounded-ui-md border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-text-muted">
-      Each purchased product includes <strong class="text-text-main">3 downloads</strong>. A download is counted when the transfer starts, including interrupted transfers. Keep a backup of your files. Your purchase and license remain here when the download limit is reached.
+      Each approved product version includes <strong class="text-text-main">3 downloads</strong>. When a seller publishes an update, your newest version receives a fresh allowance automatically. A download is counted when the transfer starts, including interrupted transfers.
     </div>
 
     <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -128,12 +128,19 @@ onBeforeUnmount(() => {
         <div class="relative aspect-[4/3] overflow-hidden bg-bg-alt">
           <img v-if="purchase.product?.image_url" :src="purchase.product.image_url" :alt="purchase.product.name" width="640" height="480" loading="lazy" decoding="async" class="h-full w-full object-cover">
           <div v-else class="flex h-full items-center justify-center text-text-muted"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M4 7h16v13H4V7Zm-1-4h18v4H3V3Zm6 8h6" /></svg></div>
-          <span class="absolute left-3 top-3 rounded-ui-full bg-surface/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">Purchased</span>
+          <div class="absolute left-3 top-3 flex flex-wrap gap-2">
+            <span class="rounded-ui-full bg-surface/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">Purchased</span>
+            <span v-if="purchase.update_available" class="rounded-ui-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">Update available</span>
+          </div>
         </div>
         <div class="flex flex-1 flex-col p-4 sm:p-5">
           <h2 class="line-clamp-2 text-lg font-semibold leading-6 text-text-main">{{ purchase.product?.name || 'Purchased product' }}</h2>
           <p class="mt-1 text-xs text-text-muted">Purchased {{ formatDate(purchase.purchased_at) }}<span v-if="purchase.price !== null"> · {{ formatIDR(purchase.price) }}</span></p>
           <NuxtLink v-if="purchase.store?.slug" :to="`/stores/${purchase.store.slug}`" class="mt-2 w-fit text-sm font-medium text-primary hover:underline">{{ purchase.store.name }}</NuxtLink>
+          <div v-if="purchase.latest_version" class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <span class="rounded-ui-full bg-primary/10 px-2.5 py-1 text-primary">Latest v{{ purchase.latest_version }}</span>
+            <span v-if="purchase.purchased_version && purchase.purchased_version !== purchase.latest_version" class="text-text-muted">Purchased at v{{ purchase.purchased_version }}</span>
+          </div>
 
           <details v-if="purchase.license" class="mt-4 rounded-ui-sm border border-border bg-bg/60 p-3 text-sm">
             <summary class="cursor-pointer font-medium text-text-main">{{ purchase.license.name }} license</summary>
@@ -142,7 +149,7 @@ onBeforeUnmount(() => {
 
           <div class="mt-4 rounded-ui-sm bg-bg-alt/60 p-3">
             <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span class="font-medium text-text-muted">Downloads remaining</span>
+              <span class="font-medium text-text-muted">Downloads remaining<span v-if="purchase.latest_version"> for v{{ purchase.latest_version }}</span></span>
               <span class="font-semibold" :class="purchase.downloads_remaining ? 'text-primary' : 'text-text-muted'">{{ purchase.downloads_remaining }} / {{ purchase.download_limit }}</span>
             </div>
             <div class="mt-2 h-1.5 overflow-hidden rounded-ui-full bg-border" aria-hidden="true"><div class="h-full rounded-ui-full bg-primary transition-[width]" :style="{ width: `${purchase.download_limit ? Math.min(100, purchase.downloads_remaining / purchase.download_limit * 100) : 0}%` }"></div></div>

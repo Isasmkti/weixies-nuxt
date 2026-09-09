@@ -65,11 +65,27 @@ export async function loadDownloadPurchase(profileId: string, orderId: string, p
   const { data: item, error: itemError } = await db.from('order_items')
     .select('id,download_count,download_limit,is_downloaded,downloaded_at').eq('order_id', orderId).eq('product_id', productId).maybeSingle();
   if (itemError || !item) throw createError({ statusCode: 503, statusMessage: 'Purchase metadata is unavailable.' });
-  if (!downloadMetadata(item).can_download) throwDownloadFailure('download_limit_reached', downloadMetadata(item));
-  const { data: file, error: fileError } = await db.from('product_files').select('file_url,file_name')
-    .eq('product_id', productId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  const { data: file, error: fileError } = await db.from('product_files')
+    .select('id,file_url,file_name,version,version_sequence,published_at')
+    .eq('product_id', productId).eq('release_status', 'published')
+    .order('version_sequence', { ascending: false }).limit(1).maybeSingle();
   if (fileError || !file || !validProductZipPath(file.file_url, productId)) throwDownloadFailure('file_unavailable');
-  return { item, file, download: downloadMetadata(item) };
+  const { error: usageCreateError } = await db.from('order_item_file_downloads').upsert({
+    order_item_id: item.id, product_file_id: file.id,
+  }, { onConflict: 'order_item_id,product_file_id', ignoreDuplicates: true });
+  if (usageCreateError) throw createError({ statusCode: 503, statusMessage: 'Unable to prepare this release download.' });
+  const { data: usage, error: usageError } = await db.from('order_item_file_downloads')
+    .select('download_count,download_limit,first_downloaded_at,last_downloaded_at')
+    .eq('order_item_id', item.id).eq('product_file_id', file.id).single();
+  if (usageError || !usage) throw createError({ statusCode: 503, statusMessage: 'Release download metadata is unavailable.' });
+  const download = downloadMetadata({
+    download_count: usage.download_count,
+    download_limit: usage.download_limit,
+    is_downloaded: Number(usage.download_count) > 0,
+    downloaded_at: usage.last_downloaded_at,
+  });
+  if (!download.can_download) throwDownloadFailure('download_limit_reached', download);
+  return { item, file, usage, download: { ...download, version: file.version, version_sequence: file.version_sequence, product_file_id: file.id } };
 }
 
 export function throwDownloadFailure(code: string, download?: any): never {

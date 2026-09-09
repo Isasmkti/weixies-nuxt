@@ -23,7 +23,7 @@ export function validProductZipPath(path, productId) {
 
 export function downloadFailureMessage(code) {
   const messages = {
-    download_limit_reached: 'Download limit reached. Each purchase includes three downloads.',
+    download_limit_reached: 'Download limit reached. Each approved product version includes three downloads.',
     purchase_access_revoked: 'This purchase is no longer available. Refresh My Purchases.',
     download_session_signed_out: 'Your session has ended. Please sign in again.',
     download_session_used_or_expired: 'This download request has expired or was already used. Please try again.',

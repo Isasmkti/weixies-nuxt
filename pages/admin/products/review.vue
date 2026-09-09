@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { getProductsForModeration, setProductModerationStatus } from '../../../services/adminProductModerationService'
 import { confirmAction } from '../../../utils/sweetAlert'
+import { latestProductRelease, nextProductVersion, pendingProductRelease } from '../../../utils/productVersions'
 
 const products = ref([])
 const statusFilter = ref('pending_review')
@@ -22,6 +23,9 @@ const productImage = (product) => {
   return images.find((image) => image.is_primary)?.image_url || images[0]?.image_url || null
 }
 const sellerOf = (product) => Array.isArray(product.seller) ? product.seller[0] : product.seller
+const currentRelease = (product) => latestProductRelease(product.product_files)
+const pendingRelease = (product) => pendingProductRelease(product.product_files)
+const pendingVersion = (product) => nextProductVersion(product.product_files)
 const formatIDR = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0)
 const formatDate = (value) => value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value)) : '-'
 
@@ -102,7 +106,7 @@ onMounted(loadProducts)
             </div>
             <p class="mt-1 text-sm font-semibold text-primary">{{ sellerOf(product)?.store_name || 'Unknown store' }}</p>
             <p class="mt-2 line-clamp-2 text-sm text-text-muted">{{ product.description }}</p>
-            <div class="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-text-muted"><span>{{ formatIDR(product.price) }}</span><span>Submitted {{ formatDate(product.created_at) }}</span></div>
+            <div class="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-text-muted"><span>{{ formatIDR(product.price) }}</span><span>Submitted {{ formatDate(product.created_at) }}</span><span v-if="currentRelease(product)">Current v{{ currentRelease(product).version }}</span><span v-if="pendingRelease(product)" class="text-amber-600">ZIP update → v{{ pendingVersion(product) }} (pending)</span></div>
           </div>
           <div class="flex shrink-0 flex-wrap gap-2 lg:justify-end">
             <NuxtLink :to="`/products/${product.slug}`" class="rounded-lg border border-bg-alt px-3 py-2 text-xs font-bold text-text-main hover:text-primary">Preview</NuxtLink>

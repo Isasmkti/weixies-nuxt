@@ -44,9 +44,9 @@ const productNames = order => (order.order_items || []).map(item => item.product
 const downloadedItems = order => (order.order_items || []).filter(item => item.is_downloaded)
 const downloadSummary = (order) => {
   const downloaded = downloadedItems(order)
-  const allowances = (order.order_items || []).map(item => `${Number(item.download_count || 0)}/${Number(item.download_limit || 3)}`).join(', ')
+  const lifetimeDownloads = (order.order_items || []).reduce((total, item) => total + Math.max(0, Number(item.download_count) || 0), 0)
   const latest = downloaded.map(item => item.downloaded_at).filter(Boolean).sort().at(-1)
-  return `${allowances || '0/3'} download sessions used${latest ? ` · ${formatDateTime(latest)}` : ''}`
+  return `${lifetimeDownloads} lifetime download${lifetimeDownloads === 1 ? '' : 's'}${latest ? ` · ${formatDateTime(latest)}` : ''}`
 }
 
 const filteredOrders = computed(() => orders.value.filter((order) => {

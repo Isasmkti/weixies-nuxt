@@ -27,14 +27,16 @@ export default defineEventHandler(async (event) => {
   const { item, file, download } = await loadDownloadPurchase(user.id, body.order_id, productId);
   const { error } = await db.from('purchase_download_sessions').upsert({
     profile_id: user.id, order_item_id: item.id, auth_session_id: authSession.id,
+    product_file_id: file.id,
     token_hash: tokenHash, binding_hash: bindingHash, idempotency_key: body.idempotency_key,
     storage_path: file.file_url, file_name: file.file_name || `product-${productId}.zip`, expires_at: authSession.expiresAt,
   }, { onConflict: 'profile_id,idempotency_key', ignoreDuplicates: true }).select('id');
   if (error) throw createError({ statusCode: 503, statusMessage: 'Unable to prepare this download.' });
   const { data: ticket, error: lookupError } = await db.from('purchase_download_sessions')
-    .select('id,order_item_id,token_hash,auth_session_id,status,expires_at')
+    .select('id,order_item_id,product_file_id,token_hash,auth_session_id,status,expires_at')
     .eq('profile_id', user.id).eq('idempotency_key', body.idempotency_key).single();
   if (lookupError || !ticket || ticket.token_hash !== tokenHash || ticket.order_item_id !== item.id
+    || ticket.product_file_id !== file.id
     || ticket.auth_session_id !== authSession.id) throw createError({ statusCode: 409, statusMessage: 'Download request ID was already used. Refresh and try again.' });
   return { session_id: ticket.id, token, status: ticket.status, expires_at: ticket.expires_at, download };
 });

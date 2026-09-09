@@ -165,6 +165,8 @@ export const usePurchasesStore = defineStore('purchases', () => {
       downloads_remaining: Math.max(0, Number(download.downloads_remaining) || 0),
       can_download: Boolean(download.can_download),
     }
+    if (download.version || download.latest_version) metadata.latest_version = download.version || download.latest_version
+    if (Object.prototype.hasOwnProperty.call(download, 'update_available')) metadata.update_available = Boolean(download.update_available)
     items.value = items.value.map(item => String(item.product_id) === key ? { ...item, ...metadata } : item)
     if (ownershipByProductId.value[key]) {
       ownershipByProductId.value = { ...ownershipByProductId.value, [key]: { ...ownershipByProductId.value[key], ...metadata } }

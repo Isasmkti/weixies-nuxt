@@ -7,13 +7,14 @@ export const PURCHASE_SELECT = `
   product:products!inner(
     id, name, slug, status,
     product_images(image_url, is_primary),
-    product_files(file_url, file_name, file_size, version, created_at),
+    product_files(id, file_url, file_name, file_size, version, version_sequence, release_status, published_at, created_at),
     seller:sellers(id, store_name, store_slug)
   ),
   order:orders!inner(
     id, profile_id, status, purchase_conflict, order_number, paid_at,
     order_items(
-      id, product_id, price, is_downloaded, downloaded_at, download_count, download_limit,
+      id, product_id, price, product_file_id_at_purchase, is_downloaded, downloaded_at, download_count, download_limit,
+      order_item_file_downloads(product_file_id, download_count, download_limit, first_downloaded_at, last_downloaded_at),
       order_item_licenses(
         license_name_snapshot, usage_terms_snapshot,
         allow_commercial_use_snapshot, allow_resale_snapshot

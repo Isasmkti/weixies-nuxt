@@ -6,7 +6,7 @@ import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { createApp, defineEventHandler, setHeader, toNodeListener } from 'h3'
 
-test('third download exhausts the shared quota and legacy counts stay intact', () => {
+test('third download exhausts one release quota and legacy counts stay intact', () => {
   for (const count of [0, 1, 2, 3, 8]) {
     const result = downloadMetadata({ download_count: count, download_limit: 3 })
     assert.equal(result.download_count, count)

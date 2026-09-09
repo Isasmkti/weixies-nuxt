@@ -76,12 +76,12 @@
                     <div>
                         <ProductImageUploader v-model="form.images" input-name="admin-main-image" :disabled="loading" @changed="imagesDirty = true" />
                         <div>
-                            <label class="block text-sm font-semibold text-text-main mb-2">Product ZIP File</label>
+                            <label class="block text-sm font-semibold text-text-main mb-2">{{ currentRelease ? 'Upload New Version' : 'Product ZIP File' }}</label>
                             <input type="file" accept=".zip,application/zip,application/x-zip-compressed" :required="!existingZipFile" @change="handleZipChange"
                                 class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 focus:ring-2 focus:ring-primary/30 outline-none transition-all text-sm" />
-                            <p class="text-xs text-text-muted mt-1">A ZIP file is required for new products. Maximum size: 200 MB.</p>
-                            <p v-if="zipFile" class="text-sm font-medium text-text-main mt-2">Selected file: {{ zipFile.name }}</p>
-                            <p v-else-if="existingZipFile" class="text-sm text-text-muted mt-2">Current ZIP: {{ existingZipFile.file_name }}</p>
+                            <p class="text-xs text-text-muted mt-1">Uploading a ZIP publishes version {{ nextVersion }} with a fresh 3-download allowance for every eligible buyer. Maximum size: 200 MB.</p>
+                            <p v-if="zipFile" class="text-sm font-medium text-text-main mt-2">Selected for version {{ nextVersion }}: {{ zipFile.name }}</p>
+                            <p v-else-if="currentRelease" class="text-sm text-text-muted mt-2">Current version {{ currentRelease.version }}: {{ currentRelease.file_name }}</p>
                         </div>
                     </div>
 
@@ -123,6 +123,7 @@ import ProductSpecificationsEditor from '../../../components/products/ProductSpe
 import ProductLicensesEditor from '../../../components/products/ProductLicensesEditor.vue'
 import { createDefaultProductLicense } from '../../../utils/productLicenses'
 import { validateProductSubmission, validateProductZip } from '../../../utils/productSubmission'
+import { latestProductRelease, nextProductVersion, pendingProductRelease } from '../../../utils/productVersions'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,6 +148,9 @@ const form = ref({
 })
 const zipFile = ref(null)
 const existingZipFile = ref(null)
+const productFiles = ref([])
+const currentRelease = computed(() => latestProductRelease(productFiles.value))
+const nextVersion = computed(() => nextProductVersion(productFiles.value))
 const imagesDirty = ref(false)
 
 const handleZipChange = (event) => {
@@ -184,9 +188,8 @@ onMounted(async () => {
                         ? [...product.product_licenses].sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
                         : [createDefaultProductLicense(product.price)]
                 }
-                if (product.product_files && product.product_files.length > 0) {
-                    existingZipFile.value = [...product.product_files].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
-                }
+                productFiles.value = product.product_files || []
+                existingZipFile.value = currentRelease.value || pendingProductRelease(productFiles.value)
                 imagesDirty.value = false
             }
         } catch (err) {

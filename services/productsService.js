@@ -66,7 +66,7 @@ export async function sCreate(product, images, categoryIds = [], zipFile, specs 
             }
             if (categoryIds.length) await runProductSaveStage('Unable to save product categories', () => rUpsertProductCategories(newProduct.id, categoryIds))
             await runProductSaveStage('Unable to save product specifications', () => rReplaceProductSpecs(newProduct.id, normalizedSpecs))
-            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(newProduct.id, zipFile))
+            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(newProduct.id, zipFile, { publishImmediately: true }))
             if (requestedStatus === 'published') {
                 await runProductSaveStage('Unable to publish the product', () => rUpdate(newProduct.id, { status: 'published' }))
             }
@@ -94,7 +94,7 @@ export async function sUpdate(id, product, images, categoryIds = [], zipFile, sp
             if (syncImages !== false) await runProductSaveStage('Unable to save product images', () => saveProductImages(id, images))
             if (categoryIds) await runProductSaveStage('Unable to save product categories', () => rUpsertProductCategories(id, categoryIds))
             await runProductSaveStage('Unable to save product specifications', () => rReplaceProductSpecs(id, normalizedSpecs))
-            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(id, zipFile))
+            if (zipFile) await runProductSaveStage('Unable to save the product ZIP', () => rCreateProductFile(id, zipFile, { publishImmediately: true }))
             return await runProductSaveStage('Unable to reload the saved product', () => rGetById(id))
         }
         return updatedProduct

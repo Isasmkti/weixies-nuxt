@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const tokenHash = hashDownloadSecret(body.token);
   const db = useSupabaseAdmin();
   const { data: ticket, error } = await db.from('purchase_download_sessions')
-    .select('id,profile_id,status,expires_at,storage_path,file_name,item:order_items(product_id)')
+    .select('id,profile_id,product_file_id,status,expires_at,storage_path,file_name,item:order_items(product_id)')
     .eq('id', body.session_id).eq('token_hash', tokenHash).eq('binding_hash', bindingHash).maybeSingle();
   if (error) throw createError({ statusCode: 503, statusMessage: 'Unable to verify this download.' });
   if (!ticket) throwDownloadFailure('download_session_invalid');
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     prepared = await preparePurchaseStream(upstream, stop);
     clearTimeout(openingTimeout);
     if (abortController.signal.aborted || event.node.res.destroyed) throw new Error('transfer_unavailable');
-    const { error: claimError } = await db.rpc('start_purchase_download', {
+    const { error: claimError } = await db.rpc('start_product_version_download', {
       p_session_id: ticket.id, p_token_hash: tokenHash, p_binding_hash: bindingHash,
       p_ip_address: null, p_user_agent: getRequestHeader(event, 'user-agent') || null,
     });

@@ -66,3 +66,13 @@ The installed H3 Node adapter was tested over a local HTTP connection with a 6.2
 6. In test mode, verify paid→My Purchases, downloads 1/2/3 and denied fourth, two devices racing the last quota, signed-out ticket rejection, successful refund→repurchase, and admin duplicate-payment review. Confirm the actual Vercel runtime can stream the largest ZIP within the configured duration and Android receives a native attachment.
 
 No remote migration was applied and no real Xendit payment/refund was created during this implementation. Do not mark a migration applied with `migration repair` instead of executing its SQL.
+
+## Product release updates (migration 0044)
+
+- Every approved ZIP is an immutable release numbered `1.0`, `1.1`, ... `1.9`, `2.0` using an integer sequence in PostgreSQL.
+- Seller ZIPs stay `pending_review`; only `published` releases are visible to the purchase downloader. Admin ZIPs may publish immediately.
+- `order_item_file_downloads` owns the three-download allowance for each order item and release. The original `order_items.download_count` is retained as lifetime audit history and is never reset.
+- Download sessions pin a `product_file_id`, so approval of a newer release cannot silently change an already-issued ticket.
+- A successful refund revokes pending sessions and canonical ownership. A later repurchase uses a new order item and therefore a new allowance.
+
+Before pushing 0044, run the read-only checks in `docs/sql/product-release-preflight.sql`, review every returned row, then use `npx.cmd supabase db push --dry-run`. Deploy the matching application code immediately after applying the migration because the new server endpoints require the new release columns, table, and RPC.

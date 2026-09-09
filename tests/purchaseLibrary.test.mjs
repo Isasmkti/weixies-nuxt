@@ -78,6 +78,31 @@ test('missing file or mismatched canonical order item never enables a download',
   assert.equal(purchaseResponse(wrongItem).can_download, false)
 })
 
+test('a published update receives a fresh quota without erasing lifetime downloads', () => {
+  const row = purchase()
+  row.product.product_files = [
+    { id: 'file-10', file_name: 'asset-1.0.zip', file_url: '7/releases/asset-1.0.zip', version: '1.0', version_sequence: 10, release_status: 'published', published_at: '2026-09-01' },
+    { id: 'file-11', file_name: 'asset-1.1.zip', file_url: '7/releases/asset-1.1.zip', version: '1.1', version_sequence: 11, release_status: 'published', published_at: '2026-09-08' },
+    { id: 'file-pending', file_name: 'asset-next.zip', file_url: '7/releases/asset-next.zip', release_status: 'pending_review', created_at: '2026-09-09' },
+  ]
+  row.order.order_items[0] = {
+    ...row.order.order_items[0],
+    product_file_id_at_purchase: 'file-10',
+    download_count: 3,
+    order_item_file_downloads: [
+      { product_file_id: 'file-10', download_count: 3, download_limit: 3, last_downloaded_at: '2026-09-03' },
+    ],
+  }
+  const result = purchaseResponse(row)
+  assert.equal(result.latest_version, '1.1')
+  assert.equal(result.purchased_version, '1.0')
+  assert.equal(result.update_available, true)
+  assert.equal(result.download_count, 0)
+  assert.equal(result.downloads_remaining, 3)
+  assert.equal(result.lifetime_download_count, 3)
+  assert.equal(result.can_download, true)
+})
+
 test('product ID validation handles bigint bounds without rounding', () => {
   assert.equal(positivePurchaseId('9223372036854775807'), '9223372036854775807')
   for (const invalid of ['9223372036854775808', '1.2', '1 or 1=1', '-1', '0', '']) assert.equal(positivePurchaseId(invalid), null)

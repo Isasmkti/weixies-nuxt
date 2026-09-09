@@ -218,6 +218,7 @@ export default defineEventHandler(async (event) => {
       retryable: error.retryable,
       upstreamStatus: error.upstreamStatus || null,
     });
+    
     const failed = await failAiGeneration(
       conversation.stored,
       claim.assistant,
@@ -226,6 +227,7 @@ export default defineEventHandler(async (event) => {
       error.retryable,
       Date.now() - startedAt,
     );
+
     const current = failed || await currentAiReply(conversation.stored.id, storedUser.message.id);
     if (!current || current.status === 'pending') {
       throw createError({ statusCode: 503, statusMessage: 'AI support is temporarily unavailable.' });

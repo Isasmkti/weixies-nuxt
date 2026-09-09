@@ -176,7 +176,9 @@ const { canonicalUrl, absoluteUrl } = useSeoSite()
 const shortDescription = computed(() => String(product.value?.description || '').slice(0, 220) || 'A ready-to-use digital product for your next project.')
 const productSpecs = computed(() => [...(product.value?.product_specs || [])]
   .sort((a, b) => Number(a.sort_order) - Number(b.sort_order)))
-const latestProductFile = computed(() => [...(product.value?.product_files || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null)
+const latestProductFile = computed(() => [...(product.value?.product_files || [])]
+  .filter((file) => !file.release_status || file.release_status === 'published')
+  .sort((a, b) => Number(b.version_sequence || 0) - Number(a.version_sequence || 0) || new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at))[0] || null)
 const productFileFormat = computed(() => {
   const fileName = latestProductFile.value?.file_name
   if (!fileName?.includes('.')) return 'Digital file'

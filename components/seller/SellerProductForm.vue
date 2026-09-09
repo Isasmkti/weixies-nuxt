@@ -7,6 +7,7 @@ import ProductSpecificationsEditor from '../products/ProductSpecificationsEditor
 import ProductLicensesEditor from '../products/ProductLicensesEditor.vue'
 import { createDefaultProductLicense } from '../../utils/productLicenses'
 import { validateProductSubmission, validateProductZip } from '../../utils/productSubmission'
+import { latestProductRelease, nextProductVersion, pendingProductRelease } from '../../utils/productVersions'
 
 const props = defineProps({
   initialProduct: { type: Object, default: null },
@@ -21,7 +22,11 @@ const imagesDirty = ref(false)
 const validationError = ref('')
 const form = ref({ name: '', slug: '', description: '', price: 0, images: [], categoryIds: [], specs: [], licenses: [createDefaultProductLicense(0)] })
 const categories = computed(() => categoriesStore.categories)
-const existingZipFile = computed(() => props.initialProduct?.product_files?.[0] || null)
+const productFiles = computed(() => props.initialProduct?.product_files || [])
+const currentRelease = computed(() => latestProductRelease(productFiles.value))
+const pendingRelease = computed(() => pendingProductRelease(productFiles.value))
+const existingZipFile = computed(() => pendingRelease.value || currentRelease.value)
+const nextVersion = computed(() => nextProductVersion(productFiles.value))
 watch(() => props.initialProduct, (product) => {
   form.value = {
     name: product?.name || '',
@@ -129,11 +134,12 @@ const submit = () => {
       <ProductImageUploader v-model="form.images" input-name="seller-main-image" :disabled="submitting" @changed="imagesDirty = true" />
 
       <div>
-        <label class="mb-2 block text-sm font-bold text-text-main">Product ZIP file</label>
+        <label class="mb-2 block text-sm font-bold text-text-main">{{ currentRelease ? 'Upload new version' : 'Product ZIP file' }}</label>
         <input type="file" accept=".zip,application/zip,application/x-zip-compressed" :required="!existingZipFile" class="w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" @change="handleZipChange">
-        <p class="mt-1 text-xs text-text-muted">Required. The ZIP stays private and is delivered to buyers after payment (maximum 200 MB).</p>
-        <p v-if="zipFile" class="mt-2 text-sm font-semibold text-text-main">Selected: {{ zipFile.name }}</p>
-        <p v-else-if="existingZipFile" class="mt-2 text-sm text-text-muted">Current file: {{ existingZipFile.file_name }}</p>
+        <p class="mt-1 text-xs text-text-muted">A new ZIP becomes version {{ nextVersion }} only after admin approval. Existing buyers then receive 3 downloads for that release (maximum 200 MB).</p>
+        <p v-if="zipFile" class="mt-2 text-sm font-semibold text-text-main">Selected for version {{ nextVersion }}: {{ zipFile.name }}</p>
+        <p v-else-if="pendingRelease" class="mt-2 text-sm font-semibold text-amber-600">Pending approval: {{ pendingRelease.file_name }}</p>
+        <p v-else-if="currentRelease" class="mt-2 text-sm text-text-muted">Current version {{ currentRelease.version }}: {{ currentRelease.file_name }}</p>
       </div>
     </div>
 
