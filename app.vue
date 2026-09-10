@@ -23,6 +23,7 @@ import { supabase } from './utils/supabase'
 import { SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE, SEO_SITE_NAME } from './utils/seo'
 
 const route = useRoute()
+const router = useRouter()
 const { canonicalUrl, absoluteUrl } = useSeoSite()
 const indexableRoute = computed(() => (
   route.path === '/'
@@ -53,15 +54,37 @@ useSeoMeta({
 const isAuthenticated = ref(false)
 const showChat = ref(false)
 const canShowChatLauncher = computed(() => isAuthenticated.value && !route.path.startsWith('/admin'))
-const { user: authUser, resetProfile } = useAuth()
+const { user: authUser, fetchProfile, resetProfile } = useAuth()
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
 const purchasesStore = usePurchasesStore()
 let authSubscription = null
 
+const redirectInitialPublicRoute = async (sessionUser) => {
+  if (route.path === '/' && !sessionUser) {
+    await router.replace('/welcome')
+    return
+  }
+
+  if (route.path !== '/welcome' || !sessionUser) return
+
+  if (route.query.preview === '1') {
+    try {
+      const currentProfile = await fetchProfile()
+      if (currentProfile?.role === 'admin') return
+    } catch (error) {
+      console.error('Unable to verify welcome page preview access:', error)
+    }
+  }
+
+  await router.replace('/')
+}
+
 onMounted(async () => {
   const { data } = await supabase.auth.getSession()
   isAuthenticated.value = Boolean(data.session?.user)
+
+  await redirectInitialPublicRoute(data.session?.user)
 
   const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
     if (!session?.user
@@ -97,7 +120,9 @@ onBeforeUnmount(() => {
 /* Global transitions */
 .page-slide-enter-active,
 .page-slide-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-slide-enter-from {

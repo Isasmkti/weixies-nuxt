@@ -1,29 +1,50 @@
 import { getUser, getUserProfile } from '~/services/authService'
 import { getSellerByProfileId } from '~/services/sellerService'
 
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  // In a real SSR app with Supabase, we would use useSupabaseUser()
-  // But since we're using the existing client-side auth service:
-  
-  // Skip on server side if auth service is purely client-side
+const AUTH_ROUTE_PREFIXES = [
+  '/dashboard',
+  '/cart',
+  '/wishlist',
+  '/purchases',
+  '/orders',
+  '/messages',
+  '/refunds',
+  '/become-seller',
+  '/seller',
+  '/admin',
+]
+
+const matchesPrefix = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`)
+const redirectTo = path => navigateTo(path, { replace: true })
+
+export default defineNuxtRouteMiddleware(async (to) => {
+  // Private routes are client-rendered in nuxt.config because the current
+  // Supabase session is stored in the browser and is not available during SSR.
   if (import.meta.server) return
 
-  const user = await getUser()
+  // `/` and `/welcome` stay server-rendered for SEO. On their initial load,
+  // hydrate the server-rendered page first; app.vue performs the session-based
+  // redirect after mount so pages with different layouts are never hydrated
+  // against one another.
+  const nuxtApp = useNuxtApp()
+  const isInitialPublicHydration = nuxtApp.isHydrating
+    && nuxtApp.payload.serverRendered
+    && (to.path === '/' || to.path === '/welcome')
+  if (isInitialPublicHydration) return
 
-  // Pages that require auth
-  const authRoutes = ['/cart', '/wishlist', '/dashboard', '/purchases', '/admin', '/admin/products', '/admin/products/create', '/become-seller', '/seller']
-  const isAdminRoute = to.path.startsWith('/admin')
-  const isSellerRoute = to.path === '/seller' || to.path.startsWith('/seller/')
-  const requiresAuth = authRoutes.some(route => to.path === route || to.path.startsWith(route + '/'))
+  const user = await getUser()
+  const isAdminRoute = matchesPrefix(to.path, '/admin')
+  const isSellerRoute = matchesPrefix(to.path, '/seller')
+  const requiresAuth = AUTH_ROUTE_PREFIXES.some(prefix => matchesPrefix(to.path, prefix))
 
   if (requiresAuth && !user) {
-    return navigateTo('/login')
+    return redirectTo('/login')
   }
 
   if (isAdminRoute) {
     const profile = await getUserProfile()
     if (!profile || profile.role !== 'admin') {
-      return navigateTo('/dashboard')
+      return redirectTo('/dashboard')
     }
   }
 
@@ -34,31 +55,31 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       if (to.path === '/become-seller') {
         if (!seller) return
         if (seller.status === 'rejected') return
-        return navigateTo(seller.status === 'approved' ? '/seller' : '/seller/pending')
+        return redirectTo(seller.status === 'approved' ? '/seller' : '/seller/pending')
       }
 
       if (!seller) {
-        return navigateTo('/become-seller')
+        return redirectTo('/become-seller')
       }
 
       if (seller.status === 'approved') {
         if (to.path === '/seller/pending') {
-          return navigateTo('/seller')
+          return redirectTo('/seller')
         }
         return
       }
 
       if (to.path !== '/seller/pending') {
-        return navigateTo('/seller/pending')
+        return redirectTo('/seller/pending')
       }
     } catch (error) {
       console.error('[Seller middleware] Failed to load seller status:', error)
-      return navigateTo('/dashboard')
+      return redirectTo('/dashboard')
     }
   }
 
   if (to.path === '/' && !user) {
-    return navigateTo('/welcome')
+    return redirectTo('/welcome')
   }
 
   if (to.path === '/welcome' && user) {
@@ -66,6 +87,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       const profile = await getUserProfile()
       if (profile?.role === 'admin') return
     }
-    return navigateTo('/')
+    return redirectTo('/')
   }
 })

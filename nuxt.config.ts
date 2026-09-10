@@ -59,14 +59,36 @@ export default defineNuxtConfig({
     configPath: '~/tailwind.config.js',
   },
 
-  nitro: {
-    routeRules: {
-      '/**': {
-        headers: {
-          'Content-Security-Policy': "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'self'; object-src 'none'"
-        }
+  // Authentication currently comes from Supabase's browser session. Rendering
+  // private pages on the server would therefore produce a different page tree
+  // from the client-side role redirect and can corrupt hydration/layout state.
+  // Keep public marketplace routes SSR-enabled for SEO, and render account
+  // workspaces only after the browser session has been checked.
+  routeRules: {
+    '/**': {
+      headers: {
+        'Content-Security-Policy': "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'self'; object-src 'none'"
       }
     },
+    '/dashboard': { ssr: false },
+    '/cart': { ssr: false },
+    '/wishlist': { ssr: false },
+    '/purchases': { ssr: false },
+    '/purchases/**': { ssr: false },
+    '/orders': { ssr: false },
+    '/orders/**': { ssr: false },
+    '/messages': { ssr: false },
+    '/messages/**': { ssr: false },
+    '/refunds': { ssr: false },
+    '/refunds/**': { ssr: false },
+    '/become-seller': { ssr: false },
+    '/seller': { ssr: false },
+    '/seller/**': { ssr: false },
+    '/admin': { ssr: false },
+    '/admin/**': { ssr: false },
+  },
+
+  nitro: {
     tasks: {
       'payment-status-check': {
         handler: '~/server/tasks/payment-status-check',

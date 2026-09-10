@@ -96,10 +96,26 @@ const submitApplication = async () => {
     </div>
 
     <div v-else class="bg-surface rounded-3xl border border-bg-alt/50 shadow-xl shadow-black/[0.03] overflow-hidden">
-      <div class="bg-gradient-to-br from-primary to-primary-dark p-8 md:p-10 text-white">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Weixies Marketplace</p>
-        <h1 class="mt-3 text-3xl md:text-4xl font-black tracking-tight">{{ rejectedSeller ? 'Resubmit your store' : 'Open your store' }}</h1>
-        <p class="mt-3 max-w-xl text-white/80">{{ rejectedSeller ? 'Update your store details, then submit the same application for another review.' : 'Sell your digital products to the Weixies community. Your application will be reviewed before you can publish products.' }}</p>
+      <div class="bg-gradient-to-br from-primary to-primary-dark p-8 text-white md:p-10">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div v-if="rejectedSeller" class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-ui-lg border-4 border-white/20 bg-white/10 text-2xl font-bold shadow-elevation-2">
+            <img v-if="displayedStoreImage" :src="displayedStoreImage" :alt="`${rejectedSeller.store_name} store photo`" class="h-full w-full object-cover">
+            <span v-else>{{ rejectedSeller.store_name?.charAt(0)?.toUpperCase() || 'S' }}</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Weixies Marketplace</p>
+              <span v-if="rejectedSeller" class="rounded-ui-full bg-white px-3 py-1 text-xs font-bold text-danger">Application rejected</span>
+            </div>
+            <h1 class="mt-3 text-3xl font-black tracking-tight md:text-4xl">{{ rejectedSeller ? 'Update and resubmit your store' : 'Open your store' }}</h1>
+            <p class="mt-3 max-w-xl text-white/80">{{ rejectedSeller ? 'Correct the information mentioned in the administrator feedback, then submit the same application for another review.' : 'Sell your digital products to the Weixies community. Your application will be reviewed before you can publish products.' }}</p>
+          </div>
+        </div>
+
+        <div v-if="rejectedSeller" class="mt-6 rounded-ui-lg border border-white/20 bg-black/20 p-5 backdrop-blur-sm">
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Main rejection reason</p>
+          <p class="mt-2 whitespace-pre-line text-base font-semibold leading-7 text-white">{{ rejectedSeller.rejection_reason || 'The administrator did not provide a detailed reason. Contact support if you need clarification before resubmitting.' }}</p>
+        </div>
       </div>
 
       <form class="p-8 md:p-10 space-y-6" @submit.prevent="submitApplication">
@@ -154,11 +170,6 @@ const submitApplication = async () => {
               <p v-else-if="rejectedSeller?.store_image_url" class="mt-1 text-xs font-semibold text-text-main">Current store photo will be kept unless you choose a new one.</p>
             </div>
           </div>
-        </div>
-
-        <div v-if="rejectedSeller?.rejection_reason" class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-          <p class="font-bold">Previous review feedback</p>
-          <p class="mt-1">{{ rejectedSeller.rejection_reason }}</p>
         </div>
 
         <div class="rounded-2xl bg-primary/5 border border-primary/10 p-5 text-sm text-text-muted">
