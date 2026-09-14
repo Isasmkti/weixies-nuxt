@@ -1,13 +1,13 @@
 <template>
-  <div class="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col overflow-hidden rounded-2xl border border-bg-alt bg-surface font-poppins shadow-sm md:h-[calc(100vh-4rem)]">
-    <header class="flex items-center gap-3 border-b border-bg-alt px-4 py-3 sm:px-5">
+  <div class="conversation-shell mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-surface font-poppins md:rounded-2xl md:border md:border-bg-alt md:shadow-sm">
+    <header class="conversation-header flex shrink-0 items-center gap-2 border-b border-bg-alt px-3 py-3 sm:gap-3 sm:px-5">
       <NuxtLink to="/messages" class="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-alt hover:text-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6" /></svg></NuxtLink>
       <div class="min-w-0 flex-1"><h1 class="truncate font-black text-text-main">{{ counterpartName }}</h1><p class="truncate text-xs text-text-muted">{{ conversationLabel }}</p></div>
       <button v-if="thread" type="button" class="rounded-lg px-2.5 py-2 text-xs font-bold text-text-muted transition hover:bg-red-500/10 hover:text-red-500" @click="reportConversation">Report</button>
       <span v-if="thread" class="rounded-full bg-bg-alt px-2.5 py-1 text-[10px] font-bold uppercase text-text-muted">{{ thread.status }}</span>
     </header>
 
-    <section v-if="productContext" class="flex items-center gap-3 border-b border-bg-alt bg-bg/45 px-4 py-3 sm:px-5" aria-label="Conversation product">
+    <section v-if="productContext" class="flex shrink-0 items-center gap-2 border-b border-bg-alt bg-bg/45 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3" aria-label="Conversation product">
       <NuxtLink v-if="productIsAvailable" :to="`/products/${productContext.slug}`" class="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-bg-alt bg-bg-alt sm:h-14 sm:w-[4.5rem]">
         <img v-if="productPrimaryImage" :src="productPrimaryImage" :alt="productContext.name" class="h-full w-full object-cover">
         <span v-else class="flex h-full w-full items-center justify-center text-lg font-black text-text-muted">{{ productContext.name?.charAt(0)?.toUpperCase() || 'P' }}</span>
@@ -33,10 +33,10 @@
       </div>
     </section>
 
-    <div v-if="loading" class="flex flex-1 items-center justify-center"><span class="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></span></div>
+    <div v-if="loading" class="flex min-h-0 flex-1 items-center justify-center"><span class="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></span></div>
     <div v-else-if="error" class="m-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{{ error }}</div>
     <template v-else>
-      <div ref="messageList" class="flex-1 space-y-3 overflow-y-auto bg-bg/40 p-4 sm:p-6">
+      <div ref="messageList" class="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-bg/40 p-4 sm:p-6">
         <div v-if="!messages.length" class="py-16 text-center text-sm text-text-muted">Send the first message to begin this conversation.</div>
         <div v-for="message in messages" :key="message.id" class="flex" :class="message.sender_profile_id === profileId ? 'justify-end' : 'justify-start'">
           <div class="max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[70%]" :class="message.sender_profile_id === profileId ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md border border-bg-alt bg-surface text-text-main'">
@@ -46,9 +46,9 @@
         </div>
       </div>
 
-      <form class="border-t border-bg-alt bg-surface p-3 sm:p-4" @submit.prevent="sendMessage">
+      <form class="conversation-composer shrink-0 border-t border-bg-alt bg-surface p-3 sm:p-4" @submit.prevent="sendMessage">
         <div class="flex items-end gap-2 rounded-2xl border border-bg-alt bg-bg px-3 py-2 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
-          <textarea v-model="draft" :disabled="sending || thread?.status !== 'open'" rows="1" maxlength="5000" class="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-1 py-2 text-sm text-text-main outline-none" :placeholder="thread?.status === 'open' ? 'Write a message…' : 'This conversation is closed.'" @keydown.enter.exact.prevent="sendMessage"></textarea>
+          <textarea v-model="draft" :disabled="sending || thread?.status !== 'open'" rows="1" maxlength="5000" class="max-h-32 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-base text-text-main outline-none sm:text-sm" :placeholder="thread?.status === 'open' ? 'Write a message…' : 'This conversation is closed.'" @focus="handleComposerFocus" @keydown.enter.exact.prevent="sendMessage"></textarea>
           <button type="submit" :disabled="sending || !draft.trim() || thread?.status !== 'open'" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"><span v-if="sending" class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span><svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 12-3.269-9.53A59.768 59.768 0 0 1 21.485 12 59.768 59.768 0 0 1 2.731 21.53L6 12Zm0 0h7.5" /></svg></button>
         </div>
         <p v-if="sendError" class="mt-2 text-xs font-semibold text-red-500">{{ sendError }}</p>
@@ -109,6 +109,10 @@ const authHeaders = async () => {
   return { Authorization: data.session?.access_token ? `Bearer ${data.session.access_token}` : '' }
 }
 const scrollBottom = async () => { await nextTick(); if (messageList.value) messageList.value.scrollTop = messageList.value.scrollHeight }
+const handleComposerFocus = () => {
+  // The visual viewport settles shortly after the mobile keyboard opens.
+  window.setTimeout(() => { void scrollBottom() }, 180)
+}
 const formatTime = (value) => value ? new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : ''
 
 const markRead = async () => {
@@ -167,3 +171,15 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel) })
 </script>
+
+<style scoped>
+@media (max-width: 767px) {
+  .conversation-header {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .conversation-composer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+</style>

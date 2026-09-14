@@ -11,11 +11,11 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 
 const theme = useThemeStore()
 const router = useRouter()
-const { profile, fetchProfile, updateProfile, uploadProfileImage, loading, signOut } = useAuth()
+const { user, profile, fetchProfile, updateProfile, uploadProfileImage, loading, signOut } = useAuth()
 
-const isEditing = ref(false)
 const selectedFile = ref(null)
 const previewUrl = ref(null)
+const profileSettings = ref(null)
 const sellerApplication = ref(null)
 const loggingOut = ref(false)
 const pageLoading = ref(true)
@@ -23,6 +23,8 @@ const pageError = ref('')
 const unreadMessageCount = ref(0)
 const purchaseCount = ref(null)
 const visiblePurchaseCount = computed(() => purchaseCount.value?.profileId === profile.value?.id ? purchaseCount.value.count : null)
+const accountEmail = computed(() => user.value?.email || profile.value?.email || '')
+const isVerified = computed(() => Boolean(user.value?.email_confirmed_at || user.value?.confirmed_at))
 let messageChannel = null
 
 const loadPurchaseCount = async () => {
@@ -83,8 +85,8 @@ const sellerCallToAction = computed(() => {
     if (profile.value?.is_seller === true || status === 'approved') {
         return {
             eyebrow: 'Seller account active',
-            title: 'Your shop is ready to grow',
-            description: 'Manage your products, store page, and marketplace activity from the seller workspace.',
+            title: 'Seller Center',
+            description: 'Manage products, orders, and marketplace activity.',
             label: 'Manage Shop',
             to: '/seller',
             tone: 'active'
@@ -93,8 +95,8 @@ const sellerCallToAction = computed(() => {
     if (status === 'pending') {
         return {
             eyebrow: 'Application submitted',
-            title: 'Your shop is under review',
-            description: 'An admin is reviewing your store information. Seller tools become available after approval.',
+            title: 'Seller review in progress',
+            description: 'Your store information is being reviewed.',
             label: 'View Application',
             to: '/seller/pending',
             tone: 'pending'
@@ -103,8 +105,8 @@ const sellerCallToAction = computed(() => {
     if (status === 'rejected') {
         return {
             eyebrow: 'Application needs changes',
-            title: 'Ready to improve your shop application?',
-            description: 'Review the admin feedback, update your store information and photo, then submit it again.',
+            title: 'Update your seller application',
+            description: 'Review the feedback, update your information, and resubmit.',
             label: 'Update Application',
             to: '/become-seller',
             tone: 'rejected'
@@ -113,8 +115,8 @@ const sellerCallToAction = computed(() => {
     if (status === 'suspended') {
         return {
             eyebrow: 'Seller access suspended',
-            title: 'Your shop needs attention',
-            description: 'Seller access is temporarily unavailable. Open the status page for more information.',
+            title: 'Seller Center needs attention',
+            description: 'Open the status page for more information.',
             label: 'View Status',
             to: '/seller/pending',
             tone: 'suspended'
@@ -178,7 +180,6 @@ const handleUpdate = async () => {
         }
 
         editForm.value.profile_img = finalImageUrl
-        isEditing.value = false
         selectedFile.value = null
         previewUrl.value = null
 
@@ -237,6 +238,11 @@ onMounted(() => {
     initializeDashboard()
 })
 
+const showSellerCenter = computed(() => profile.value?.is_seller === true || Boolean(sellerApplication.value))
+const scrollToProfileSettings = () => {
+    profileSettings.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 onBeforeUnmount(() => {
     if (messageChannel) {
         supabase.removeChannel(messageChannel)
@@ -247,15 +253,15 @@ onBeforeUnmount(() => {
 
 <template>
     
-        <div class="mx-auto max-w-[1440px] space-y-6 py-4 md:py-6">
+        <div class="mx-auto max-w-7xl space-y-7 pb-20 pt-2 font-poppins sm:pt-4 md:pt-6">
             <div v-if="pageLoading" role="status" aria-label="Loading dashboard" class="space-y-6 animate-pulse motion-reduce:animate-none">
-                <div class="flex h-80 flex-col items-center justify-center gap-4 rounded-ui-xl border border-border bg-surface">
-                    <div class="h-20 w-20 rounded-ui-lg bg-bg-alt"></div>
+                <div class="flex h-32 items-center gap-4 rounded-ui-lg bg-surface p-5">
+                    <div class="h-16 w-16 rounded-ui-md bg-bg-alt"></div>
                     <div class="h-6 w-48 rounded bg-bg-alt"></div>
                     <div class="h-4 w-32 rounded bg-bg-alt"></div>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div v-for="i in 4" :key="i" class="h-24 rounded-ui-lg bg-bg-alt"></div></div>
-                <div class="h-44 rounded-ui-xl bg-bg-alt"></div>
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><div v-for="i in 5" :key="i" class="h-24 rounded-ui-lg bg-bg-alt"></div></div>
+                <div class="h-28 rounded-ui-lg bg-bg-alt"></div>
                 <div class="h-72 rounded-ui-lg bg-bg-alt"></div>
             </div>
             <div v-else-if="pageError" role="alert" class="rounded-ui-lg border border-border bg-surface p-6 text-text-main">
@@ -263,20 +269,16 @@ onBeforeUnmount(() => {
                 <button class="mt-4 text-primary underline" @click="initializeDashboard">Try again</button>
             </div>
             <template v-else>
-            <!-- Hero Profile Section -->
-            <div
-                class="rounded-ui-xl border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
-                <!-- Luxury Glow Decor -->
-                <div class="flex flex-col items-center text-center">
-                    <!-- Profile Avatar -->
-                    <div class="relative mb-5">
-                        <div
-                            class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-ui-lg border border-border bg-bg-alt">
+            <!-- Compact account header -->
+            <section class="rounded-ui-lg bg-surface p-4 shadow-elevation-1 sm:p-5">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div class="relative w-fit shrink-0">
+                        <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-ui-md bg-bg-alt sm:h-[4.5rem] sm:w-[4.5rem]">
                             <img v-if="profile?.profile_img" :src="profile.profile_img" alt="Profile"
                                 class="w-full h-full object-cover">
                             <div v-else
                                 class="flex h-full w-full items-center justify-center bg-bg-alt">
-                                <span class="text-2xl font-semibold text-text-muted">{{
+                                <span class="text-xl font-semibold text-text-muted">{{
                                     profile?.full_name?.charAt(0) || 'U' }}</span>
                             </div>
                         </div>
@@ -284,31 +286,36 @@ onBeforeUnmount(() => {
                             class="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-ui-full border-2 border-surface bg-success">
                         </div>
                     </div>
-
-
-                    <!-- Identity Info -->
-                    <div class="max-w-2xl space-y-3">
-                        <div class="space-y-1">
-                            <h3 class="text-sm font-medium text-primary">Welcome back</h3>
-                            <h1 class="text-3xl font-semibold leading-tight tracking-tight text-text-main">
+                    <div class="min-w-0 flex-1 text-left">
+                        <div>
+                            <h1 class="truncate text-xl font-semibold tracking-tight text-text-main sm:text-2xl">
                                 {{ profile?.full_name || 'Explorer' }}
                             </h1>
+                            <p v-if="accountEmail" class="mt-1 truncate text-sm text-text-muted">{{ accountEmail }}</p>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
                             <span
                                 class="rounded-ui-xs bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-primary">
                                 {{ profile?.role || 'Member' }}
                             </span>
                             <span
                                 class="rounded-ui-xs bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-muted">
-                                Verified account
+                                {{ isVerified ? 'Verified account' : 'Verification pending' }}
                             </span>
                         </div>
+                    </div>
+
+                    <div class="flex shrink-0 flex-wrap items-center gap-2">
+                        <NuxtLink v-if="!showSellerCenter" to="/become-seller" class="inline-flex min-h-10 items-center rounded-ui-sm px-3 py-2 text-sm font-medium text-text-muted transition hover:bg-bg-alt hover:text-primary">Become a seller</NuxtLink>
+                        <button type="button" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-ui-sm bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark" @click="scrollToProfileSettings">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.86 4.49 19.5 7.13M18 2.75a1.87 1.87 0 0 1 2.65 2.65L8 18.05 3.75 19.5l1.45-4.25L18 2.75Z" /></svg>
+                            Edit profile
+                        </button>
                         <button
                             type="button"
                             :disabled="loggingOut"
-                            class="mx-auto mt-2 inline-flex items-center gap-2 rounded-ui-sm border border-danger/25 px-3 py-2 text-xs font-medium text-danger transition hover:bg-danger/10 disabled:cursor-wait disabled:opacity-60 md:hidden"
+                            class="inline-flex min-h-10 items-center gap-2 rounded-ui-sm border border-danger/25 px-3 py-2 text-xs font-medium text-danger transition hover:bg-danger/10 disabled:cursor-wait disabled:opacity-60 md:hidden"
                             @click="handleLogout"
                         >
                             <span v-if="loggingOut" class="h-3.5 w-3.5 animate-spin rounded-ui-full border-2 border-danger/30 border-t-danger"></span>
@@ -317,99 +324,112 @@ onBeforeUnmount(() => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Account activity">
-                <NuxtLink to="/purchases" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+            <section aria-labelledby="quick-actions-title">
+              <div class="mb-3 flex items-end justify-between"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Account</p><h2 id="quick-actions-title" class="mt-1 text-xl font-semibold text-text-main">Quick Actions</h2></div></div>
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <NuxtLink to="/purchases" class="group flex min-h-24 items-center gap-3 rounded-ui-md border border-transparent bg-surface p-4 shadow-elevation-1 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16v13H4V7Zm-1-4h18v4H3V3Zm6 8h6" /></svg>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="flex flex-wrap items-center gap-2 text-base font-semibold text-text-main">My purchases <span v-if="visiblePurchaseCount !== null" class="rounded-ui-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{{ visiblePurchaseCount }}</span></span>
-                        <span class="mt-1 block text-sm text-text-muted">Paid products, licenses, and downloads</span>
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
-                </NuxtLink>
-                <NuxtLink to="/orders" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></svg>
-                    </span>
-                    <span class="min-w-0 flex-1">
-                        <span class="block text-base font-semibold text-text-main">My orders</span>
-                        <span class="mt-1 block text-sm text-text-muted">Payments, reviews, and order history</span>
+                        <span class="flex flex-wrap items-center gap-2 text-sm font-semibold text-text-main">Purchases <span v-if="visiblePurchaseCount !== null" class="rounded-ui-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{{ visiblePurchaseCount }}</span></span>
+                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-text-muted">Your purchased products</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>
 
-                <NuxtLink to="/messages" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                <NuxtLink to="/wishlist" class="group flex min-h-24 items-center gap-3 rounded-ui-md border border-transparent bg-surface p-4 shadow-elevation-1 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-text-main">Wishlist</span>
+                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-text-muted">Products saved for later</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
+
+                <NuxtLink to="/orders" class="group flex min-h-24 items-center gap-3 rounded-ui-md border border-transparent bg-surface p-4 shadow-elevation-1 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-text-main">Orders</span>
+                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-text-muted">Payments and order history</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+                </NuxtLink>
+
+                <NuxtLink to="/messages" class="group flex min-h-24 items-center gap-3 rounded-ui-md border border-transparent bg-surface p-4 shadow-elevation-1 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5">
                     <span class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.6 12h.01m3.74 0h.01m3.74 0h.01M21 12c0 4.6-4 8.3-9 8.3a9.8 9.8 0 0 1-2.6-.4A6 6 0 0 1 5.4 21a6 6 0 0 1-.5-.1 4.5 4.5 0 0 0 1-2C3.4 16.9 2.3 15 2.3 12c0-4.6 4-8.3 9-8.3s9.7 3.7 9.7 8.3Z" /></svg>
                         <span v-if="unreadMessageCount" class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-ui-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface" :aria-label="`${unreadMessageCount} unread messages`">{{ displayedUnreadMessageCount }}</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="flex items-center gap-2 text-base font-semibold text-text-main">
+                        <span class="flex flex-wrap items-center gap-2 text-sm font-semibold text-text-main">
                             Messages
                             <span v-if="unreadMessageCount" class="rounded-ui-full bg-danger/10 px-2 py-0.5 text-xs font-bold text-danger">{{ displayedUnreadMessageCount }} unread</span>
                         </span>
-                        <span class="mt-1 block text-sm text-text-muted">{{ unreadMessageCount ? 'You have new messages to read' : 'Continue conversations with sellers' }}</span>
+                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-text-muted">{{ unreadMessageCount ? 'New conversations waiting' : 'Seller conversations' }}</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>
 
-                <NuxtLink to="/refunds" class="group flex items-center gap-4 rounded-ui-lg border border-border bg-surface p-5 shadow-elevation-1 transition hover:border-primary/30 hover:shadow-elevation-2">
+                <NuxtLink to="/refunds" class="group flex min-h-24 items-center gap-3 rounded-ui-md border border-transparent bg-surface p-4 shadow-elevation-1 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h14a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4H8m-5-8 4-4m-4 4 4 4" /></svg>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block text-base font-semibold text-text-main">My refunds</span>
-                        <span class="mt-1 block text-sm text-text-muted">Reasons, returned amounts, and progress</span>
+                        <span class="block text-sm font-semibold text-text-main">Refunds</span>
+                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-text-muted">Refund status and progress</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
                 </NuxtLink>
+              </div>
             </section>
 
-            <!-- Seller onboarding / workspace CTA -->
-            <section class="rounded-ui-xl border border-primary/20 bg-surface p-6 shadow-elevation-1 md:p-8">
-                <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <!-- Seller Center only appears for sellers or existing applications. -->
+            <section v-if="showSellerCenter" class="overflow-hidden rounded-ui-lg bg-primary/5 shadow-elevation-1 ring-1 ring-inset ring-primary/15">
+                <div class="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                     <div class="max-w-3xl">
-                        <p class="text-sm font-medium" :class="sellerCallToAction.tone === 'rejected' || sellerCallToAction.tone === 'suspended' ? 'text-danger' : 'text-primary'">{{ sellerCallToAction.eyebrow }}</p>
-                        <h2 class="mt-2 text-xl font-semibold tracking-tight text-text-main md:text-2xl">{{ sellerCallToAction.title }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-text-muted">{{ sellerCallToAction.description }}</p>
+                        <p class="flex items-center gap-2 text-xs font-semibold" :class="sellerCallToAction.tone === 'rejected' || sellerCallToAction.tone === 'suspended' ? 'text-danger' : 'text-primary'"><span class="h-2 w-2 rounded-ui-full bg-current"></span>{{ sellerCallToAction.eyebrow }}</p>
+                        <h2 class="mt-1.5 text-lg font-semibold tracking-tight text-text-main">{{ sellerCallToAction.title }}</h2>
+                        <p class="mt-1 text-sm leading-6 text-text-muted">{{ sellerCallToAction.description }}</p>
                     </div>
-                    <NuxtLink :to="sellerCallToAction.to" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-ui-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
+                    <NuxtLink :to="sellerCallToAction.to" class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-ui-sm bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark">
                         {{ sellerCallToAction.label }}
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m9 5 7 7-7 7" /></svg>
                     </NuxtLink>
                 </div>
             </section>
 
-            <!-- Standalone Edit Profile Section -->
-            <div class="rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
-                <div class="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <section ref="profileSettings" class="scroll-mt-6" aria-labelledby="account-settings-title">
+              <div class="mb-3">
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Preferences</p>
+                <h2 id="account-settings-title" class="mt-1 text-xl font-semibold text-text-main">Account Settings</h2>
+              </div>
+
+            <!-- Profile settings -->
+            <div class="rounded-ui-lg bg-surface p-5 shadow-elevation-1 sm:p-6">
+                <div class="space-y-6">
                     <div>
                         <div class="space-y-2">
-                            <h2 class="text-xl font-semibold text-text-main">Edit profile</h2>
-                            <p class="text-sm leading-6 text-text-muted">Update your personal information and profile
-                                appearance.</p>
+                            <h3 class="text-lg font-semibold text-text-main">Profile</h3>
+                            <p class="text-sm leading-6 text-text-muted">Manage your personal information and profile appearance.</p>
                         </div>
 
-                        <div class="mt-5 rounded-ui-md border border-primary/15 bg-primary/5 p-4">
-                            <div class="flex gap-3 text-text-muted [&>span]:hidden">
-                                <span class="text-2xl">✨</span>
-                                <p class="text-sm leading-5">Your changes will be reflected globally across the
-                                    platform.</p>
-                            </div>
-                        </div>
                     </div>
 
                     <div>
-                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                             <div>
                                 <label
                                     class="block text-left text-sm font-medium text-text-main">Full
                                     name</label>
                                 <div class="relative group text-left">
-                                    <input v-model="editForm.full_name" type="text" placeholder="Enter your full name"
+                                    <input v-model="editForm.full_name" type="text" required maxlength="120" placeholder="Enter your full name"
                                         class="mt-2 w-full rounded-ui-sm border border-border bg-bg px-4 py-3 text-sm text-text-main outline-none transition placeholder:text-text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15">
                                 </div>
                             </div>
@@ -419,7 +439,7 @@ onBeforeUnmount(() => {
                                     photo</label>
                                 <div class="mt-2 flex items-center gap-4">
                                     <!-- Image Preview Thumbnail -->
-                                    <div class="group/preview relative h-20 w-20 shrink-0">
+                                    <div class="group/preview relative h-16 w-16 shrink-0">
                                         <div
                                             class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-ui-lg border border-border bg-bg-alt">
                                             <!-- Priority: 1. New Local Preview, 2. Existing DB Image, 3. Placeholder -->
@@ -444,7 +464,7 @@ onBeforeUnmount(() => {
                                             </div>
 
                                             <!-- Reset/Clear selected file -->
-                                            <button v-if="selectedFile && !loading"
+                                            <button v-if="selectedFile && !loading" type="button"
                                                 @click="selectedFile = null; previewUrl = null"
                                                 class="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-danger/80 text-white opacity-0 transition-opacity group-hover/preview:opacity-100"
                                                 title="Remove pending upload">
@@ -463,7 +483,7 @@ onBeforeUnmount(() => {
                                         <input type="file" @change="handleImageUpload" class="hidden"
                                             id="profile-upload" accept="image/*">
                                         <label for="profile-upload"
-                                            class="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-ui-sm border border-border bg-surface px-4 py-2.5 text-primary transition hover:border-primary/40">
+                                            class="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-ui-sm border border-border bg-bg px-4 py-2.5 text-primary transition hover:border-primary/40">
                                             <template v-if="loading">
                                                 <div
                                                     class="w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin">
@@ -496,8 +516,8 @@ onBeforeUnmount(() => {
                         </div>
 
                         <div class="mt-7 flex flex-wrap items-center gap-3">
-                            <button @click="handleUpdate"
-                                class="flex items-center gap-2 rounded-ui-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-elevation-1 transition hover:bg-primary-dark">
+                            <button type="button" :disabled="loading" @click="handleUpdate"
+                                class="flex min-h-10 items-center gap-2 rounded-ui-sm bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-wait disabled:opacity-60">
                                 <span>Save changes</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
@@ -505,8 +525,8 @@ onBeforeUnmount(() => {
                                         d="M5 13l4 4L19 7" />
                                 </svg>
                             </button>
-                            <button @click="startEditing"
-                                class="rounded-ui-sm border border-border bg-surface px-5 py-3 text-sm font-medium text-text-muted transition hover:bg-bg-alt hover:text-text-main">
+                            <button type="button" :disabled="loading" @click="startEditing"
+                                class="min-h-10 rounded-ui-sm px-4 py-2 text-sm font-medium text-text-muted transition hover:bg-bg-alt hover:text-text-main disabled:opacity-60">
                                 Reset details
                             </button>
                         </div>
@@ -514,31 +534,31 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <!-- Settings / Preferences Section -->
-            <div class="rounded-ui-lg border border-border bg-surface p-6 shadow-elevation-1 md:p-8">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <!-- Appearance remains part of Account Settings without another large card. -->
+            <div class="border-t border-border px-1 py-5 sm:px-2">
+                <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        <h2 class="text-xl font-semibold text-text-main">System preferences</h2>
-                        <p class="mt-1 text-sm text-text-muted">Personalize your interface and workspace settings.
-                        </p>
+                        <h3 class="text-base font-semibold text-text-main">Appearance</h3>
+                        <p class="mt-1 text-sm text-text-muted">Choose how Weixies looks on this device.</p>
                     </div>
 
                     <!-- Theme Switch UI -->
                     <div
                         class="flex w-fit items-center rounded-ui-full border border-border bg-bg-alt p-1">
-                        <button v-for="mode in ['light', 'dark', 'system']" :key="mode" @click="theme.setTheme(mode)"
+                        <button v-for="mode in ['light', 'dark', 'system']" :key="mode" type="button" @click="theme.setTheme(mode)"
                             :class="theme.mode === mode
                                 ? 'bg-surface text-primary shadow-elevation-1'
                                 : 'text-text-muted hover:text-text-main'"
-                            class="flex items-center rounded-ui-full px-3 py-1.5 text-xs font-medium capitalize transition sm:px-4 sm:py-2 sm:text-sm [&>span]:hidden">
-                            <component :is="mode === 'light' ? 'span' : 'span'">
-                                {{ mode === 'light' ? '☀️' : mode === 'dark' ? '🌙' : '💻' }}
-                            </component>
+                            class="flex items-center gap-1.5 rounded-ui-full px-3 py-1.5 text-xs font-medium capitalize transition sm:px-4 sm:py-2 sm:text-sm">
+                            <svg v-if="mode === 'light'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="1.8" d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21m-2.64-6.36-1.06 1.06M6.7 17.3l-1.06 1.06m0-12.72L6.7 6.7m10.6 10.6 1.06 1.06M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" /></svg>
+                            <svg v-else-if="mode === 'dark'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="1.8" d="M20.25 15.75A9 9 0 0 1 8.25 3.75a9 9 0 1 0 12 12Z" /></svg>
+                            <svg v-else class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="1.8" d="M3 4.5h18v12H3v-12Zm5.25 16.5h7.5M12 16.5V21" /></svg>
                             {{ mode }}
                         </button>
                     </div>
                 </div>
             </div>
+            </section>
             </template>
         </div>
     
