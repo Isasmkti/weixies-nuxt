@@ -38,6 +38,20 @@ async function getApprovedStores(supabase: SupabaseClient, remaining: number) {
   return rows;
 }
 
+async function getPublishedPublicPages(supabase: SupabaseClient) {
+  const { data, error } = await supabase
+    .from('public_pages')
+    .select('path, updated_at')
+    .eq('status', 'published')
+    .order('path', { ascending: true });
+  if (error) {
+    // Keep the sitemap available before migration 0045 is deployed.
+    if (['42P01', 'PGRST205'].includes(error.code || '')) return [];
+    throw error;
+  }
+  return (data || []) as Array<{ path: string; updated_at: string | null }>;
+}
+
 export default defineEventHandler(async (event) => {
   const origin = resolveSeoSiteOrigin(event);
   const config = useRuntimeConfig(event);
@@ -46,10 +60,17 @@ export default defineEventHandler(async (event) => {
   });
   const products = await getPublishedProducts(supabase);
   const stores = await getApprovedStores(supabase, Math.max(0, MAX_DYNAMIC_URLS - products.length));
+  const publicPages = await getPublishedPublicPages(supabase);
   const entries = [
     { path: '/', priority: '1.0', changefreq: 'daily', lastmod: null },
     { path: '/welcome', priority: '0.8', changefreq: 'weekly', lastmod: null },
     { path: '/products', priority: '0.9', changefreq: 'daily', lastmod: null },
+    ...publicPages.map(page => ({
+      path: page.path,
+      priority: '0.6',
+      changefreq: 'monthly',
+      lastmod: page.updated_at,
+    })),
     ...products.map(product => ({
       path: `/products/${encodeURIComponent(product.slug)}`,
       priority: '0.8',

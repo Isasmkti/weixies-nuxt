@@ -8,7 +8,7 @@ const route = useRoute()
 const { profile, signOut } = useAuth()
 const isCollapsed = ref(false)
 const openGroups = reactive({
-    content: ['/admin/home-carousel', '/admin/signup-banner', '/admin/welcome'].some(path => route.path.startsWith(path)),
+    content: ['/admin/home-carousel', '/admin/signup-banner', '/admin/welcome', '/admin/public-pages'].some(path => route.path.startsWith(path)),
     products: route.path.startsWith('/admin/products')
 })
 
@@ -44,6 +44,11 @@ const menuItems = [
                 name: 'Welcome Page',
                 to: '/admin/welcome',
                 icon: 'M2.25 12l8.954-8.955a1.126 1.126 0 011.592 0L21.75 12M4.5 9.75v9.375c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v4.875h4.125c.621 0 1.125-.504 1.125-1.125V9.75'
+            },
+            {
+                name: 'Public Pages',
+                to: '/admin/public-pages',
+                icon: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5V6.75A3.375 3.375 0 0 0 11.25 3.375H8.625m0 11.625h4.5m-4.5 3h4.5M10.5 3.75H5.625c-.621 0-1.125.504-1.125 1.125v14.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V12a8.25 8.25 0 0 0-8.25-8.25h-.75Z'
             }
         ]
     },

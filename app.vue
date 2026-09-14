@@ -31,6 +31,11 @@ const indexableRoute = computed(() => (
   || route.path === '/products'
   || route.path.startsWith('/products/')
   || route.path.startsWith('/stores/')
+  || route.path === '/about'
+  || route.path === '/contact'
+  || route.path === '/help'
+  || route.path.startsWith('/help/')
+  || route.path.startsWith('/legal/')
 ))
 
 useHead(() => ({

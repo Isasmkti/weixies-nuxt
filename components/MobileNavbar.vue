@@ -25,6 +25,7 @@ const icons = {
     payout: 'M2.25 18.75a60 60 0 0 1 17.48 1.06l.87-2.6M2.25 18.75V5.25A2.25 2.25 0 0 1 4.5 3h9.75a2.25 2.25 0 0 1 2.25 2.25v4.5M16.5 9.75h3.75a1.5 1.5 0 0 1 1.5 1.5V15a1.5 1.5 0 0 1-1.5 1.5H16.5A1.5 1.5 0 0 1 15 15v-3.75a1.5 1.5 0 0 1 1.5-1.5Z',
     logs: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
     knowledge: 'M12 6.25v13m0-13C10.83 5.48 9.25 5 7.5 5A4.5 4.5 0 0 0 3 9.5v9A4.5 4.5 0 0 1 7.5 14c1.75 0 3.33.48 4.5 1.25m0-9C13.17 5.48 14.75 5 16.5 5A4.5 4.5 0 0 1 21 9.5v9a4.5 4.5 0 0 0-4.5-4.5c-1.75 0-3.33.48-4.5 1.25',
+    page: 'M19.5 14.25v-2.63a3.38 3.38 0 0 0-3.38-3.37h-1.5v-1.5a3.38 3.38 0 0 0-3.37-3.38H5.63A1.13 1.13 0 0 0 4.5 4.5v15c0 .62.5 1.13 1.13 1.13h12.74c.63 0 1.13-.5 1.13-1.13v-5.25Z',
 }
 
 const userMenuItems = [
@@ -43,6 +44,7 @@ const adminMenuItems = [
             { name: 'Home Carousel', to: '/admin/home-carousel', icon: icons.carousel },
             { name: 'Sign-up Banner', to: '/admin/signup-banner', icon: icons.banner },
             { name: 'Welcome Page', to: '/admin/welcome', icon: icons.home },
+            { name: 'Public Pages', to: '/admin/public-pages', icon: icons.page },
         ],
     },
     {
