@@ -13,8 +13,11 @@ const openGroups = reactive({
 })
 
 const handleLogout = async () => {
-    await signOut()
-    router.push('/')
+    try {
+        await signOut()
+    } finally {
+        await router.replace('/welcome')
+    }
 }
 
 const menuItems = [

@@ -30,7 +30,39 @@ export const getUserProfile = async () => {
   return data; // { role: 'admin' | 'user' | 'seller' }
 };
 
-// Sign out
+// Sign out locally before revoking the refresh token remotely. Supabase's
+// public signOut() performs the remote request first, which can leave the UI
+// waiting on a slow network even though logging out of this browser only needs
+// the local session to be removed.
 export const signOut = async () => {
-  await supabase.auth.signOut();
+  const auth = supabase.auth;
+  let accessToken = null;
+
+  try {
+    const { data } = await auth.getSession();
+    accessToken = data.session?.access_token ?? null;
+  } catch {
+    // Local cleanup must still run when the cached session cannot be read.
+  }
+
+  // _removeSession is the same local cleanup used internally by auth-js. The
+  // fallback keeps this compatible if a future auth-js version stops exposing
+  // that method at runtime.
+  if (typeof auth._removeSession === "function") {
+    await auth._removeSession();
+
+    // Revocation is still attempted, but it must never block navigation. A
+    // local scope logs out only this session rather than every user device.
+    if (accessToken && typeof auth.admin?.signOut === "function") {
+      try {
+        void Promise.resolve(auth.admin.signOut(accessToken, "local")).catch(() => {});
+      } catch {
+        // The browser is already signed out; remote revocation is best-effort.
+      }
+    }
+    return;
+  }
+
+  const { error } = await auth.signOut({ scope: "local" });
+  if (error) throw error;
 };

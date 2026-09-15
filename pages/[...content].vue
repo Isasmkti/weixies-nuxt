@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import PublicPageRichText from '../components/content/PublicPageRichText.vue'
+import { publicPageRichTextToPlainText } from '../utils/publicPageRichText'
 import { seoDescription, serializeJsonLd } from '../utils/seo'
 
 definePageMeta({ layout: 'public' })
@@ -20,7 +22,11 @@ if (error.value || !data.value?.page) {
 }
 
 const page = computed(() => data.value.page)
-const description = computed(() => seoDescription(page.value.seo_description || page.value.summary || page.value.sections?.[0]?.body))
+const description = computed(() => seoDescription(
+  page.value.seo_description
+  || page.value.summary
+  || publicPageRichTextToPlainText(page.value.sections?.[0]?.body),
+))
 const contactDetails = computed(() => page.value.contact_details || [])
 const linkedDetail = detail => ['email', 'phone', 'url'].includes(detail.type)
 const detailHref = (detail) => {
@@ -85,7 +91,7 @@ useHead(() => ({
         </section>
         <section v-for="(section, index) in page.sections" :id="`section-${index + 1}`" :key="`${section.heading}-${index}`" class="scroll-mt-24 rounded-ui-lg border border-border bg-surface p-5 shadow-sm sm:p-8">
           <h2 class="text-xl font-extrabold text-text-main sm:text-2xl">{{ section.heading }}</h2>
-          <p class="mt-4 whitespace-pre-line font-montserrat text-sm leading-7 text-text-muted sm:text-base">{{ section.body }}</p>
+          <PublicPageRichText :content="section.body" class="mt-4 whitespace-pre-line font-montserrat text-sm leading-7 text-text-muted sm:text-base" />
         </section>
       </div>
       <aside v-if="page.sections.length > 1" class="rounded-ui-lg border border-border bg-surface p-5 lg:sticky lg:top-24">

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import PublicPageRichTextEditor from '../../components/admin/PublicPageRichTextEditor.vue'
 import {
   createAdminPublicPage,
   deleteAdminPublicPage,
@@ -40,6 +41,9 @@ const filteredPages = computed(() => {
 })
 const publishedCount = computed(() => pages.value.filter(page => page.status === 'published').length)
 const draftCount = computed(() => pages.value.length - publishedCount.value)
+const completedSections = computed(() => form.sections.filter(section => (
+  String(section.heading || '').trim() && String(section.body || '').trim()
+)).length)
 
 const errorText = (error, fallback) => error?.data?.statusMessage || error?.statusMessage || error?.message || fallback
 const formatDate = value => value ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Not published'
@@ -205,25 +209,27 @@ onMounted(loadPages)
     </section>
 
     <Teleport to="body">
-      <div v-if="editorOpen" class="fixed inset-0 z-[100] overflow-y-auto bg-black/45 p-3 sm:p-6" @click.self="closeEditor">
-        <section class="mx-auto max-w-5xl rounded-ui-lg border border-border bg-surface shadow-2xl">
-          <header class="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-4 sm:px-6">
-            <div><p class="text-xs font-black uppercase tracking-wider text-primary">{{ editingId ? 'Edit page' : 'New page' }}</p><h2 class="text-xl font-extrabold text-text-main">Page content</h2></div>
-            <button type="button" class="rounded-full p-2 text-text-muted hover:bg-bg-alt" aria-label="Close editor" @click="closeEditor"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="m6 6 12 12M18 6 6 18" /></svg></button>
+      <div v-if="editorOpen" class="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden bg-black/45 backdrop-blur-[2px] sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-labelledby="public-page-editor-title" @click.self="closeEditor">
+        <section class="flex max-h-[96dvh] w-full max-w-7xl flex-col overflow-hidden rounded-t-ui-xl border border-border bg-surface shadow-2xl sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-ui-xl">
+          <header class="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-4 sm:px-6">
+            <div class="min-w-0"><div class="flex items-center gap-2"><p class="text-xs font-black uppercase tracking-wider text-primary">{{ editingId ? 'Edit page' : 'New page' }}</p><span class="rounded-full bg-bg-alt px-2 py-1 text-[10px] font-black uppercase tracking-wider text-text-muted">{{ form.status }}</span></div><h2 id="public-page-editor-title" class="mt-1 truncate text-xl font-extrabold text-text-main sm:text-2xl">{{ form.title || 'Untitled public page' }}</h2><code class="mt-1 block truncate text-[11px] text-text-muted">{{ form.path || 'Choose a public path' }}</code></div>
+            <button type="button" class="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-bg-alt hover:text-text-main" aria-label="Close editor" @click="closeEditor"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="m6 6 12 12M18 6 6 18" /></svg></button>
           </header>
-          <form class="space-y-8 p-4 sm:p-6" @submit.prevent="savePage('draft')">
+          <form class="min-h-0 flex-1 space-y-6 overflow-y-auto bg-bg-alt/35 p-4 sm:p-6" @submit.prevent="savePage('draft')">
+            <section class="rounded-ui-lg border border-border bg-surface p-4 shadow-sm sm:p-6">
+              <div class="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-black uppercase tracking-[0.16em] text-primary">Page setup</p><h3 class="mt-1 text-lg font-extrabold text-text-main">Identity and publishing path</h3></div><div class="flex flex-wrap gap-2"><button type="button" class="min-h-10 rounded-ui-md border border-border px-3 text-xs font-bold text-text-main hover:border-primary hover:text-primary" @click="useSuggestedPath">Use suggested path</button><button type="button" class="min-h-10 rounded-ui-md bg-primary/10 px-3 text-xs font-bold text-primary" @click="loadSectionGuide">Load section guide</button></div></div>
             <div class="grid gap-5 md:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-bold text-text-main">Page type *</span><select v-model="form.page_type" class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-sm text-text-main outline-none focus:border-primary"><option v-for="type in PUBLIC_PAGE_TYPES" :key="type.value" :value="type.value">{{ type.label }}</option></select></label>
-              <div class="space-y-2"><span class="block text-sm font-bold text-text-main">Editor guide</span><div class="flex flex-wrap gap-2"><button type="button" class="min-h-11 rounded-ui-md border border-border px-3 text-xs font-bold text-text-main hover:border-primary hover:text-primary" @click="useSuggestedPath">Use suggested path</button><button type="button" class="min-h-11 rounded-ui-md bg-primary/10 px-3 text-xs font-bold text-primary" @click="loadSectionGuide">Load section guide</button></div></div>
               <label class="space-y-2"><span class="text-sm font-bold text-text-main">Public path *</span><input v-model="form.path" list="public-page-paths" required placeholder="/legal/terms" class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-sm text-text-main outline-none focus:border-primary"><datalist id="public-page-paths"><option value="/about" /><option value="/contact" /><option value="/help" /><option value="/help/documentation" /><option value="/help/tutorials" /><option value="/legal/license" /><option value="/legal/refund-policy" /><option value="/legal/privacy-policy" /><option value="/legal/terms" /></datalist><span class="block text-xs text-text-muted">Allowed: /about, /contact, /help, /help/..., /legal/...</span></label>
               <label class="space-y-2"><span class="text-sm font-bold text-text-main">Eyebrow</span><input v-model="form.eyebrow" maxlength="80" placeholder="Help center" class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-sm text-text-main outline-none focus:border-primary"></label>
               <label v-if="form.page_type.startsWith('legal_')" class="space-y-2"><span class="text-sm font-bold text-text-main">Effective date *</span><input v-model="form.effective_date" type="date" required class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-sm text-text-main outline-none focus:border-primary"><span class="block text-xs text-text-muted">Required before a legal page can be published.</span></label>
               <label class="space-y-2 md:col-span-2"><span class="text-sm font-bold text-text-main">Title *</span><input v-model="form.title" required minlength="3" maxlength="160" class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-text-main outline-none focus:border-primary"></label>
               <label class="space-y-2 md:col-span-2"><span class="text-sm font-bold text-text-main">Summary</span><textarea v-model="form.summary" maxlength="600" rows="3" class="w-full rounded-ui-md border border-border bg-bg px-4 py-3 text-sm text-text-main outline-none focus:border-primary" /></label>
             </div>
+            </section>
 
-            <div>
-              <div class="mb-4 flex items-center justify-between"><div><h3 class="font-extrabold text-text-main">Content sections</h3><p class="text-xs text-text-muted">Plain text only; line breaks are preserved.</p></div><button type="button" class="rounded-ui-sm bg-primary/10 px-3 py-2 text-xs font-bold text-primary" @click="addSection">Add section</button></div>
+            <section class="rounded-ui-lg border border-border bg-surface p-4 shadow-sm sm:p-6">
+              <div class="mb-4 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"><div><div class="flex items-center gap-2"><h3 class="text-lg font-extrabold text-text-main">Content sections</h3><span class="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-black text-primary">{{ completedSections }}/{{ form.sections.length }} complete</span></div><p class="mt-1 text-xs text-text-muted">Format the content and use Preview to verify its public appearance.</p></div><button type="button" class="rounded-ui-sm bg-primary/10 px-3 py-2 text-xs font-bold text-primary" @click="addSection">Add section</button></div>
               <div v-if="form.page_type.startsWith('legal_')" class="mb-4 rounded-ui-md border border-amber-300/60 bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
                 <strong>Legal review required.</strong> The guide only lists topics to address. It is not legal advice and does not create policy text for Weixies.
               </div>
@@ -231,14 +237,14 @@ onMounted(loadPages)
                 <article v-for="(section, index) in form.sections" :key="index" class="rounded-ui-md border border-border bg-bg p-4">
                   <div class="mb-3 flex items-center justify-between"><span class="text-xs font-black uppercase tracking-wider text-text-muted">Section {{ index + 1 }}</span><div class="flex gap-1"><button type="button" class="p-2 text-text-muted disabled:opacity-30" :disabled="index === 0" aria-label="Move up" @click="moveSection(index, -1)">↑</button><button type="button" class="p-2 text-text-muted disabled:opacity-30" :disabled="index === form.sections.length - 1" aria-label="Move down" @click="moveSection(index, 1)">↓</button><button type="button" class="p-2 text-danger" aria-label="Remove section" @click="removeSection(index)">×</button></div></div>
                   <input v-model="section.heading" maxlength="160" placeholder="Section heading" class="mb-3 min-h-11 w-full rounded-ui-sm border border-border bg-surface px-4 text-sm font-bold text-text-main outline-none focus:border-primary">
-                  <textarea v-model="section.body" maxlength="20000" rows="7" placeholder="Write the approved content here..." class="w-full rounded-ui-sm border border-border bg-surface px-4 py-3 text-sm leading-7 text-text-main outline-none focus:border-primary" />
+                  <PublicPageRichTextEditor v-model="section.body" :disabled="saving" :maxlength="20000" />
                   <p v-if="section.guidance" class="mt-2 rounded-ui-sm bg-primary/5 px-3 py-2 text-xs leading-5 text-text-muted"><strong class="text-primary">What to include:</strong> {{ section.guidance }}</p>
                 </article>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <div class="mb-4 flex items-center justify-between"><div><h3 class="font-extrabold text-text-main">Contact and business details</h3><p class="text-xs text-text-muted">Optional structured facts such as support email, phone, address, service hours, or an external URL.</p></div><button type="button" class="rounded-ui-sm bg-primary/10 px-3 py-2 text-xs font-bold text-primary" @click="addContactDetail">Add detail</button></div>
+            <section class="rounded-ui-lg border border-border bg-surface p-4 shadow-sm sm:p-6">
+              <div class="mb-4 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-lg font-extrabold text-text-main">Contact and business details</h3><p class="mt-1 text-xs text-text-muted">Optional structured facts such as support email, phone, address, service hours, or an external URL.</p></div><button type="button" class="min-h-10 rounded-ui-sm bg-primary/10 px-4 text-xs font-bold text-primary" @click="addContactDetail">Add detail</button></div>
               <div v-if="!form.contact_details.length" class="rounded-ui-md border border-dashed border-border px-4 py-8 text-center text-sm text-text-muted">No contact details added.</div>
               <div v-else class="space-y-3">
                 <article v-for="(detail, index) in form.contact_details" :key="index" class="grid gap-3 rounded-ui-md border border-border bg-bg p-4 md:grid-cols-[180px_minmax(0,1fr)_minmax(0,1.5fr)_44px]">
@@ -249,17 +255,20 @@ onMounted(loadPages)
                   <button type="button" class="h-11 rounded-ui-sm text-xl text-danger hover:bg-danger/10" aria-label="Remove detail" @click="removeContactDetail(index)">×</button>
                 </article>
               </div>
-            </div>
+            </section>
 
-            <div class="grid gap-5 border-t border-border pt-6 md:grid-cols-2">
+            <section class="rounded-ui-lg border border-border bg-surface p-4 shadow-sm sm:p-6"><div class="mb-5 border-b border-border pb-4"><h3 class="text-lg font-extrabold text-text-main">Search preview</h3><p class="mt-1 text-xs text-text-muted">Control how this page can appear in search results.</p></div><div class="grid gap-5 md:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-bold text-text-main">SEO title</span><input v-model="form.seo_title" maxlength="70" class="min-h-11 w-full rounded-ui-md border border-border bg-bg px-4 text-sm text-text-main outline-none focus:border-primary"><span class="block text-right text-xs text-text-muted">{{ form.seo_title.length }}/70</span></label>
               <label class="space-y-2"><span class="text-sm font-bold text-text-main">SEO description</span><textarea v-model="form.seo_description" maxlength="160" rows="3" class="w-full rounded-ui-md border border-border bg-bg px-4 py-3 text-sm text-text-main outline-none focus:border-primary" /><span class="block text-right text-xs text-text-muted">{{ form.seo_description.length }}/160</span></label>
-            </div>
+            </div></section>
 
-            <footer class="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
-              <button type="button" class="min-h-11 rounded-ui-md border border-border px-5 font-semibold text-text-main" :disabled="saving" @click="closeEditor">Cancel</button>
-              <button type="submit" class="min-h-11 rounded-ui-md border border-primary px-5 font-semibold text-primary disabled:opacity-50" :disabled="saving">Save draft</button>
-              <button type="button" class="min-h-11 rounded-ui-md bg-primary px-5 font-semibold text-white disabled:opacity-50" :disabled="saving" @click="savePage('published')">{{ saving ? 'Saving...' : 'Publish' }}</button>
+            <footer class="sticky -bottom-4 z-10 -mx-4 -mb-4 flex flex-col-reverse gap-3 border-t border-border bg-surface px-4 py-4 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p class="hidden text-xs text-text-muted lg:block">Drafts stay private. Publishing makes this page available at <code class="font-semibold text-text-main">{{ form.path || 'its public path' }}</code>.</p>
+              <div class="flex flex-col-reverse gap-3 sm:ml-auto sm:flex-row">
+                <button type="button" class="min-h-11 rounded-ui-md border border-border px-5 font-semibold text-text-main transition hover:bg-bg-alt" :disabled="saving" @click="closeEditor">Cancel</button>
+                <button type="submit" class="min-h-11 rounded-ui-md border border-primary px-5 font-semibold text-primary transition hover:bg-primary/5 disabled:opacity-50" :disabled="saving">Save draft</button>
+                <button type="button" class="min-h-11 rounded-ui-md bg-primary px-5 font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50" :disabled="saving" @click="savePage('published')">{{ saving ? 'Saving...' : 'Publish page' }}</button>
+              </div>
             </footer>
           </form>
         </section>

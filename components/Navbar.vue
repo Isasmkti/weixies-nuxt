@@ -1,10 +1,10 @@
 <template>
   <nav :class="[
-  'fixed z-50 flex justify-between items-center transition-all duration-1000 ease-in-out rounded-[40px]',
+  'welcome-navbar fixed z-50 flex justify-between items-center rounded-[40px]',
 
   isScrolled
-    ? 'top-5 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-surface/40 backdrop-blur-md shadow-md py-4 px-8 text-text-main dark:text-white '
-    : 'top-0 left-0 w-full bg-transparent py-12 px-12 text-white'
+    ? 'welcome-navbar--scrolled top-5 bg-surface/40 backdrop-blur-md shadow-md py-4 px-8 text-text-main dark:text-white'
+    : 'top-0 bg-transparent py-12 px-12 text-white'
 ]">
     <div class="flex items-center gap-2">
       <img src="../assets/weixies-logo.svg" alt="Weixies Logo" class="w-8 h-8 object-contain" />
@@ -42,17 +42,78 @@ import { useWelcomeStore } from '../stores/welcomeStore'
 const { profile, fetchProfile } = useAuth()
 const welcomeStore = useWelcomeStore()
 const isScrolled = ref(false)
+const NAVBAR_COLLAPSE_AT = 100
+const NAVBAR_EXPAND_AT = 72
+let scrollFrame = null
 
-const handleScroll = () => {
-  isScrolled.value = window.scrollY > 100
+const updateScrollState = () => {
+  const scrollPosition = window.scrollY
+
+  if (!isScrolled.value && scrollPosition > NAVBAR_COLLAPSE_AT) {
+    isScrolled.value = true
+  } else if (isScrolled.value && scrollPosition < NAVBAR_EXPAND_AT) {
+    isScrolled.value = false
+  }
 }
 
-onMounted(async () => {
-  window.addEventListener('scroll', handleScroll)
-  await Promise.all([fetchProfile(), welcomeStore.stAll()])
+const handleScroll = () => {
+  if (scrollFrame !== null) return
+
+  scrollFrame = window.requestAnimationFrame(() => {
+    scrollFrame = null
+    updateScrollState()
+  })
+}
+
+onMounted(() => {
+  // Sync before subscribing so a restored scroll position never renders the
+  // expanded navbar until the next browser scroll event.
+  updateScrollState()
+  window.addEventListener('scroll', handleScroll, { passive: true })
+
+  void fetchProfile().catch(() => {})
+  if (!welcomeStore.contentAttempted) void welcomeStore.stContent()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  if (scrollFrame !== null) window.cancelAnimationFrame(scrollFrame)
 })
 </script>
+
+<style scoped>
+.welcome-navbar {
+  left: 0;
+  right: 0;
+  backface-visibility: hidden;
+  transition-property:
+    top,
+    left,
+    right,
+    padding-top,
+    padding-right,
+    padding-bottom,
+    padding-left,
+    color,
+    background-color,
+    box-shadow,
+    backdrop-filter,
+    -webkit-backdrop-filter;
+  transition-duration: 1000ms;
+  transition-timing-function: ease-in-out;
+  will-change: top, left, right;
+}
+
+.welcome-navbar--scrolled {
+  /* Equivalent to width: 95%; max-width: 72rem, but both edges remain
+     continuously interpolable instead of snapping max-width from `none`. */
+  left: max(2.5%, calc(50% - 36rem));
+  right: max(2.5%, calc(50% - 36rem));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-navbar {
+    transition-duration: 0.01ms;
+  }
+}
+</style>

@@ -33,7 +33,10 @@ test('profile callers share one request and a late response cannot restore a log
     auth: { getSession: async () => ({ data: { session: { user: { id: 'buyer-a' } } } }) },
     from: () => ({ select: () => ({ eq: () => ({ single: () => { calls++; return response.promise } }) }) }),
   }
-  const { useAuth } = await loadModule('../composables/useAuth.js', { '../utils/supabase': { supabase } }, {
+  const { useAuth } = await loadModule('../composables/useAuth.js', {
+    '../utils/supabase': { supabase },
+    '../services/authService': { signOut: async () => {} },
+  }, {
     useState: (key, init) => {
       if (!states.has(key)) states.set(key, ref(init()))
       return states.get(key)

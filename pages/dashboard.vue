@@ -73,9 +73,9 @@ const handleLogout = async () => {
     loggingOut.value = true
     try {
         await signOut()
-        await router.push('/')
     } finally {
         loggingOut.value = false
+        await router.replace('/welcome')
     }
 }
 

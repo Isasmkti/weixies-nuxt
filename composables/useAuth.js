@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabase'
+import { signOut as signOutSession } from '../services/authService'
 
 const profileRequests = new WeakMap()
 const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024
@@ -56,11 +57,10 @@ export function useAuth() {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    user.value = null
-    profile.value = null
-    profileFetchedAt.value = 0
+    // Clear reactive account data before any auth/network work so stale
+    // profile content cannot flash while the route changes.
+    resetProfile()
+    await signOutSession()
   }
 
   const fetchProfile = async ({ force = false } = {}) => {
