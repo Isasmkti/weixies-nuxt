@@ -4,6 +4,7 @@ import { enforceRateLimit } from '~/server/utils/rate-limit';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
 import { createXenditInvoice, getXenditInvoice, XenditApiError } from '~/server/utils/xendit';
 import { processPendingOrder } from '~/server/utils/xendit-payment-processor';
+import { assertXenditInvoiceBinding } from '~/server/utils/payment-integrity';
 import { throwPurchaseConflict } from '~/server/utils/purchase-eligibility';
 import { purchaseConflictPayload, purchaseDatabaseConflict } from '~/utils/purchaseEligibility.js';
 import {
@@ -14,6 +15,7 @@ import {
 } from '~/server/utils/self-purchase';
 
 async function persistInvoice(supabase: any, orderId: string, invoice: Record<string, any>) {
+  await assertXenditInvoiceBinding(supabase, invoice.id, orderId);
   const paymentMethod = String(invoice.payment_method || invoice.payment_channel || '').trim() || null;
   const { error } = await supabase.from('payments').upsert({
     order_id: orderId,

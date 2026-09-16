@@ -51,8 +51,8 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="relative w-full max-w-2xl">
             <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M16.65 11A5.65 5.65 0 1 1 5.35 11a5.65 5.65 0 0 1 11.3 0Z" /></svg>
-            <input ref="searchInputEl" v-model="searchInput" type="search" placeholder="Search templates, UI kits, or assets..." @keydown.enter="onSearchSubmit" @focus="showRecentSearches = true" @blur="hideRecentDelayed" class="w-full rounded-xl border border-bg-alt bg-surface py-3 pl-12 pr-10 text-sm text-text-main shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20">
-            <button v-if="searchInput" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted hover:bg-bg-alt hover:text-text-main" @click="searchInput = ''">&times;</button>
+            <input ref="searchInputEl" v-model="searchInput" type="search" maxlength="80" autocomplete="off" placeholder="Search products or stores..." @keydown.enter.prevent="onSearchSubmit" @focus="showRecentSearches = true" @blur="hideRecentDelayed" class="w-full rounded-xl border border-bg-alt bg-surface py-3 pl-12 pr-10 text-sm text-text-main shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20">
+            <button v-if="searchInput" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted hover:bg-bg-alt hover:text-text-main" aria-label="Clear catalog search" @click="clearCatalogSearch">&times;</button>
             <div v-if="showRecentSearches && !searchInput && recentSearches.length" class="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-bg-alt bg-surface shadow-xl"><div class="flex items-center justify-between border-b border-bg-alt px-4 py-2.5"><span class="text-xs font-bold uppercase tracking-wider text-text-muted">Recent searches</span><button class="text-xs font-bold text-primary" @mousedown.prevent="clearAllSearches">Clear</button></div><button v-for="term in recentSearches" :key="term" class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-text-main hover:bg-bg-alt/50" @mousedown.prevent="applyRecentSearch(term)">{{ term }}</button></div>
           </div>
           <div class="flex shrink-0 items-center gap-2">
@@ -62,6 +62,27 @@
             <label for="catalog-sort" class="text-sm font-medium text-text-muted">Sort:</label><select id="catalog-sort" class="rounded-lg border border-bg-alt bg-surface px-3 py-2 text-sm font-semibold text-text-main outline-none focus:ring-2 focus:ring-primary/30" @change="onSortChange"><option value="created_at-desc">Newest</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="name-asc">Name: A-Z</option></select>
           </div>
         </div>
+
+        <section v-if="catalogSearchQuery.length >= MIN_MARKETPLACE_SEARCH_LENGTH && (sellersLoading || relatedSellers.length)" class="mt-6 rounded-2xl border border-bg-alt bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="related-stores-heading">
+          <div class="flex items-end justify-between gap-3">
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Store matches</p>
+              <h2 id="related-stores-heading" class="mt-1 text-lg font-black text-text-main">Stores related to “{{ catalogSearchQuery }}”</h2>
+            </div>
+            <span v-if="relatedSellers.length" class="shrink-0 text-xs font-semibold text-text-muted">{{ relatedSellers.length }} found</span>
+          </div>
+
+          <div v-if="sellersLoading" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" role="status" aria-label="Searching stores">
+            <div v-for="index in 4" :key="index" class="flex animate-pulse items-center gap-3 rounded-xl border border-bg-alt p-3 motion-reduce:animate-none"><span class="h-11 w-11 shrink-0 rounded-xl bg-bg-alt" /><span class="min-w-0 flex-1 space-y-2"><span class="block h-3 w-2/3 rounded bg-bg-alt" /><span class="block h-2.5 w-full rounded bg-bg-alt" /></span></div>
+          </div>
+          <div v-else class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <NuxtLink v-for="seller in relatedSellers" :key="seller.id" :to="`/stores/${seller.store_slug}`" class="group flex min-w-0 items-center gap-3 rounded-xl border border-bg-alt bg-bg/50 p-3 transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-md">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 font-black text-primary"><img v-if="seller.store_image_url" :src="seller.store_image_url" :alt="seller.store_name" class="h-full w-full object-cover"><span v-else>{{ seller.store_name?.charAt(0)?.toUpperCase() || 'S' }}</span></div>
+              <div class="min-w-0 flex-1"><h3 class="truncate text-sm font-black text-text-main transition group-hover:text-primary">{{ seller.store_name }}</h3><p class="mt-1 line-clamp-1 text-[11px] text-text-muted">{{ seller.store_description || 'Verified marketplace store' }}</p></div>
+              <svg class="h-4 w-4 shrink-0 text-text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" /></svg>
+            </NuxtLink>
+          </div>
+        </section>
 
         <div class="mt-5 flex flex-wrap items-center gap-2 text-sm text-text-muted"><span v-if="productsStore.total">Showing <strong class="text-text-main">{{ resultStart }}-{{ resultEnd }}</strong> of <strong class="text-text-main">{{ productsStore.total }}</strong> products</span><span v-else>Showing <strong class="text-text-main">0</strong> products</span><button v-for="slug in selectedCategory" :key="slug" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="setCategory(slug)">{{ categoryName(slug) }} <span>&times;</span></button><button v-if="productsStore.minPrice !== null || productsStore.maxPrice !== null" class="inline-flex items-center gap-1 rounded-full bg-bg-alt px-2.5 py-1 text-xs font-bold text-text-main hover:text-red-600" @click="clearPriceFilter">{{ priceFilterLabel }} <span>&times;</span></button></div>
 
@@ -186,6 +207,11 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import defaultProduct from '../../components/defaultProduct.vue'
 import { getUser } from '../../services/authService'
+import { searchMarketplaceSellers } from '../../services/marketplaceSearchService'
+import {
+  MIN_MARKETPLACE_SEARCH_LENGTH,
+  normalizeMarketplaceSearchQuery,
+} from '../../utils/marketplaceSearch'
 import { SEO_DEFAULT_DESCRIPTION } from '../../utils/seo'
 
 const router = useRouter()
@@ -193,9 +219,14 @@ const route = useRoute()
 const bootstrapProductsStore = useProductsStore()
 const bootstrapCategoriesStore = useCategoriesStore()
 const { canonicalUrl, absoluteUrl } = useSeoSite()
+const initialCatalogSearch = normalizeMarketplaceSearchQuery(route.query.q)
 
-await callOnce('public-catalog-data', () => Promise.all([
-  bootstrapProductsStore.ensureProductsLoaded({ force: false }),
+await callOnce(`public-catalog-data:${initialCatalogSearch.toLocaleLowerCase()}`, () => Promise.all([
+  bootstrapProductsStore.ensureProductsLoaded({
+    page: 1,
+    search: initialCatalogSearch,
+    force: bootstrapProductsStore.search !== initialCatalogSearch,
+  }),
   bootstrapCategoriesStore.fetchCategories(),
 ]))
 
@@ -220,8 +251,13 @@ const filterInLayout = ref(false)
 const minPrice = ref('')
 const maxPrice = ref('')
 const priceError = ref('')
+const relatedSellers = ref([])
+const sellersLoading = ref(false)
+let sellerSearchRequest = 0
 const { recentSearches, addSearch, clearAll: clearAllSearches } = useRecentSearches()
-const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, isOwnProduct, isPurchased, productsStore, cartStore, formatIDR } = useCatalogUI()
+const { products, categories, selectedCategory, loading, error, searchInput, addingToCart, onSortChange, setCategory, goToPage, addToCart, getMainImage, isOwnProduct, isPurchased, productsStore, cartStore, formatIDR } = useCatalogUI({ initialSearch: initialCatalogSearch })
+
+const catalogSearchQuery = computed(() => normalizeMarketplaceSearchQuery(productsStore.search))
 
 watch(() => productsStore.minPrice, (value) => { minPrice.value = value ?? '' }, { immediate: true })
 watch(() => productsStore.maxPrice, (value) => { maxPrice.value = value ?? '' }, { immediate: true })
@@ -268,12 +304,36 @@ const isNewProduct = (createdAt) => createdAt && (Date.now() - new Date(createdA
 const isInCart = (productId) => (cartStore?.items || []).some((item) => (
   String(item.product_id) === String(productId)
 ))
-const applyRecentSearch = (term) => { searchInput.value = term; showRecentSearches.value = false }
-const onSearchSubmit = () => { if (searchInput.value?.trim()) addSearch(searchInput.value.trim()); showRecentSearches.value = false; searchInputEl.value?.blur() }
+const replaceSearchQuery = async (query) => {
+  const nextQuery = { ...route.query }
+  delete nextQuery.focus
+  if (query) nextQuery.q = query
+  else delete nextQuery.q
+  await router.replace({ path: '/products', query: nextQuery })
+}
+const applyRecentSearch = (term) => {
+  const query = normalizeMarketplaceSearchQuery(term)
+  searchInput.value = query
+  showRecentSearches.value = false
+  void replaceSearchQuery(query)
+}
+const onSearchSubmit = async () => {
+  const query = normalizeMarketplaceSearchQuery(searchInput.value)
+  searchInput.value = query
+  if (query) addSearch(query)
+  showRecentSearches.value = false
+  searchInputEl.value?.blur()
+  await replaceSearchQuery(query)
+}
+const clearCatalogSearch = async () => {
+  searchInput.value = ''
+  showRecentSearches.value = false
+  await replaceSearchQuery('')
+}
 const hideRecentDelayed = () => setTimeout(() => { showRecentSearches.value = false }, 200)
 const applyPriceFilter = async () => { priceError.value = ''; try { await productsStore.setPriceRange(minPrice.value, maxPrice.value) } catch (error) { priceError.value = error.message } }
 const clearPriceFilter = async () => { minPrice.value = ''; maxPrice.value = ''; await productsStore.setPriceRange(null, null) }
-const resetFilters = async () => { searchInput.value = ''; minPrice.value = ''; maxPrice.value = ''; priceError.value = ''; productsStore.categorySlug = []; productsStore.search = ''; await productsStore.setPriceRange(null, null) }
+const resetFilters = async () => { searchInput.value = ''; minPrice.value = ''; maxPrice.value = ''; priceError.value = ''; productsStore.categorySlug = []; productsStore.search = ''; await replaceSearchQuery(''); await productsStore.setPriceRange(null, null) }
 const toggleWishlist = async (productId) => { const product = products.value.find((item) => item.id === productId); if (isOwnProduct(product)) return; if (!profileId.value) return router.push('/login'); await wishlistStore.stToggleWishlist(profileId.value, productId) }
 const closeFilters = () => { showFilters.value = false }
 const toggleFilters = () => {
@@ -281,6 +341,35 @@ const toggleFilters = () => {
   filterInLayout.value = true
   showFilters.value = true
 }
+
+const loadRelatedSellers = async (value) => {
+  const query = normalizeMarketplaceSearchQuery(value)
+  const request = ++sellerSearchRequest
+
+  if (query.length < MIN_MARKETPLACE_SEARCH_LENGTH) {
+    relatedSellers.value = []
+    sellersLoading.value = false
+    return
+  }
+
+  sellersLoading.value = true
+  try {
+    const sellers = await searchMarketplaceSellers(query, { sellerLimit: 4 })
+    if (request === sellerSearchRequest) relatedSellers.value = sellers
+  } catch {
+    if (request === sellerSearchRequest) {
+      relatedSellers.value = []
+    }
+  } finally {
+    if (request === sellerSearchRequest) sellersLoading.value = false
+  }
+}
+
+watch(() => productsStore.search, loadRelatedSellers, { immediate: true })
+watch(() => route.query.q, (value) => {
+  const query = normalizeMarketplaceSearchQuery(value)
+  if (query !== normalizeMarketplaceSearchQuery(searchInput.value)) searchInput.value = query
+})
 
 onMounted(async () => {
   const user = await getUser()

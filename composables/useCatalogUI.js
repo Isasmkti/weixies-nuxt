@@ -9,7 +9,7 @@ import { formatIDR } from '../utils/currency'
 import { usePurchasesStore } from '../stores/purchasesStore'
 import { showErrorDialog } from '../utils/sweetAlert'
 
-export function useCatalogUI() {
+export function useCatalogUI({ initialSearch = '' } = {}) {
   const router = useRouter()
   const productsStore = useProductsStore()
   const cartStore = useCartStore()
@@ -25,7 +25,7 @@ export function useCatalogUI() {
 
   const addingToCart = ref(null)
   const ownSellerId = ref(null)
-  const searchInput = ref('')
+  const searchInput = ref(initialSearch)
   let timeout = null
 
   watch(searchInput, (val) => {

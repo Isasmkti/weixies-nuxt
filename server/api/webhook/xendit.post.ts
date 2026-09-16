@@ -7,6 +7,7 @@ import {
   verifyXenditCallbackToken,
 } from '~/server/utils/xendit';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
+import { assertXenditInvoiceBinding } from '~/server/utils/payment-integrity';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event).catch(() => null);
@@ -100,6 +101,8 @@ export default defineEventHandler(async (event) => {
     });
     throw createError({ statusCode: 400, statusMessage: 'Invoice amount does not match order total.' });
   }
+
+  await assertXenditInvoiceBinding(supabase, invoice.id, order.id);
 
   const normalizedStatus = normalizeXenditInvoiceStatus(invoice.status);
   if (!normalizedStatus) {

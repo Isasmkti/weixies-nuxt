@@ -3,7 +3,7 @@
     <header class="conversation-header flex shrink-0 items-center gap-2 border-b border-bg-alt px-3 py-3 sm:gap-3 sm:px-5">
       <NuxtLink to="/messages" class="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-alt hover:text-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6" /></svg></NuxtLink>
       <div class="min-w-0 flex-1"><h1 class="truncate font-black text-text-main">{{ counterpartName }}</h1><p class="truncate text-xs text-text-muted">{{ conversationLabel }}</p></div>
-      <button v-if="thread" type="button" class="rounded-lg px-2.5 py-2 text-xs font-bold text-text-muted transition hover:bg-red-500/10 hover:text-red-500" @click="reportConversation">Report</button>
+      <NuxtLink v-if="thread" :to="`/messages/report/${threadId}`" class="rounded-lg px-2.5 py-2 text-xs font-bold text-text-muted transition hover:bg-red-500/10 hover:text-red-500">Report</NuxtLink>
       <span v-if="thread" class="rounded-full bg-bg-alt px-2.5 py-1 text-[10px] font-bold uppercase text-text-muted">{{ thread.status }}</span>
     </header>
 
@@ -139,16 +139,6 @@ const sendMessage = async () => {
     sendError.value = err?.data?.statusMessage || err?.message || 'Message could not be sent.'
   } finally {
     sending.value = false
-  }
-}
-const reportConversation = async () => {
-  const reason = window.prompt('Why are you reporting this conversation?')?.trim()
-  if (!reason) return
-  try {
-    await $fetch(`/api/direct-messages/${threadId.value}/reports`, { method: 'POST', headers: await authHeaders(), body: { reason } })
-    window.alert('Your report was submitted for admin review.')
-  } catch (err) {
-    window.alert(err?.data?.statusMessage || err?.message || 'The report could not be submitted.')
   }
 }
 

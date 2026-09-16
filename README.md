@@ -25,6 +25,9 @@ Apply database migrations before deploying matching server code. Security RPCs
 used by checkout and downloads must exist before the new application build is
 started.
 
+For the complete test, migration, environment, deployment, and smoke-test
+sequence, follow [`docs/production-readiness.md`](docs/production-readiness.md).
+
 ## Xendit webhooks
 
 Configure the Xendit callback token as `XENDIT_WEBHOOK_TOKEN` (or
@@ -72,10 +75,13 @@ npx.cmd supabase migration list
 ```
 
 Set a strong random `CRON_SECRET` in the production Vercel project. The
-`vercel.json` schedule calls `GET /api/cron/automated-payouts` every day in the
-02:00 UTC hour (09:00 Asia/Jakarta hour), and Vercel sends that secret as a
-Bearer token.
-The job first retries or synchronizes unfinished Xendit payouts, then creates
+`vercel.json` schedule first calls `GET /api/cron/payment-reconciliation` at
+00:00 UTC (07:00 Asia/Jakarta) to recover pending orders whose payment webhook
+was missed. It then calls `GET /api/cron/automated-payouts` at 02:00 UTC
+(09:00 Asia/Jakarta). The two-hour window also accommodates Vercel Hobby's
+hour-level scheduling precision. Vercel sends `CRON_SECRET` to both routes as
+a Bearer token.
+The payout job first retries or synchronizes unfinished Xendit payouts, then creates
 and submits mature seller balances. Because the schedule is daily, a balance
 is submitted on the first run after its exact 72-hour protection deadline.
 

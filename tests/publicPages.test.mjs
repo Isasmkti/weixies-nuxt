@@ -23,10 +23,16 @@ test('content-field migration adds typed contact facts without seeding legal cop
 test('public renderer exposes only published records', async () => {
   const endpoint = await read('server/api/public-pages.get.ts')
   const page = await read('pages/[...content].vue')
+  const layout = await read('layouts/public.vue')
   assert.match(endpoint, /\.eq\('status', 'published'\)/)
   assert.match(page, /layout: 'public'/)
   assert.match(page, /whitespace-pre-line/)
   assert.match(page, /Contact information/)
+  assert.match(page, /Back to Welcome/)
+  assert.match(page, /Mobile page sections/)
+  assert.match(page, /Browse Catalog/)
+  assert.match(layout, /to="\/welcome"/)
+  assert.match(layout, /id="public-page-content"/)
   assert.doesNotMatch(page, /v-html/)
 })
 

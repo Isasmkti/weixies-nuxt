@@ -12,6 +12,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "test": "node --experimental-vm-modules --test",
+    "test:contracts": "node --test tests/projectContract.test.mjs tests/securityHardening.test.mjs tests/systemJobRuns.test.mjs",
     "test:product-validation": "node --test tests/productSubmission.test.mjs",
     "test:self-purchase": "node --test tests/selfPurchase.test.mjs",
     "test:purchases": "node --experimental-vm-modules --test tests/purchase*.test.mjs"

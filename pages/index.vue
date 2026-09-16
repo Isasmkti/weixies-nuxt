@@ -188,7 +188,7 @@ const featuredProducts = computed(() => homeContent.value?.products || [])
 const carouselItems = computed(() => homeContent.value?.carousel || [])
 
 const goToSearch = () => {
-  router.push('/search')
+  router.push({ path: '/products', query: { focus: 'search' } })
 }
 
 const goToCatalog = () => router.push('/products')

@@ -61,6 +61,7 @@ const adminMenuItems = [
             { name: 'Seller Applications', to: '/admin/sellers', icon: icons.store },
             { name: 'Orders & Refunds', to: '/admin/orders', icon: icons.orders },
             { name: 'Automatic Payouts', to: '/admin/payouts', icon: icons.payout },
+            { name: 'Chat Reports', to: '/admin/chat-reports', icon: icons.review },
             { name: 'Activity Logs', to: '/admin/logs', icon: icons.logs },
             { name: 'AI Knowledge', to: '/admin/ai/knowledge', icon: icons.knowledge },
         ],

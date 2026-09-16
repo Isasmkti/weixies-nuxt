@@ -20,6 +20,7 @@ const modules = {
   '~/server/utils/request-auth': `export const requireRequestUser = async () => ({ user: { id: '${buyerId}', email: 'buyer@example.test', user_metadata: {} } });`,
   '~/server/utils/rate-limit': 'export const enforceRateLimit = async () => {};',
   '~/server/utils/payment-logger': 'export const logPaymentEvent = async value => globalThis.__checkoutTest.logs.push(value);',
+  '~/server/utils/payment-integrity': 'export const assertXenditInvoiceBinding = async () => {};',
   '~/server/utils/xendit-payment-processor': 'export const processPendingOrder = (...args) => globalThis.__checkoutTest.reconcile(...args);',
   '~/server/utils/self-purchase': 'export const getCartProductIds = async () => []; export const findSelfPurchaseConflicts = async () => []; export const isSelfPurchaseDatabaseError = () => false; export const throwSelfPurchase = () => { throw Error("Unexpected self-purchase path"); };',
   '~/server/utils/xendit': `

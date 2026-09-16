@@ -1,6 +1,7 @@
 <script setup>
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import { getAdminDashboard } from '../../services/adminDashboardService'
+import { getAdminOperationsHealth } from '../../services/adminOperationsService'
 import { useThemeStore } from '../../stores/themeStore'
 
 const themeStore = useThemeStore()
@@ -22,6 +23,21 @@ const dashboard = ref({
 })
 const loading = ref(true)
 const errorMessage = ref('')
+const operationsError = ref('')
+const operations = ref({
+  status: 'healthy',
+  attentionCount: 0,
+  checkedAt: null,
+  counts: {
+    stalePendingOrders: 0,
+    recentPaymentErrors: 0,
+    refundAttention: 0,
+    payoutExceptions: 0,
+    stalledPayouts: 0,
+    automationAttention: 0,
+  },
+  jobs: [],
+})
 const lastUpdated = ref(null)
 const activeChartRange = ref(30)
 
@@ -48,6 +64,39 @@ const metricCards = computed(() => [
   { label: 'Total Transactions', value: formatNumber(dashboard.value.metrics.transactions), change: dashboard.value.metrics.transactionChange, icon: 'receipt' },
   { label: 'Total Users', value: formatNumber(dashboard.value.metrics.users), change: dashboard.value.metrics.userChange, icon: 'users' },
   { label: 'Active Sellers', value: formatNumber(dashboard.value.metrics.activeSellers), change: dashboard.value.metrics.sellerChange, icon: 'store' },
+])
+
+const operationCards = computed(() => [
+  {
+    label: 'Pending payments',
+    value: operations.value.counts.stalePendingOrders,
+    description: 'Orders pending for more than 30 minutes',
+    to: '/admin/logs',
+  },
+  {
+    label: 'Payment errors',
+    value: operations.value.counts.recentPaymentErrors,
+    description: 'Provider or delivery errors in the last 24 hours',
+    to: '/admin/logs',
+  },
+  {
+    label: 'Refund attention',
+    value: operations.value.counts.refundAttention,
+    description: 'Failed refunds or requests requiring manual action',
+    to: '/admin/orders',
+  },
+  {
+    label: 'Payout attention',
+    value: operations.value.counts.payoutExceptions + operations.value.counts.stalledPayouts,
+    description: `${operations.value.counts.payoutExceptions} exception · ${operations.value.counts.stalledPayouts} stalled`,
+    to: '/admin/payouts',
+  },
+  {
+    label: 'Automation jobs',
+    value: operations.value.counts.automationAttention,
+    description: 'Missing, partial, failed, or stale scheduled runs',
+    to: '/admin/logs',
+  },
 ])
 
 const chartRanges = [
@@ -183,16 +232,31 @@ const initials = (name) => String(name || 'U')
 const loadDashboard = async () => {
   loading.value = true
   errorMessage.value = ''
+  operationsError.value = ''
 
-  try {
-    dashboard.value = await getAdminDashboard()
-    lastUpdated.value = new Date()
-  } catch (error) {
-    console.error('[Admin dashboard] Failed to load analytics:', error)
-    errorMessage.value = error.message || 'The admin dashboard could not be loaded.'
-  } finally {
-    loading.value = false
+  const [dashboardResult, operationsResult] = await Promise.allSettled([
+    getAdminDashboard(),
+    getAdminOperationsHealth(),
+  ])
+
+  if (dashboardResult.status === 'fulfilled') {
+    dashboard.value = dashboardResult.value
+  } else {
+    console.error('[Admin dashboard] Failed to load analytics:', dashboardResult.reason)
+    errorMessage.value = dashboardResult.reason?.message || 'The admin dashboard could not be loaded.'
   }
+
+  if (operationsResult.status === 'fulfilled') {
+    operations.value = operationsResult.value
+  } else {
+    console.error('[Admin dashboard] Failed to load operational health:', operationsResult.reason)
+    operationsError.value = operationsResult.reason?.data?.statusMessage
+      || operationsResult.reason?.message
+      || 'Operational health could not be loaded.'
+  }
+
+  lastUpdated.value = new Date()
+  loading.value = false
 }
 
 onMounted(loadDashboard)
@@ -250,6 +314,56 @@ onMounted(loadDashboard)
       </article>
     </section>
 
+    <section class="mb-6 overflow-hidden rounded-ui-lg border border-border bg-surface shadow-elevation-1">
+      <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-bold text-text-main">Operational health</h2>
+            <span
+              v-if="!loading && !operationsError"
+              class="rounded-ui-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+              :class="operations.status === 'healthy'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'"
+            >
+              {{ operations.status === 'healthy' ? 'Healthy' : `${operations.attentionCount} need attention` }}
+            </span>
+          </div>
+          <p class="mt-1 text-sm text-text-muted">Payment, refund, and seller payout exceptions requiring review</p>
+        </div>
+        <p v-if="operations.checkedAt && !operationsError" class="text-xs text-text-muted">
+          Checked {{ formatDateTime(operations.checkedAt) }}
+        </p>
+      </div>
+
+      <div v-if="operationsError" class="m-4 rounded-ui-sm border border-danger/20 bg-danger/10 p-4 text-sm text-danger sm:m-5">
+        {{ operationsError }}
+      </div>
+      <div v-else class="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 xl:grid-cols-5 xl:divide-x xl:divide-y-0">
+        <NuxtLink
+          v-for="card in operationCards"
+          :key="card.label"
+          :to="card.to"
+          class="group flex min-w-0 items-start justify-between gap-4 p-4 transition hover:bg-bg-alt/50 sm:p-5"
+        >
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-text-main">{{ card.label }}</p>
+            <p class="mt-1 text-xs leading-5 text-text-muted">{{ card.description }}</p>
+          </div>
+          <span v-if="loading" class="h-8 w-10 shrink-0 animate-pulse rounded-lg bg-bg-alt" />
+          <span
+            v-else
+            class="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-ui-full px-2 text-sm font-bold"
+            :class="card.value > 0
+              ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'"
+          >
+            {{ card.value }}
+          </span>
+        </NuxtLink>
+      </div>
+    </section>
+
     <section class="mb-6 grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-3">
       <article class="min-w-0 rounded-ui-lg border border-border bg-surface p-4 shadow-elevation-1 sm:p-6 xl:col-span-2">
         <div class="mb-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -300,12 +414,22 @@ onMounted(loadDashboard)
         </article>
 
         <article class="flex-1 rounded-ui-lg border border-border bg-surface p-4 shadow-elevation-1 sm:p-6">
-          <h2 class="text-sm font-bold text-text-main">Data Status</h2>
+          <h2 class="text-sm font-bold text-text-main">System status</h2>
           <ul class="mt-5 space-y-4 text-sm">
-            <li v-for="item in ['Marketplace database', '30-day analytics', 'Administrator access']" :key="item" class="flex items-center gap-3">
+            <li class="flex items-center gap-3">
               <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="errorMessage ? 'bg-rose-500' : loading ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'" />
-              <span class="min-w-0 flex-1 text-text-main">{{ item }}</span>
+              <span class="min-w-0 flex-1 text-text-main">Marketplace analytics</span>
               <span class="text-xs font-semibold text-text-muted">{{ errorMessage ? 'Issue' : loading ? 'Loading' : 'Active' }}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="operationsError ? 'bg-rose-500' : loading ? 'animate-pulse bg-amber-500' : operations.status === 'healthy' ? 'bg-emerald-500' : 'bg-amber-500'" />
+              <span class="min-w-0 flex-1 text-text-main">Transaction operations</span>
+              <span class="text-xs font-semibold text-text-muted">{{ operationsError ? 'Issue' : loading ? 'Loading' : operations.status === 'healthy' ? 'Active' : 'Review' }}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="errorMessage && operationsError ? 'bg-rose-500' : loading ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'" />
+              <span class="min-w-0 flex-1 text-text-main">Administrator access</span>
+              <span class="text-xs font-semibold text-text-muted">{{ loading ? 'Loading' : 'Active' }}</span>
             </li>
           </ul>
           <NuxtLink to="/admin/logs" class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline">

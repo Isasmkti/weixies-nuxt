@@ -55,23 +55,3 @@ export async function rGetPayoutCandidates(periodStart, periodEnd) {
   if (error) throw error
   return data || []
 }
-
-export async function rCreatePayoutBatch(sellerId, periodStart, periodEnd) {
-  const { data, error } = await supabase.rpc('create_seller_payout_batch', {
-    p_seller_id: sellerId,
-    p_period_start: periodStart,
-    p_period_end: periodEnd,
-  })
-  if (error) throw error
-  return Array.isArray(data) ? data[0] : data
-}
-
-export async function rSetPayoutStatus(payoutId, status, referenceNo = null) {
-  const { data, error } = await supabase.rpc('set_seller_payout_status', {
-    p_payout_id: payoutId,
-    p_status: status,
-    p_reference_no: referenceNo,
-  })
-  if (error) throw error
-  return Array.isArray(data) ? data[0] : data
-}

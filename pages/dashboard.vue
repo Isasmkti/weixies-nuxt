@@ -294,16 +294,6 @@ onBeforeUnmount(() => {
                             <p v-if="accountEmail" class="mt-1 truncate text-sm text-text-muted">{{ accountEmail }}</p>
                         </div>
 
-                        <div class="mt-3 flex flex-wrap items-center gap-2">
-                            <span
-                                class="rounded-ui-xs bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-primary">
-                                {{ profile?.role || 'Member' }}
-                            </span>
-                            <span
-                                class="rounded-ui-xs bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-muted">
-                                {{ isVerified ? 'Verified account' : 'Verification pending' }}
-                            </span>
-                        </div>
                     </div>
 
                     <div class="flex shrink-0 flex-wrap items-center gap-2">

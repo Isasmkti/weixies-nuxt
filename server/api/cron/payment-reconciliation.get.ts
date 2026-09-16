@@ -1,4 +1,4 @@
-import { processAutomaticSellerPayouts } from '~/server/utils/seller-payout-processor';
+import { processPendingOrders } from '~/server/utils/xendit-payment-processor';
 import { verifyXenditCallbackToken } from '~/server/utils/xendit';
 import {
   beginSystemJob,
@@ -12,7 +12,9 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const cronSecret = String(config.cronSecret || '').trim();
   const authorization = String(getRequestHeader(event, 'authorization') || '').trim();
-  const receivedSecret = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  const receivedSecret = authorization.startsWith('Bearer ')
+    ? authorization.slice(7).trim()
+    : '';
 
   if (!cronSecret) {
     throw createError({ statusCode: 500, statusMessage: 'CRON_SECRET is not configured.' });
@@ -26,22 +28,27 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'XENDIT_SECRET_KEY is not configured.' });
   }
 
-  const runId = await beginSystemJob('seller_payouts', 3600);
+  const runId = await beginSystemJob('payment_reconciliation', 1800);
   if (!runId) {
     return { ok: true, skipped: true, reason: 'already_running' };
   }
 
   try {
-    const result = await processAutomaticSellerPayouts(secretKey, 25);
+    const result = await processPendingOrders(secretKey, {
+      maxOrders: 100,
+      olderThanMinutes: 15,
+    });
+
+    if (result.failed > 0) {
+      console.error('[Payment Reconciliation Cron] Some pending orders require attention:', result.errors);
+    }
+
     await completeSystemJob(runId, {
       status: result.failed > 0 ? 'partial' : 'succeeded',
-      processed: result.attempted,
+      processed: result.processed,
       succeeded: result.succeeded,
       failed: result.failed,
-      errorSummary: result.results
-        .filter(item => !item.ok)
-        .map(item => String(item.error || 'Unknown payout error'))
-        .join('\n'),
+      errorSummary: result.errors.join('\n'),
     });
 
     return {
@@ -56,7 +63,7 @@ export default defineEventHandler(async (event) => {
       succeeded: 0,
       failed: 0,
       errorSummary: systemJobErrorSummary(error),
-    }).catch(completionError => console.error('[Seller Payout Cron] Could not close job run:', completionError));
+    }).catch(completionError => console.error('[Payment Reconciliation Cron] Could not close job run:', completionError));
     throw error;
   }
 });

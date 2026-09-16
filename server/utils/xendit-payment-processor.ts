@@ -1,6 +1,7 @@
 import { useSupabaseAdmin } from '~/server/utils/supabase-admin';
 import { logPaymentEvent } from '~/server/utils/payment-logger';
 import { grantDigitalAccessForOrder } from '~/server/utils/order-delivery';
+import { assertXenditInvoiceBinding } from '~/server/utils/payment-integrity';
 import {
   getXenditInvoice,
   getXenditInvoicesByExternalId,
@@ -101,6 +102,8 @@ export async function processPendingOrder(
       });
       return { success: false, error: 'Amount mismatch' };
     }
+
+    await assertXenditInvoiceBinding(supabase, invoice.id, order.id);
 
     const normalizedStatus = normalizeXenditInvoiceStatus(invoice.status);
     if (!normalizedStatus) {

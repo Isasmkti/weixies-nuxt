@@ -85,6 +85,11 @@ const menuItems = [
         icon: 'M3 9.75L5.25 4.5h13.5L21 9.75M3 9.75h18M3 9.75v8.625A1.125 1.125 0 004.125 19.5h15.75A1.125 1.125 0 0021 18.375V9.75M9 19.5v-4.125A1.125 1.125 0 0110.125 14.25h3.75A1.125 1.125 0 0115 15.375V19.5'
     },
     {
+        name: 'Chat Reports',
+        to: '/admin/chat-reports',
+        icon: 'M4 4h16v12H8l-4 4V4zm8 3v4m0 2v1'
+    },
+    {
         name: 'Activity Logs',
         to: '/admin/logs',
         icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
