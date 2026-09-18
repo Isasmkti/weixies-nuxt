@@ -8,6 +8,15 @@ export async function getAdminDashboard() {
 
   return {
     metrics: {
+      grossGmv: numberValue(metrics.gross_gmv ?? metrics.gmv),
+      grossGmvChange: numberValue(metrics.gross_gmv_change ?? metrics.gmv_change),
+      refundAmount: numberValue(metrics.refund_amount),
+      netGmv: numberValue(metrics.net_gmv ?? metrics.gmv),
+      netGmvChange: numberValue(metrics.net_gmv_change ?? metrics.gmv_change),
+      grossPlatformRevenue: numberValue(metrics.gross_platform_revenue),
+      netPlatformRevenue: numberValue(metrics.net_platform_revenue),
+      netRevenueChange: numberValue(metrics.net_revenue_change),
+      netSellerEarnings: numberValue(metrics.net_seller_earnings),
       gmv: numberValue(metrics.gmv),
       gmvChange: numberValue(metrics.gmv_change),
       transactions: numberValue(metrics.transactions),
@@ -22,6 +31,10 @@ export async function getAdminDashboard() {
       ? data.chart.map((point) => ({
           date: point.date,
           revenue: numberValue(point.revenue),
+          grossGmv: numberValue(point.gross_gmv),
+          refunds: numberValue(point.refunds),
+          netGmv: numberValue(point.net_gmv ?? point.revenue),
+          netRevenue: numberValue(point.net_revenue),
           transactions: numberValue(point.transactions),
         }))
       : [],

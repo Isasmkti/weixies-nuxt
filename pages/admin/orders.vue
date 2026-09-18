@@ -36,8 +36,18 @@ const holdDeadline = (order) => {
 }
 const canStartRefund = order => order.status === 'paid'
   && !['manual_action_required', 'submitted', 'succeeded'].includes(refundOf(order)?.status)
-  && (hasPurchaseConflict(order) || sellerItems(order).some(item => item.payout_status === 'held'))
-const isOnHold = order => hasPurchaseConflict(order) || sellerItems(order).some(item => item.payout_status === 'refund_review')
+  && (
+    hasPurchaseConflict(order)
+    || sellerItems(order).length === 0
+    || sellerItems(order).some(item => ['pending', 'held', 'released', 'refund_review'].includes(item.payout_status))
+  )
+const isOnHold = order => hasPurchaseConflict(order)
+  || sellerItems(order).some(item => item.payout_status === 'refund_review')
+  || (
+    order.status === 'paid'
+    && refundOf(order)
+    && !['cancelled', 'succeeded'].includes(refundOf(order).status)
+  )
 const canReleaseHold = order => !order.purchase_conflict && isOnHold(order)
   && !['submitted', 'succeeded'].includes(refundOf(order)?.status)
 const productNames = order => (order.order_items || []).map(item => item.product?.name).filter(Boolean).join(', ') || 'Digital product'
@@ -89,7 +99,7 @@ const requestRefund = async (order) => {
     title: `Review order #${order.order_number}`,
     text: hasPurchaseConflict(order)
       ? `A duplicate payment was received without granting additional product access. Request a full ${formatIDR(order.total_amount)} refund; the payout cannot be released.`
-      : `A full ${formatIDR(order.total_amount)} refund will be requested and the seller payout will remain on hold.`,
+      : `A full ${formatIDR(order.total_amount)} refund will be requested. Unpaid earnings will be held; earnings already sent will become a seller balance adjustment after the refund succeeds.`,
     input: 'textarea',
     inputValue: currentReason,
     inputLabel: hasPurchaseConflict(order) ? 'Duplicate payment refund reason' : 'Product quality issue',
@@ -122,8 +132,8 @@ const requestRefund = async (order) => {
     })
     await loadOrders()
     await showSuccess(
-      result.status === 'manual_action_required' ? 'Seller payout is on hold' : 'Refund submitted',
-      result.message || 'Seller funds remain held until Xendit confirms the refund.',
+      result.status === 'manual_action_required' ? 'Refund requires manual action' : 'Refund submitted',
+      result.message || 'The order remains in financial review until Xendit confirms the refund.',
     )
   } catch (error) {
     await showErrorDialog('Refund could not be submitted', error?.data?.statusMessage || error.message || 'Refund review could not be created.')
@@ -136,7 +146,7 @@ const releaseHold = async (order) => {
   if (!canReleaseHold(order)) return
   const confirmed = await confirmAction({
     title: 'Release refund hold?',
-    text: `Order #${order.order_number} will become eligible for the next automatic seller payout run.`,
+    text: `Order #${order.order_number} will return to its correct payout state. Unpaid earnings can re-enter the automatic queue; an already paid earning remains released.`,
     confirmButtonText: 'Release hold',
   })
   if (!confirmed) return
@@ -145,7 +155,7 @@ const releaseHold = async (order) => {
   try {
     await authFetch(`/api/admin/orders/${order.id}/refund-hold`, { method: 'DELETE' })
     await loadOrders()
-    await showSuccess('Refund hold released', `Order #${order.order_number} can enter the next automatic payout run.`)
+    await showSuccess('Refund review released', `Order #${order.order_number} has returned to its correct payout state.`)
   } catch (error) {
     await showErrorDialog('Hold could not be released', error?.data?.statusMessage || error.message || 'Refund hold could not be released.')
   } finally {

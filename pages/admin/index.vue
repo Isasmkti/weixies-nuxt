@@ -8,6 +8,15 @@ const themeStore = useThemeStore()
 const ApexChart = defineAsyncComponent(() => import('vue3-apexcharts'))
 const dashboard = ref({
   metrics: {
+    grossGmv: 0,
+    grossGmvChange: 0,
+    refundAmount: 0,
+    netGmv: 0,
+    netGmvChange: 0,
+    grossPlatformRevenue: 0,
+    netPlatformRevenue: 0,
+    netRevenueChange: 0,
+    netSellerEarnings: 0,
     gmv: 0,
     gmvChange: 0,
     transactions: 0,
@@ -60,11 +69,22 @@ const formatTime = (value) => value
   : '-'
 
 const metricCards = computed(() => [
-  { label: 'Total GMV', value: formatIDR(dashboard.value.metrics.gmv), change: dashboard.value.metrics.gmvChange, icon: 'wallet' },
-  { label: 'Total Transactions', value: formatNumber(dashboard.value.metrics.transactions), change: dashboard.value.metrics.transactionChange, icon: 'receipt' },
-  { label: 'Total Users', value: formatNumber(dashboard.value.metrics.users), change: dashboard.value.metrics.userChange, icon: 'users' },
-  { label: 'Active Sellers', value: formatNumber(dashboard.value.metrics.activeSellers), change: dashboard.value.metrics.sellerChange, icon: 'store' },
+  { label: 'Gross GMV', value: formatIDR(dashboard.value.metrics.grossGmv), change: dashboard.value.metrics.grossGmvChange, icon: 'wallet', description: 'All successful sales before refunds', primary: true },
+  { label: 'Net GMV', value: formatIDR(dashboard.value.metrics.netGmv), change: dashboard.value.metrics.netGmvChange, icon: 'wallet', description: 'Gross GMV minus completed refunds', primary: true },
+  { label: 'Net platform revenue', value: formatIDR(dashboard.value.metrics.netPlatformRevenue), change: dashboard.value.metrics.netRevenueChange, icon: 'revenue', description: 'Commission and direct sales after refunds', primary: true },
+  { label: 'Successful orders', value: formatNumber(dashboard.value.metrics.transactions), change: dashboard.value.metrics.transactionChange, icon: 'receipt', description: 'Paid and subsequently refunded orders', primary: true },
+  { label: 'Net seller earnings', value: formatIDR(dashboard.value.metrics.netSellerEarnings), icon: 'store', description: 'Seller share after completed refunds' },
+  { label: 'Active sellers', value: formatNumber(dashboard.value.metrics.activeSellers), change: dashboard.value.metrics.sellerChange, icon: 'store', description: 'Approved seller accounts' },
+  { label: 'Total users', value: formatNumber(dashboard.value.metrics.users), change: dashboard.value.metrics.userChange, icon: 'users', description: 'Registered marketplace accounts' },
+  { label: 'Completed refunds', value: formatIDR(dashboard.value.metrics.refundAmount), icon: 'refund', description: 'Funds returned to buyers', inverseTrend: true },
 ])
+
+const metricTrendClasses = card => {
+  const improved = card.inverseTrend ? card.change <= 0 : card.change >= 0
+  return improved
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : 'text-rose-600 dark:text-rose-400'
+}
 
 const operationCards = computed(() => [
   {
@@ -105,19 +125,25 @@ const chartRanges = [
   { label: '30D', days: 30 },
 ]
 
-const revenuePoints = computed(() => dashboard.value.chart.map((point) => [
+const netGmvPoints = computed(() => dashboard.value.chart.map((point) => [
   new Date(`${point.date}T00:00:00`).getTime(),
-  point.revenue,
+  point.netGmv,
 ]))
 
-const chartMax = computed(() => revenuePoints.value.at(-1)?.[0])
+const netRevenuePoints = computed(() => dashboard.value.chart.map((point) => [
+  new Date(`${point.date}T00:00:00`).getTime(),
+  point.netRevenue,
+]))
+
+const chartMax = computed(() => netGmvPoints.value.at(-1)?.[0])
 const chartMin = computed(() => {
   if (!chartMax.value) return undefined
   return chartMax.value - ((activeChartRange.value - 1) * 24 * 60 * 60 * 1000)
 })
 
 const chartSeries = computed(() => [
-  { name: 'Revenue', data: revenuePoints.value },
+  { name: 'Net GMV', data: netGmvPoints.value },
+  { name: 'Net platform revenue', data: netRevenuePoints.value },
 ])
 
 const chartOptions = computed(() => ({
@@ -141,7 +167,7 @@ const chartOptions = computed(() => ({
     zoom: { enabled: true, autoScaleYaxis: true },
   },
   theme: { mode: themeStore.isDark ? 'dark' : 'light' },
-  colors: ['#4f46e5'],
+  colors: ['#4f46e5', '#10b981'],
   dataLabels: { enabled: false },
   markers: {
     size: 0,
@@ -158,7 +184,10 @@ const chartOptions = computed(() => ({
     strokeDashArray: 4,
     padding: { left: 8, right: 8 },
   },
-  legend: { show: false },
+  legend: {
+    show: true,
+    labels: { colors: themeStore.isDark ? '#d4d4d8' : '#3f3f46' },
+  },
   xaxis: {
     type: 'datetime',
     min: chartMin.value,
@@ -172,7 +201,6 @@ const chartOptions = computed(() => ({
     },
   },
   yaxis: {
-    min: 0,
     forceNiceScale: true,
     labels: {
       style: { colors: themeStore.isDark ? '#a1a1aa' : '#71717a' },
@@ -184,7 +212,7 @@ const chartOptions = computed(() => ({
     x: { format: 'dd MMM yyyy' },
     y: { formatter: (value) => formatIDR(value) },
   },
-  noData: { text: 'No revenue data available' },
+  noData: { text: 'No financial data available' },
   responsive: [{
     breakpoint: 640,
     options: {
@@ -290,26 +318,36 @@ onMounted(loadDashboard)
     </div>
 
     <section class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <article v-for="card in metricCards" :key="card.label" class="min-w-0 rounded-ui-lg border border-border bg-surface p-4 shadow-elevation-1 sm:p-5">
-        <div class="mb-5 flex items-start justify-between gap-4">
+      <article
+        v-for="card in metricCards"
+        :key="card.label"
+        class="flex h-full min-w-0 flex-col rounded-ui-lg border bg-surface p-4 shadow-elevation-1 sm:p-5"
+        :class="card.primary ? 'border-primary/20' : 'border-border'"
+      >
+        <div class="mb-4 flex flex-1 items-start justify-between gap-4">
           <div class="min-w-0">
             <p class="text-sm font-medium text-text-muted">{{ card.label }}</p>
             <div v-if="loading" class="mt-3 h-8 w-32 animate-pulse rounded-lg bg-bg-alt" />
-            <p v-else class="mt-2 truncate text-2xl font-semibold tracking-tight text-text-main">{{ card.value }}</p>
+            <p v-else class="mt-2 truncate font-semibold tracking-tight text-text-main" :class="card.primary ? 'text-2xl sm:text-[1.7rem]' : 'text-2xl'">{{ card.value }}</p>
+            <p class="mt-1 text-xs leading-5 text-text-muted">{{ card.description }}</p>
           </div>
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md bg-primary/10 text-primary">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-ui-md text-primary" :class="card.primary ? 'bg-primary/15' : 'bg-primary/10'">
             <svg v-if="card.icon === 'wallet'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2m0-6h2a2 2 0 012 2v2a2 2 0 01-2 2h-5a2 2 0 01-2-2v-2a2 2 0 012-2h3z" /></svg>
             <svg v-else-if="card.icon === 'receipt'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6m-6-4h6M5 4h14v16l-3-2-4 2-4-2-3 2V4z" /></svg>
             <svg v-else-if="card.icon === 'users'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H2v-2a4 4 0 014-4h3m8-5a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg v-else-if="card.icon === 'refund'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h11a4 4 0 110 8H8m-5-8 4-4m-4 4 4 4" /></svg>
+            <svg v-else-if="card.icon === 'revenue'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19V9m5 10V5m5 14v-7m5 7V3" /></svg>
             <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l2-5h14l2 5M4 9h16v10H4V9zm5 10v-5h6v5" /></svg>
           </div>
         </div>
-        <div v-if="!loading" class="flex flex-wrap items-center gap-1.5 text-xs">
-          <span class="inline-flex items-center gap-1 font-bold" :class="card.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
-            <svg class="h-3.5 w-3.5" :class="{ 'rotate-180': card.change < 0 }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
-            {{ card.change >= 0 ? '+' : '' }}{{ card.change }}%
-          </span>
-          <span class="text-text-muted">vs the previous 30 days</span>
+        <div class="mt-auto min-h-5 text-xs">
+          <div v-if="!loading && card.change !== undefined" class="flex flex-wrap items-center gap-1.5">
+            <span class="inline-flex items-center gap-1 font-bold" :class="metricTrendClasses(card)">
+              <svg class="h-3.5 w-3.5" :class="{ 'rotate-180': card.change < 0 }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
+              {{ card.change >= 0 ? '+' : '' }}{{ card.change }}%
+            </span>
+            <span class="text-text-muted">vs the previous 30 days</span>
+          </div>
         </div>
       </article>
     </section>
@@ -368,8 +406,8 @@ onMounted(loadDashboard)
       <article class="min-w-0 rounded-ui-lg border border-border bg-surface p-4 shadow-elevation-1 sm:p-6 xl:col-span-2">
         <div class="mb-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 class="text-lg font-bold text-text-main sm:text-xl">Revenue Growth</h2>
-            <p class="mt-1 text-sm text-text-muted">Marketplace revenue from successful transactions</p>
+            <h2 class="text-lg font-bold text-text-main sm:text-xl">Net GMV & platform revenue</h2>
+            <p class="mt-1 text-sm text-text-muted">Daily successful sales minus refunds completed on that day</p>
           </div>
           <div class="flex w-fit items-center rounded-ui-full bg-bg-alt p-1">
             <button

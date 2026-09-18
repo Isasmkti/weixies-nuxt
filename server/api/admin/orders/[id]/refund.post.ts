@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
       status: 'manual_action_required',
       refundRequestId: refundRequest.id,
       invoiceId: payment.provider_invoice_id,
-      message: 'Seller funds are on hold. Complete the full refund from the Xendit Dashboard; the refund webhook will reconcile this order automatically.',
+      message: 'The financial impact is protected. Complete the full refund from the Xendit Dashboard; the webhook will reconcile held earnings or create a seller balance adjustment if payout has already started.',
     };
   }
 
@@ -152,8 +152,8 @@ export default defineEventHandler(async (event) => {
       refundRequestId: refundRequest.id,
       invoiceId: payment.provider_invoice_id,
       message: definitiveFailure
-        ? 'Xendit rejected the refund request. Seller funds remain on hold while an administrator reviews the error.'
-        : 'The Xendit response is uncertain. Seller funds remain locked; verify the transaction in Xendit and wait for the webhook.',
+        ? 'Xendit rejected the refund request. The order remains in financial review until an administrator resolves the error.'
+        : 'The Xendit response is uncertain. The order remains in financial review; verify the transaction in Xendit and wait for the webhook.',
     };
   }
 });
