@@ -71,12 +71,13 @@ const menuItems = [
                 name: 'Product Review',
                 to: '/admin/products/review',
                 icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
-            },
-            {
-                name: 'Product Categories',
-                to: '/admin/products/categories',
-                icon: 'M20 13V6a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-1.4.58L4.58 11.1a2 2 0 0 0 0 2.82l5.5 5.5a2 2 0 0 0 2.82 0l6.52-6.52A2 2 0 0 0 20 13Z'
             }
+            // ,
+            // {
+            //     name: 'Product Categories',
+            //     to: '/admin/products/categories',
+            //     icon: 'M20 13V6a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-1.4.58L4.58 11.1a2 2 0 0 0 0 2.82l5.5 5.5a2 2 0 0 0 2.82 0l6.52-6.52A2 2 0 0 0 20 13Z'
+            // }
         ]
     },
     {

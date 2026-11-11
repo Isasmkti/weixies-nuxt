@@ -51,22 +51,7 @@
                         </div>
                     </div>
 
-                    <!-- Categories -->
-                    <div>
-                        <label class="block text-sm font-semibold text-text-main mb-4">Categories</label>
-                        <div v-if="categoriesStore.loading" class="text-text-muted text-sm italic">Loading categories...</div>
-                        <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <label v-for="cat in categories" :key="cat.id" 
-                                class="flex items-center gap-3 p-3 rounded-xl border border-bg-alt hover:border-primary/30 cursor-pointer transition-all bg-bg/50">
-                                <input type="checkbox" :value="cat.id" v-model="form.categoryIds"
-                                    class="h-5 w-5 rounded border-bg-alt text-primary focus:ring-primary/30">
-                                <span class="text-sm font-medium text-text-main">{{ cat.name }}</span>
-                            </label>
-                        </div>
-                        <div v-if="!categoriesStore.loading && categories.length === 0" class="text-text-muted text-sm border-2 border-dashed border-bg-alt rounded-xl p-4 text-center">
-                            No categories defined in database.
-                        </div>
-                    </div>
+                    <AdminProductCategoryPicker v-model="form.categoryIds" />
 
                     <ProductSpecificationsEditor v-model="form.specs" :disabled="loading" />
 
@@ -118,6 +103,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../../../stores/productsStore'
 import { useCategoriesStore } from '../../../stores/categoriesStore'
 import { sGetById } from '../../../services/productsService'
+import AdminProductCategoryPicker from '../../../components/products/AdminProductCategoryPicker.vue'
 import ProductImageUploader from '../../../components/products/ProductImageUploader.vue'
 import ProductSpecificationsEditor from '../../../components/products/ProductSpecificationsEditor.vue'
 import ProductLicensesEditor from '../../../components/products/ProductLicensesEditor.vue'
@@ -133,8 +119,6 @@ const categoriesStore = useCategoriesStore()
 const isEditMode = computed(() => !!route.params.id)
 const loading = ref(false)
 const error = ref(null)
-
-const categories = computed(() => categoriesStore.categories)
 
 const form = ref({
     name: '',

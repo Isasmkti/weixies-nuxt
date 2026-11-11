@@ -20,15 +20,26 @@
     <template v-else-if="currentItem">
       <MotionGroup preset="fade" :duration="350">
         <div class="absolute inset-0">
-          <img
-            :src="currentItem.image"
-            alt="Hero Background"
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="high"
-            class="h-full w-full scale-110 object-cover animate-subtle-zoom"
-          />
+          
+          <!-- PICTURE ELEMENT UNTUK GANTI GAMBAR MOBILE LOKAL -->
+          <picture>
+            <!-- Layar HP (<= 768px): Ambil gambar lokal dari folder public/images/ -->
+            <source 
+              media="(max-width: 768px)" 
+              srcset="/images/hero-mobile.jpg" 
+            />
+            
+            <!-- Layar Desktop (> 768px): Ambil gambar dari store / API -->
+            <img
+              :src="currentItem.image"
+              alt="Hero Background"
+              width="1920"
+              height="1080"
+              decoding="async"
+              fetchpriority="high"
+              class="h-full w-full scale-110 object-cover animate-subtle-zoom"
+            />
+          </picture>
 
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2),rgba(0,0,0,0.75))]"></div>
           <div class="absolute inset-0 bg-primary/10"></div>

@@ -36,6 +36,14 @@ export const useCategoriesStore = defineStore('categories', {
             } finally {
                 this.loading = false
             }
+        },
+        upsertCategory(category) {
+            if (!category?.id) throw new Error('A saved category is required.')
+            this.categories = [
+                ...this.categories.filter(item => String(item.id) !== String(category.id)),
+                category,
+            ].sort((a, b) => a.name.localeCompare(b.name))
+            this.fetchedAt = Date.now()
         }
     }
 })
