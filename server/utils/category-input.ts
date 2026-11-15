@@ -42,7 +42,7 @@ export function requireCategoryId(value: unknown) {
 
 export function categoryDatabaseError(error: any, fallback: string): never {
   if (error?.code === '23505') {
-    throw createError({ statusCode: 409, statusMessage: 'That category slug is already in use.' });
+    throw createError({ statusCode: 409, statusMessage: 'That category name or slug is already in use.' });
   }
   if (error?.code === 'P0002') {
     throw createError({ statusCode: 404, statusMessage: 'Category was not found.' });
