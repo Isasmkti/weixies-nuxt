@@ -7,6 +7,23 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+@font-face {
+  font-family: 'PolySans Neutral';
+  src: url('/fonts/PolySansTrial-Neutral.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PolySans Median';
+  src: url('/fonts/PolySansTrial-Median.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 
 .no-scrollbar {
   scrollbar-width: none; /* Firefox */
@@ -93,8 +110,11 @@ body {
 h1,
 h2,
 h3,
-p {
-    font-family: inherit;
+h4,
+h5,
+h6 {
+    font-family: 'PolySans Median', sans-serif;
+    font-weight: 500;
 }
 
 .weixies-swal-popup {

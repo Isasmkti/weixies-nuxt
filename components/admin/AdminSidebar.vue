@@ -1,6 +1,27 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+    Activity,
+    ArrowLeft,
+    BadgeCheck,
+    BookOpen,
+    ChevronDown,
+    FileText,
+    House,
+    Images,
+    LayoutDashboard,
+    List,
+    LogOut,
+    MessageSquareWarning,
+    Package,
+    PanelLeftClose,
+    PanelLeftOpen,
+    PanelsTopLeft,
+    ShoppingBag,
+    Store,
+    Wallet,
+} from 'lucide-vue-next'
 import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
@@ -25,33 +46,33 @@ const menuItems = [
         name: 'Dashboard',
         to: '/admin',
         exact: true,
-        icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
+        icon: LayoutDashboard
     },
     {
         name: 'Content',
         to: '/admin/home-carousel',
         group: 'content',
-        icon: 'M4 5.25A2.25 2.25 0 0 1 6.25 3h11.5A2.25 2.25 0 0 1 20 5.25v13.5A2.25 2.25 0 0 1 17.75 21H6.25A2.25 2.25 0 0 1 4 18.75V5.25ZM8 7h8M8 11h8M8 15h5',
+        icon: FileText,
         children: [
             {
                 name: 'Home Carousel',
                 to: '/admin/home-carousel',
-                icon: 'M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 16.5v-9zM7 14l2.5-2.5 2 2L15 10l3 4'
+                icon: Images
             },
             {
                 name: 'Sign-up Banner',
                 to: '/admin/signup-banner',
-                icon: 'M3 5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25v13.5A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V5.25zM3 15l4.5-4.5 3.75 3.75L15 10.5l6 6'
+                icon: PanelsTopLeft
             },
             {
                 name: 'Welcome Page',
                 to: '/admin/welcome',
-                icon: 'M2.25 12l8.954-8.955a1.126 1.126 0 011.592 0L21.75 12M4.5 9.75v9.375c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v4.875h4.125c.621 0 1.125-.504 1.125-1.125V9.75'
+                icon: House
             },
             {
                 name: 'Public Pages',
                 to: '/admin/public-pages',
-                icon: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5V6.75A3.375 3.375 0 0 0 11.25 3.375H8.625m0 11.625h4.5m-4.5 3h4.5M10.5 3.75H5.625c-.621 0-1.125.504-1.125 1.125v14.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V12a8.25 8.25 0 0 0-8.25-8.25h-.75Z'
+                icon: FileText
             }
         ]
     },
@@ -59,18 +80,18 @@ const menuItems = [
         name: 'Products',
         to: '/admin/products',
         group: 'products',
-        icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+        icon: Package,
         children: [
             {
                 name: 'All Products',
                 to: '/admin/products',
                 exact: true,
-                icon: 'M4 6h16M4 12h16M4 18h16'
+                icon: List
             },
             {
                 name: 'Product Review',
                 to: '/admin/products/review',
-                icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'
+                icon: BadgeCheck
             }
             // ,
             // {
@@ -83,37 +104,37 @@ const menuItems = [
     {
         name: 'Sellers',
         to: '/admin/sellers',
-        icon: 'M3 9.75L5.25 4.5h13.5L21 9.75M3 9.75h18M3 9.75v8.625A1.125 1.125 0 004.125 19.5h15.75A1.125 1.125 0 0021 18.375V9.75M9 19.5v-4.125A1.125 1.125 0 0110.125 14.25h3.75A1.125 1.125 0 0115 15.375V19.5'
+        icon: Store
     },
     {
         name: 'Chat Reports',
         to: '/admin/chat-reports',
-        icon: 'M4 4h16v12H8l-4 4V4zm8 3v4m0 2v1'
+        icon: MessageSquareWarning
     },
     {
         name: 'Activity Logs',
         to: '/admin/logs',
-        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+        icon: Activity
     },
     {
         name: 'Orders & Refunds',
         to: '/admin/orders',
-        icon: 'M9 14.25 6.75 12m0 0L9 9.75M6.75 12h7.5a4.5 4.5 0 0 1 0 9h-3M3.75 4.5h16.5v3.75H3.75V4.5Zm1.5 3.75v10.5h3'
+        icon: ShoppingBag
     },
     {
         name: 'AI Knowledge',
         to: '/admin/ai/knowledge',
-        icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5A4.5 4.5 0 003 9.5v9A4.5 4.5 0 017.5 14c1.746 0 3.332.477 4.5 1.253m0-9C13.168 5.477 14.754 5 16.5 5A4.5 4.5 0 0121 9.5v9a4.5 4.5 0 00-4.5-4.5c-1.746 0-3.332.477-4.5 1.253'
+        icon: BookOpen
     },
     {
         name: 'Payouts',
         to: '/admin/payouts',
-        icon: 'M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.111 1.453-.342 1.682-1.04l.867-2.603M2.25 18.75V5.25A2.25 2.25 0 0 1 4.5 3h9.75a2.25 2.25 0 0 1 2.25 2.25v4.5M2.25 18.75a60.055 60.055 0 0 0 8.922.826m5.328-9.826h3.75a1.5 1.5 0 0 1 1.5 1.5v3.75a1.5 1.5 0 0 1-1.5 1.5h-3.75a1.5 1.5 0 0 1-1.5-1.5v-3.75a1.5 1.5 0 0 1 1.5-1.5Z'
+        icon: Wallet
     },
     {
         name: 'Back to Shop',
         to: '/',
-        icon: 'M10 19l-7-7m0 0l7-7m-7 7h18'
+        icon: ArrowLeft
     }
 ]
 
@@ -157,31 +178,23 @@ watch(() => route.path, (path) => {
                 <div v-if="item.children" class="space-y-1">
                     <NuxtLink v-if="isCollapsed" :to="item.to" :title="item.name"
                         :class="['group flex items-center justify-center rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', groupIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
-                        </svg>
+                        <component :is="item.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
                     </NuxtLink>
 
                     <template v-else>
                         <button type="button" :aria-expanded="groupIsOpen(item)" :aria-controls="`admin-${item.group}-menu`"
                             :class="['group flex w-full items-center gap-3 rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', groupIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']"
                             @click="toggleGroup(item)">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
-                            </svg>
+                            <component :is="item.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
                             <span class="min-w-0 flex-1 text-left">{{ item.name }}</span>
-                            <svg class="h-4 w-4 shrink-0 transition-transform duration-200" :class="groupIsOpen(item) ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
-                            </svg>
+                            <ChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="groupIsOpen(item) ? 'rotate-180' : ''" aria-hidden="true" />
                         </button>
 
                         <Transition name="submenu">
                             <div v-if="groupIsOpen(item)" :id="`admin-${item.group}-menu`" class="ml-5 space-y-1 border-l border-border pl-3">
                                 <NuxtLink v-for="child in item.children" :key="child.name" :to="child.to"
                                     :class="['group flex items-center gap-2.5 rounded-ui-sm px-3 py-2.5 text-sm transition-colors duration-200 hover:bg-bg hover:text-primary', routeIsActive(child) ? 'bg-primary/10 font-semibold text-primary' : 'text-text-muted']">
-                                    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="child.icon" />
-                                    </svg>
+                                    <component :is="child.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
                                     <span>{{ child.name }}</span>
                                 </NuxtLink>
                             </div>
@@ -191,9 +204,7 @@ watch(() => route.path, (path) => {
 
                 <NuxtLink v-else :to="item.to" :title="isCollapsed ? item.name : undefined"
                     :class="['group flex items-center gap-3 rounded-ui-md px-4 py-3 transition-colors duration-200 hover:bg-bg hover:text-primary', isCollapsed ? 'justify-center' : '', routeIsActive(item) ? 'bg-primary/10 font-medium text-primary' : 'text-text-muted']">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
-                    </svg>
+                    <component :is="item.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
                     <transition name="fade">
                         <span v-if="!isCollapsed">{{ item.name }}</span>
                     </transition>
@@ -232,12 +243,7 @@ watch(() => route.path, (path) => {
             <!-- Sign Out -->
             <button @click="handleLogout"
                 :class="['group flex items-center gap-3 rounded-ui-sm px-3 py-2 text-danger transition-colors duration-200 hover:bg-danger/10', isCollapsed ? 'justify-center' : 'w-full']">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 shrink-0 group-hover:scale-110 transition-transform duration-200" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <LogOut class="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
                 <transition name="fade">
                     <span v-if="!isCollapsed" class="font-medium">Sign Out</span>
                 </transition>
@@ -246,14 +252,8 @@ watch(() => route.path, (path) => {
             <!-- Collapse Toggle -->
             <button @click="isCollapsed = !isCollapsed"
                 class="absolute -right-3 top-0 transform -translate-y-1/2 bg-surface shadow-md rounded-full p-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer z-50">
-                <svg v-if="!isCollapsed" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
+                <PanelLeftClose v-if="!isCollapsed" class="h-4 w-4" aria-hidden="true" />
+                <PanelLeftOpen v-else class="h-4 w-4" aria-hidden="true" />
             </button>
         </div>
     </aside>

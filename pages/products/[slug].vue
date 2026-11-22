@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-[1120px] font-[Inter,sans-serif]">
+  <div class="mx-auto max-w-[1120px] font-sans">
     <div v-if="loading" class="flex min-h-[520px] flex-col items-center justify-center rounded-3xl border border-bg-alt bg-surface"><span class="h-11 w-11 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></span><p class="mt-4 text-sm font-semibold text-text-muted">Loading product details...</p></div>
     <div v-else-if="error" class="rounded-3xl border border-red-200 bg-red-50 p-10 text-center text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400"><span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10"><svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg></span><h1 class="mt-5 text-xl font-black">Product not available</h1><p class="mt-2 text-sm">{{ error }}</p><NuxtLink to="/products" class="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-dark">Back to catalog</NuxtLink></div>
 

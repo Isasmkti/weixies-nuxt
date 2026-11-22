@@ -150,7 +150,7 @@ const chartOptions = computed(() => ({
   chart: {
     id: 'admin-revenue-datetime',
     type: 'area',
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: 'PolySans Neutral, sans-serif',
     background: 'transparent',
     toolbar: {
       show: true,

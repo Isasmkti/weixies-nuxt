@@ -93,7 +93,7 @@ onMounted(loadProducts)
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-[1280px] flex-col gap-8 py-4 font-[Inter,sans-serif] md:py-6">
+  <div class="mx-auto flex max-w-[1280px] flex-col gap-8 py-4 font-sans md:py-6">
     <header class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Seller workspace</p>

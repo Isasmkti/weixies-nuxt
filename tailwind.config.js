@@ -19,9 +19,9 @@ export default {
         danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        poppins: ['Poppins', 'sans-serif'],
-        montserrat: ['Montserrat', 'sans-serif'],
+        sans: ['PolySans Neutral', 'sans-serif'],
+        poppins: ['PolySans Neutral', 'sans-serif'],
+        montserrat: ['PolySans Neutral', 'sans-serif'],
       },
       borderRadius: {
         'ui-none': 'var(--radius-none)',

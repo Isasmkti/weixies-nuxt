@@ -26,11 +26,19 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap',
+          rel: 'preload',
+          href: '/fonts/PolySansTrial-Neutral.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
+          href: '/fonts/PolySansTrial-Median.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: 'anonymous',
         },
       ],
       script: [
@@ -67,7 +75,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/**': {
       headers: {
-        'Content-Security-Policy': "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-src 'self'; object-src 'none'"
+        'Content-Security-Policy': "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co https://*.pinimg.com; font-src 'self'; connect-src 'self' https://*.supabase.co; frame-src 'self'; object-src 'none'"
       }
     },
     '/dashboard': { ssr: false },

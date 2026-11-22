@@ -25,6 +25,7 @@
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.13.0",
     "autoprefixer": "^10.5.0",
+    "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.5.1",
     "pinia": "^3.0.4",
     "postcss": "^8.5.26",
