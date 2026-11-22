@@ -2,25 +2,25 @@
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-    Activity,
+    List,
     ArrowLeft,
     BadgeCheck,
-    BookOpen,
     ChevronDown,
     FileText,
     House,
     Images,
     LayoutDashboard,
-    List,
     LogOut,
     MessageSquareWarning,
-    Package,
     PanelLeftClose,
     PanelLeftOpen,
     PanelsTopLeft,
     ShoppingBag,
-    Store,
+    Users,
     Wallet,
+    LibraryBig,
+    FileBox,
+    Folder
 } from 'lucide-vue-next'
 import { useAuth } from '../../composables/useAuth'
 
@@ -52,7 +52,7 @@ const menuItems = [
         name: 'Content',
         to: '/admin/home-carousel',
         group: 'content',
-        icon: FileText,
+        icon: Folder,
         children: [
             {
                 name: 'Home Carousel',
@@ -80,7 +80,7 @@ const menuItems = [
         name: 'Products',
         to: '/admin/products',
         group: 'products',
-        icon: Package,
+        icon: FileBox,
         children: [
             {
                 name: 'All Products',
@@ -93,18 +93,12 @@ const menuItems = [
                 to: '/admin/products/review',
                 icon: BadgeCheck
             }
-            // ,
-            // {
-            //     name: 'Product Categories',
-            //     to: '/admin/products/categories',
-            //     icon: 'M20 13V6a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-1.4.58L4.58 11.1a2 2 0 0 0 0 2.82l5.5 5.5a2 2 0 0 0 2.82 0l6.52-6.52A2 2 0 0 0 20 13Z'
-            // }
         ]
     },
     {
         name: 'Sellers',
         to: '/admin/sellers',
-        icon: Store
+        icon: Users
     },
     {
         name: 'Chat Reports',
@@ -114,7 +108,7 @@ const menuItems = [
     {
         name: 'Activity Logs',
         to: '/admin/logs',
-        icon: Activity
+        icon: List
     },
     {
         name: 'Orders & Refunds',
@@ -124,7 +118,7 @@ const menuItems = [
     {
         name: 'AI Knowledge',
         to: '/admin/ai/knowledge',
-        icon: BookOpen
+        icon: LibraryBig
     },
     {
         name: 'Payouts',

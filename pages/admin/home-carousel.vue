@@ -24,8 +24,8 @@ const temporaryImagePath = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const inputClass = 'mt-2 w-full rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm text-text-main outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15'
-const labelClass = 'block text-sm font-bold text-text-main'
+const inputClass = 'mt-2 min-h-11 w-full rounded-ui-sm border border-border bg-bg px-3 py-2.5 text-sm text-text-main outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15'
+const labelClass = 'block text-sm font-medium text-text-main'
 const editorTitle = computed(() => editingId.value ? 'Edit carousel item' : 'Create carousel item')
 
 function localDateTime(value = null) {
@@ -240,36 +240,36 @@ onMounted(loadItems)
 
 <template>
   <div class="mx-auto max-w-7xl font-poppins">
-    <header class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-xs font-black uppercase tracking-[0.25em] text-primary">Content management</p>
-        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-text-main sm:text-4xl">Home Carousel</h1>
-        <p class="mt-2 max-w-2xl font-montserrat text-text-muted">Publish promotional campaigns and marketplace news in the automatic Home carousel.</p>
+    <header class="mb-7 flex flex-col gap-5 border-b border-border pb-6 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-primary">Content management</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-tight text-text-main sm:text-4xl">Home Carousel</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-muted">Manage the promotions and marketplace news shown on your home page.</p>
       </div>
-      <div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap">
-        <NuxtLink to="/" target="_blank" class="text-center rounded-xl border border-bg-alt bg-surface px-3 py-3 text-sm font-bold text-text-main transition hover:border-primary/30 hover:text-primary sm:px-5">Preview Home</NuxtLink>
-        <button type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary-dark sm:px-5" @click="openCreate">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14" /></svg>
+      <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <NuxtLink to="/" target="_blank" class="inline-flex min-h-11 items-center justify-center rounded-ui-sm border border-border bg-surface px-4 text-sm font-semibold text-text-main transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">Preview Home</NuxtLink>
+        <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-ui-sm bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" @click="openCreate">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14" /></svg>
           Add Item
         </button>
       </div>
     </header>
 
-    <div v-if="errorMessage" class="mb-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-semibold text-red-600 dark:text-red-300">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-4 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{{ successMessage }}</div>
+    <p v-if="errorMessage" role="alert" class="mb-5 rounded-ui-sm border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">{{ errorMessage }}</p>
+    <p v-if="successMessage" role="status" class="mb-5 rounded-ui-sm border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">{{ successMessage }}</p>
 
-    <section v-if="editorOpen" class="mb-8 overflow-hidden rounded-3xl border border-primary/20 bg-surface shadow-xl shadow-primary/5">
-      <div class="flex items-center justify-between border-b border-bg-alt px-4 py-4 sm:px-6 sm:py-5">
+    <section v-if="editorOpen" aria-labelledby="editor-heading" class="mb-8 overflow-hidden rounded-ui-md border border-border bg-surface">
+      <div class="flex items-center justify-between border-b border-border px-4 py-4 sm:px-6">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.18em] text-primary">Editor</p>
-          <h2 class="mt-1 text-xl font-black text-text-main">{{ editorTitle }}</h2>
+          <p class="text-xs font-semibold uppercase tracking-wide text-text-muted">Carousel content</p>
+          <h2 id="editor-heading" class="mt-1 text-xl font-semibold text-text-main">{{ editorTitle }}</h2>
         </div>
-        <button type="button" class="flex h-10 w-10 items-center justify-center rounded-xl text-text-muted transition hover:bg-bg hover:text-text-main" aria-label="Close editor" @click="closeEditor">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
+        <button type="button" class="flex h-10 w-10 items-center justify-center rounded-ui-sm text-text-muted transition hover:bg-bg hover:text-text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" aria-label="Close editor" @click="closeEditor">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
       </div>
 
-      <form class="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="saveItem">
+      <form class="grid gap-7 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_320px]" @submit.prevent="saveItem">
         <div class="space-y-5">
           <div class="grid gap-5 sm:grid-cols-2">
             <label :class="labelClass">Content type<select v-model="form.content_type" :class="inputClass"><option value="promo">Promotion</option><option value="news">News</option></select></label>
@@ -286,77 +286,92 @@ onMounted(loadItems)
             <label :class="labelClass">Start showing<input v-model="form.starts_at" type="datetime-local" :class="inputClass"></label>
             <label :class="labelClass">Stop showing<input v-model="form.ends_at" type="datetime-local" :class="inputClass"></label>
           </div>
-          <div class="flex flex-wrap items-center gap-5">
-            <label class="flex items-center gap-3 text-sm font-bold text-text-main"><input v-model="form.is_active" type="checkbox" class="h-5 w-5 rounded border-bg-alt text-primary focus:ring-primary">Visible on Home</label>
-            <label class="flex items-center gap-3 text-sm font-bold text-text-main">Order<input v-model.number="form.sort_order" type="number" min="0" class="w-24 rounded-xl border border-bg-alt bg-bg px-3 py-2 text-text-main outline-none focus:border-primary"></label>
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-4 border-t border-border pt-5">
+            <label class="flex min-h-11 items-center gap-3 text-sm font-medium text-text-main"><input v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-primary">Visible on Home</label>
+            <label class="flex min-h-11 items-center gap-3 text-sm font-medium text-text-main">Order<input v-model.number="form.sort_order" type="number" min="0" class="min-h-10 w-24 rounded-ui-sm border border-border bg-bg px-3 text-sm text-text-main outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"></label>
           </div>
         </div>
 
-        <div>
-          <p class="text-sm font-bold text-text-main">Carousel image</p>
-          <div class="mt-2 aspect-[16/10] overflow-hidden rounded-2xl border border-dashed border-bg-alt bg-bg">
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-text-main">Carousel image</p>
+          <div class="mt-2 aspect-[16/10] overflow-hidden rounded-ui-sm border border-border bg-bg">
             <img v-if="form.image_url" :src="form.image_url" :alt="form.title || 'Carousel preview'" class="h-full w-full object-cover">
             <div v-else class="flex h-full flex-col items-center justify-center px-6 text-center text-text-muted">
-              <svg class="h-10 w-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8M8.5 8.5h.01" /></svg>
+              <svg class="h-9 w-9 text-text-muted/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8M8.5 8.5h.01" /></svg>
               <p class="mt-3 text-xs leading-5">Use a landscape image, ideally 1600 × 700 px.</p>
             </div>
           </div>
-          <label class="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-bg-alt bg-bg px-4 py-3 text-sm font-bold text-primary transition hover:border-primary/30 hover:bg-primary/5">
+          <label class="mt-3 flex min-h-11 cursor-pointer items-center justify-center rounded-ui-sm border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary transition hover:border-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40">
             {{ uploading ? 'Uploading...' : (form.image_url ? 'Replace image' : 'Upload image') }}
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="uploading" @change="uploadImage">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="sr-only" :disabled="uploading" @change="uploadImage">
           </label>
           <p class="mt-2 text-xs leading-5 text-text-muted">JPG, PNG, WEBP, or GIF. Maximum 5 MB. Images are stored in the <code>home-carousel</code> bucket.</p>
 
-          <div class="mt-6 flex gap-3">
-            <button type="button" class="flex-1 rounded-xl border border-bg-alt px-4 py-3 text-sm font-bold text-text-muted transition hover:text-text-main" @click="closeEditor">Cancel</button>
-            <button type="submit" :disabled="saving || uploading" class="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-dark disabled:cursor-wait disabled:opacity-60">{{ saving ? 'Saving...' : 'Save Item' }}</button>
+          <div class="mt-6 flex flex-col gap-2 sm:flex-row lg:flex-col">
+            <button type="submit" :disabled="saving || uploading" class="min-h-11 flex-1 rounded-ui-sm bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60">{{ saving ? 'Saving...' : 'Save Item' }}</button>
+            <button type="button" class="min-h-11 flex-1 rounded-ui-sm border border-border px-4 text-sm font-semibold text-text-muted transition hover:bg-bg hover:text-text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" @click="closeEditor">Cancel</button>
           </div>
         </div>
       </form>
     </section>
 
-    <div v-if="loading" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      <div v-for="index in 3" :key="index" class="h-80 animate-pulse rounded-3xl border border-bg-alt bg-surface"><div class="h-44 rounded-t-3xl bg-bg-alt"></div></div>
+    <div v-if="loading" aria-label="Loading carousel items" class="divide-y divide-border rounded-ui-md border border-border bg-surface">
+      <div v-for="index in 3" :key="index" class="flex animate-pulse items-center gap-4 p-4 motion-reduce:animate-none sm:p-5">
+        <div class="h-16 w-20 shrink-0 rounded-ui-sm bg-bg-alt sm:h-20 sm:w-28"></div>
+        <div class="min-w-0 flex-1 space-y-3"><div class="h-3 w-28 rounded bg-bg-alt"></div><div class="h-4 max-w-sm rounded bg-bg-alt"></div><div class="h-3 max-w-xs rounded bg-bg-alt"></div></div>
+      </div>
     </div>
 
-    <div v-else-if="!items.length" class="rounded-3xl border border-dashed border-bg-alt bg-surface px-6 py-20 text-center">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"><svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8" /></svg></div>
-      <h2 class="mt-5 text-xl font-black text-text-main">No carousel items yet</h2>
-      <p class="mt-2 text-sm text-text-muted">Create your first promotion or marketplace news story.</p>
-      <button type="button" class="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white" @click="openCreate">Create First Item</button>
-    </div>
+    <section v-else-if="!items.length" aria-labelledby="empty-heading" class="rounded-ui-md border border-border bg-surface px-5 py-12 text-center sm:px-8">
+      <h2 id="empty-heading" class="text-lg font-semibold text-text-main">No carousel items yet</h2>
+      <p class="mt-2 text-sm text-text-muted">Create a promotion or news item to feature it on your home page.</p>
+      <button type="button" class="mt-5 min-h-11 rounded-ui-sm bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" @click="openCreate">Create First Item</button>
+    </section>
 
-    <div v-else class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      <article v-for="(item, index) in items" :key="item.id" class="group overflow-hidden rounded-3xl border border-bg-alt bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-        <div class="relative aspect-[16/9] overflow-hidden bg-bg-alt">
-          <img v-if="item.image_url" :src="item.image_url" :alt="item.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
-          <div v-else class="flex h-full items-center justify-center bg-gradient-to-br from-primary/80 to-primary-dark text-white/70"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8" /></svg></div>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10"></div>
-          <div class="absolute left-4 top-4 flex gap-2">
-            <span class="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-gray-900">{{ item.content_type }}</span>
-            <span :class="item.is_active ? 'bg-emerald-500 text-white' : 'bg-gray-800/80 text-white/80'" class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider">{{ item.is_active ? 'Visible' : 'Hidden' }}</span>
+    <section v-else aria-labelledby="items-heading" class="overflow-hidden rounded-ui-md border border-border bg-surface">
+      <div class="flex items-baseline justify-between gap-4 border-b border-border px-4 py-3 sm:px-5">
+        <h2 id="items-heading" class="text-sm font-semibold text-text-main">Carousel items</h2>
+        <p class="text-xs text-text-muted">{{ items.length }} {{ items.length === 1 ? 'item' : 'items' }}</p>
+      </div>
+      <div class="divide-y divide-border">
+        <article v-for="(item, index) in items" :key="item.id" class="grid grid-cols-[72px_minmax(0,1fr)] gap-x-4 gap-y-4 p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:gap-x-5 sm:p-5 lg:grid-cols-[112px_minmax(0,1fr)_minmax(150px,190px)_auto] lg:items-center">
+          <div class="aspect-[4/3] overflow-hidden rounded-ui-sm bg-bg-alt">
+            <img v-if="item.image_url" :src="item.image_url" :alt="item.title" class="h-full w-full object-cover">
+            <div v-else class="flex h-full items-center justify-center text-text-muted">
+              <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5M3 16.5l4.8-4.8a2 2 0 0 1 2.8 0l2.4 2.4 1.4-1.4a2 2 0 0 1 2.8 0l3.8 3.8" /></svg>
+            </div>
           </div>
-          <p class="absolute bottom-4 left-4 right-4 line-clamp-2 text-lg font-black leading-snug text-white">{{ item.title }}</p>
-        </div>
-        <div class="p-5">
-          <p class="line-clamp-2 min-h-10 text-sm leading-5 text-text-muted">{{ item.description || 'No description provided.' }}</p>
-          <dl class="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <div class="rounded-xl bg-bg p-3"><dt class="font-bold text-text-muted">Order</dt><dd class="mt-1 font-black text-text-main">#{{ index + 1 }}</dd></div>
-            <div class="rounded-xl bg-bg p-3"><dt class="font-bold text-text-muted">Published</dt><dd class="mt-1 truncate font-black text-text-main">{{ formatDate(item.published_at) }}</dd></div>
+
+          <div class="min-w-0 self-center">
+            <div class="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <span class="font-semibold uppercase tracking-wide text-text-muted">{{ item.content_type }}</span>
+              <span class="inline-flex items-center gap-1.5" :class="item.is_active ? 'text-success' : 'text-text-muted'">
+                <span class="h-1.5 w-1.5 rounded-full" :class="item.is_active ? 'bg-success' : 'bg-text-muted/60'"></span>
+                {{ item.is_active ? 'Visible' : 'Hidden' }}
+              </span>
+            </div>
+            <h3 class="truncate text-base font-semibold leading-6 text-text-main">{{ item.title }}</h3>
+            <p class="mt-1 line-clamp-2 text-sm leading-5 text-text-muted">{{ item.description || 'No description provided.' }}</p>
+          </div>
+
+          <dl class="col-span-2 grid grid-cols-2 gap-x-4 text-xs sm:col-span-1 sm:col-start-2 lg:col-start-auto lg:block lg:space-y-2">
+            <div><dt class="text-text-muted">Position</dt><dd class="mt-0.5 font-medium tabular-nums text-text-main">{{ index + 1 }} of {{ items.length }}</dd></div>
+            <div class="min-w-0"><dt class="text-text-muted">Published</dt><dd class="mt-0.5 truncate font-medium text-text-main">{{ formatDate(item.published_at) }}</dd></div>
           </dl>
-          <div class="mt-5 flex items-center justify-between gap-2 border-t border-bg-alt pt-4">
+
+          <div class="col-span-2 flex items-center justify-between gap-3 border-t border-border pt-3 sm:col-span-1 sm:col-start-3 sm:row-start-2 sm:border-0 sm:pt-0 lg:col-auto lg:row-auto">
             <div class="flex gap-1">
-              <button type="button" :disabled="index === 0 || reordering" class="flex h-9 w-9 items-center justify-center rounded-lg border border-bg-alt text-text-muted transition hover:text-primary disabled:opacity-30" aria-label="Move item earlier" @click="moveItem(index, -1)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m18 15-6-6-6 6" /></svg></button>
-              <button type="button" :disabled="index === items.length - 1 || reordering" class="flex h-9 w-9 items-center justify-center rounded-lg border border-bg-alt text-text-muted transition hover:text-primary disabled:opacity-30" aria-label="Move item later" @click="moveItem(index, 1)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" /></svg></button>
+              <button type="button" :disabled="index === 0 || reordering" class="flex h-10 w-10 items-center justify-center rounded-ui-sm border border-border text-text-muted transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Move item earlier" @click="moveItem(index, -1)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m18 15-6-6-6 6" /></svg></button>
+              <button type="button" :disabled="index === items.length - 1 || reordering" class="flex h-10 w-10 items-center justify-center rounded-ui-sm border border-border text-text-muted transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Move item later" @click="moveItem(index, 1)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" /></svg></button>
             </div>
             <div class="flex gap-2">
-              <button type="button" class="rounded-lg border border-bg-alt px-3 py-2 text-xs font-bold text-text-muted transition hover:text-text-main" @click="toggleActive(item)">{{ item.is_active ? 'Hide' : 'Show' }}</button>
-              <button type="button" class="rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/15" @click="openEdit(item)">Edit</button>
-              <button type="button" class="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-500/15" @click="removeItem(item)">Delete</button>
+              <button type="button" class="min-h-10 rounded-ui-sm border border-border px-3 text-xs font-semibold text-text-main transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" @click="toggleActive(item)">{{ item.is_active ? 'Hide' : 'Show' }}</button>
+              <button type="button" class="min-h-10 rounded-ui-sm px-3 text-xs font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" @click="openEdit(item)">Edit</button>
+              <button type="button" class="min-h-10 rounded-ui-sm px-3 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40" @click="removeItem(item)">Delete</button>
             </div>
           </div>
-        </div>
-      </article>
-    </div>
+        </article>
+      </div>
+    </section>
   </div>
 </template>
