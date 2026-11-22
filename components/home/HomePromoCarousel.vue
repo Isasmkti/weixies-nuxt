@@ -82,7 +82,7 @@ onBeforeUnmount(stopRotation)
     <div v-else-if="!currentItem" class="flex h-[230px] items-center bg-gradient-to-br from-primary via-primary-dark to-indigo-900 px-6 text-white sm:h-[310px] md:h-[380px] md:px-10">
       <div class="max-w-xl">
         <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] backdrop-blur">Weixies Updates</span>
-        <h2 class="mt-4 font-poppins text-3xl font-black tracking-tight md:text-5xl">Promotions and news are coming soon.</h2>
+        <h2 class="mt-4 text-3xl font-black tracking-tight md:text-5xl">Promotions and news are coming soon.</h2>
         <p class="mt-3 max-w-lg text-sm leading-6 text-white/75 md:text-base">Check back for marketplace offers, product highlights, and platform announcements.</p>
       </div>
     </div>
@@ -120,7 +120,7 @@ onBeforeUnmount(stopRotation)
             </time>
           </div>
 
-          <h2 class="mt-3 max-w-2xl font-poppins text-2xl font-black leading-tight tracking-tight drop-shadow-sm sm:text-4xl md:text-5xl">
+          <h2 class="mt-3 max-w-2xl text-2xl font-black leading-tight tracking-tight drop-shadow-sm sm:text-4xl md:text-5xl">
             {{ currentItem.title }}
           </h2>
           <p class="mt-2 line-clamp-2 max-w-xl text-xs leading-5 text-white/80 sm:text-sm md:mt-3 md:text-base md:leading-7">

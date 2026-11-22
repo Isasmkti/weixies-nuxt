@@ -347,7 +347,7 @@ onBeforeUnmount(() => {
               <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500" aria-hidden="true" />
             </div>
             <div class="min-w-0 flex-1">
-              <h2 id="ai-chat-title" class="truncate font-poppins text-sm font-bold text-text-main sm:text-base">Weixies AI Support</h2>
+              <h2 id="ai-chat-title" class="truncate text-sm font-bold text-text-main sm:text-base">Weixies AI Support</h2>
               <p id="ai-chat-description" class="truncate text-xs text-text-muted">General guidance for using Weixies</p>
             </div>
             <button
@@ -380,7 +380,7 @@ onBeforeUnmount(() => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M20 11.5c0 4.142-3.582 7.5-8 7.5a8.65 8.65 0 0 1-3.68-.81L4 19.5l1.36-3.4A7.1 7.1 0 0 1 4 12c0-4.142 3.582-7.5 8-7.5s8 2.858 8 7Z" />
                 </svg>
               </div>
-              <h3 class="font-poppins text-lg font-bold text-text-main">How can we help?</h3>
+              <h3 class="text-lg font-bold text-text-main">How can we help?</h3>
               <p class="mt-2 max-w-xs text-sm leading-6 text-text-muted">Send a question and our AI support assistant will reply here.</p>
             </div>
 

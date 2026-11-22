@@ -85,7 +85,7 @@
                     <!-- Product Info -->
                     <div class="p-5 flex flex-col flex-grow">
                         <div class="mb-2">
-                            <h3 class="font-bold text-lg text-text-main font-poppins line-clamp-1 group-hover:text-primary transition-colors">
+                            <h3 class="font-bold text-lg text-text-main line-clamp-1 group-hover:text-primary transition-colors">
                                 {{ item.product?.name }}
                             </h3>
                             <p class="text-sm text-text-muted font-montserrat mt-1 line-clamp-2">
